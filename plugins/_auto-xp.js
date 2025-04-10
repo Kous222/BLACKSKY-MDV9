@@ -1,20 +1,24 @@
 /**
  * Auto XP module
  * This plugin automatically awards XP to users when they are active in groups or use bot commands
+ * Improved with daily XP caps and slower progression
  */
 
-// Set XP reward amounts for different activities
+// Daily XP cap to prevent excessive grinding
+const DAILY_XP_CAP = 1500; // Maximum XP a user can earn per day
+
+// Set XP reward amounts for different activities (significantly reduced for slower progression)
 const XP_REWARDS = {
-  TEXT_MESSAGE: { min: 3, max: 10 },      // Random XP for regular text messages
-  MEDIA_MESSAGE: { min: 5, max: 15 },     // Random XP for sending media (images, videos, etc.)
-  COMMAND_USAGE: { min: 10, max: 25 },    // Random XP for using bot commands
-  STICKER_USAGE: { min: 4, max: 12 },     // Random XP for sending stickers
-  VOICE_MESSAGE: { min: 5, max: 15 },     // Random XP for voice messages
-  GROUP_ACTIVITY: { min: 2, max: 7 }      // Random XP for other group activities
+  TEXT_MESSAGE: { min: 1, max: 3 },        // Reduced XP for regular text messages
+  MEDIA_MESSAGE: { min: 1, max: 4 },       // Reduced XP for sending media (images, videos, etc.)
+  COMMAND_USAGE: { min: 2, max: 8 },       // Reduced XP for using bot commands
+  STICKER_USAGE: { min: 1, max: 3 },       // Reduced XP for sending stickers
+  VOICE_MESSAGE: { min: 1, max: 4 },       // Reduced XP for voice messages
+  GROUP_ACTIVITY: { min: 1, max: 2 }       // Reduced XP for other group activities
 };
 
 // XP cooldown to prevent spamming (in milliseconds)
-const XP_COOLDOWN = 60000; // 1 minute cooldown
+const XP_COOLDOWN = 300000; // 5 minutes cooldown (increased from 1 minute)
 
 /**
  * Generate a random XP amount within a range
@@ -34,15 +38,36 @@ function getRandomXP(range) {
 function awardXP(user, activity) {
   if (!user) return 0;
   
-  // Initialize XP if not present
+  // Initialize XP and tracking properties if not present
   if (!user.exp) user.exp = 0;
+  if (!user.dailyXP) user.dailyXP = 0;
+  if (!user.lastDailyReset) user.lastDailyReset = 0;
   
-  // Check cooldown
   const now = Date.now();
-  if (!user.lastXPTime) user.lastXPTime = 0;
+  const today = new Date().setHours(0, 0, 0, 0);
   
-  // If on cooldown, don't award XP
+  // Check cooldown between XP awards
+  if (!user.lastXPTime) user.lastXPTime = 0;
   if (now - user.lastXPTime < XP_COOLDOWN) return 0;
+  
+  // Reset daily XP counter if it's a new day
+  if (user.lastDailyReset < today) {
+    user.dailyXP = 0;
+    user.lastDailyReset = today;
+  }
+  
+  // Check if user has reached daily XP cap
+  if (user.dailyXP >= DAILY_XP_CAP) {
+    return 0; // No XP awarded if daily cap is reached
+  }
+  
+  // Chance-based system: Sometimes don't award XP at all
+  // This makes leveling more unpredictable and slower
+  const chanceToGet = Math.random();
+  if (chanceToGet > 0.7) { // 30% chance to not get any XP
+    user.lastXPTime = now; // Still update cooldown
+    return 0;
+  }
   
   // Get XP amount based on activity
   let xpAmount = 0;
@@ -67,11 +92,22 @@ function awardXP(user, activity) {
       xpAmount = getRandomXP(XP_REWARDS.GROUP_ACTIVITY);
   }
   
-  // Award XP and update cooldown
-  user.exp += xpAmount;
+  // Rare bonus XP chance (around 5% chance)
+  const bonusChance = Math.random();
+  if (bonusChance > 0.95) {
+    // Award a small bonus occasionally to keep things interesting
+    xpAmount += Math.floor(Math.random() * 3) + 1; // 1-3 bonus XP
+  }
+  
+  // Adjust XP amount to not exceed daily cap
+  const xpToAward = Math.min(xpAmount, DAILY_XP_CAP - user.dailyXP);
+  
+  // Award XP, update daily counter and cooldown
+  user.exp += xpToAward;
+  user.dailyXP += xpToAward;
   user.lastXPTime = now;
   
-  return xpAmount;
+  return xpToAward;
 }
 
 module.exports = {

@@ -36,10 +36,10 @@ Noch *${xpNeeded}* XP nötig!
     let before = parseInt(user.level) || 0
     let oldRole = user.role || 'Newbie ㋡'
 
-    // Increment the level as long as the user has enough XP to level up
-    // Add safety to prevent infinite loops
+    // Restrict manual level-ups to be more challenging
+    // Increased difficulty for manual level-ups
     let levelUpCount = 0
-    const maxLevelUps = 10 // Prevent more than 10 level ups at once
+    const maxLevelUps = 3 // Reduced from 10 to 3 - prevent more than 3 level ups at once
     
     while (levelling.canLevelUp(user.level || 0, user.exp || 0, global.multiplier || 1) && 
            user.level < 100 && 
@@ -79,7 +79,7 @@ Verwende *.profile*, um deinen Fortschritt zu überprüfen`
   }
 }
 
-handler.help = ['levelup']
+handler.help = ['levelup', 'Verwende diesen Befehl, um im Level aufzusteigen, wenn du genug XP hast. Das neue Levelsystem ist langsamer und belohnender - Levelfortschritt wird auf dem Weg zum Maximum von Level 100 immer schwieriger.']
 handler.tags = ['xp']
 
 handler.command = /^level(|up)$/i

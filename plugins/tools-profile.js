@@ -49,7 +49,21 @@ let handler = async (m, { conn, text, usedPrefix }) => {
   let premiumTimeLeft = user.premiumTime > now ? msToDate(user.premiumTime - now) : '*Kein Ablaufdatum für Premium!*'
 
   // Extract user data
-  let { name, pasangan, limit, exp = 0, money = 0, bank = 0, age = 0, level = 0, role = 'Newbie ㋡', registered = false, regTime = 0, premium = false } = user
+  let { name, pasangan, limit, exp = 0, money = 0, bank = 0, age = 0, level = 0, role = 'Newbie ㋡', registered = false, regTime = 0, premium = false, dailyXP = 0, lastDailyReset = 0 } = user
+  
+  // Initialize daily XP tracking if not present
+  if (typeof dailyXP === 'undefined') user.dailyXP = dailyXP = 0
+  if (typeof lastDailyReset === 'undefined') user.lastDailyReset = lastDailyReset = 0
+  
+  // Check if it's a new day and reset daily XP if needed
+  const today = new Date().setHours(0, 0, 0, 0)
+  if (lastDailyReset < today) {
+    user.dailyXP = dailyXP = 0
+    user.lastDailyReset = lastDailyReset = today
+  }
+  
+  // Get daily XP cap (should match the value in _auto-xp.js)
+  const DAILY_XP_CAP = 1500
   
   // Get user display info
   let username = conn.getName(who)
@@ -57,22 +71,40 @@ let handler = async (m, { conn, text, usedPrefix }) => {
   let sn = createHash('md5').update(who).digest('hex')
   let jodoh = pasangan ? `${pasangan}` : 'Single'
   
-  // Calculate level and XP info safely
+  // Calculate level and XP info safely with enhanced error handling
   let xpInfo = { min: 0, xp: 1, max: 1 };  // Default values
   try {
-    xpInfo = levelling.xpRange(level || 0, global.multiplier || 1);
+    // Make sure we have a valid level and multiplier
+    // Cap level at 99 for XP calculation, since level 100 is max
+    const safeLevel = Math.min(99, Math.max(0, level || 0));
+    const safeMultiplier = Math.max(1, global.multiplier || 1);
+    xpInfo = levelling.xpRange(safeLevel, safeMultiplier);
+    console.log(`XP calculation for level ${safeLevel}: `, xpInfo);
   } catch (e) {
     console.error('XP calculation error:', e);
   }
   
-  // Safely extract XP range values
-  let minXP = xpInfo.min || 0;
-  let requiredXP = xpInfo.xp || 1;
-  let maxXP = xpInfo.max || 1;
+  // Safely extract XP range values with fallbacks
+  let minXP = xpInfo.min !== undefined ? xpInfo.min : 0;
+  let requiredXP = xpInfo.xp !== undefined ? xpInfo.xp : 100;
+  let maxXP = xpInfo.max !== undefined ? xpInfo.max : minXP + requiredXP;
   
-  // Safe calculations for current level progress
-  let currentXP = Math.max(0, (exp || 0) - minXP);
-  let xpLeft = Math.max(0, maxXP - (exp || 0));
+  // Safe calculations for current level progress with typecasting to avoid NaN
+  const safeExp = Number(exp) || 0;
+  
+  // Special handling for level 100 (max level)
+  const isMaxLevel = level >= 100;
+  let currentXP, xpLeft;
+  
+  if (isMaxLevel) {
+    // At max level, show 100% progress
+    currentXP = requiredXP;
+    xpLeft = 0;
+  } else {
+    // Normal level progress calculation
+    currentXP = Math.max(0, safeExp - minXP);
+    xpLeft = Math.max(0, maxXP - safeExp);
+  }
   
   // Calculate progress percentage with safety checks
   let progressPercent = 0;
@@ -110,7 +142,9 @@ let handler = async (m, { conn, text, usedPrefix }) => {
 ┌─⊷ *XP FORTSCHRITT*
 🔰 • XP: ${currentXP} / ${requiredXP} (Total: ${exp})
 📊 • ${progressBar} ${progressPercent}%
-${xpLeft <= 0 ? `✅ Bereit für *${usedPrefix}levelup*` : `⏳ ${xpLeft} XP übrig bis zum nächsten Level`}
+${isMaxLevel ? `🏆 *MAXIMALES LEVEL ERREICHT!* Herzlichen Glückwunsch!` : (xpLeft <= 0 ? `✅ Bereit für *${usedPrefix}levelup*` : `⏳ ${xpLeft} XP übrig bis zum nächsten Level`)}
+🕒 • Heute: ${dailyXP}/${DAILY_XP_CAP} XP (${DAILY_XP_CAP > 0 ? Math.floor((dailyXP/DAILY_XP_CAP)*100) : 0}% des Tageslimits)
+ℹ️ • Verwende *${usedPrefix}dailyxp* für Details
 └──────────────
 
 ┌─⊷ *RESSOURCEN*

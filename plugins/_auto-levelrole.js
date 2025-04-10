@@ -31,13 +31,18 @@ module.exports = {
         let beforeLevel = parseInt(user.level) || 0
         let beforeRole = user.role || 'Newbie ㋡'
         
-        // Level up automatically with safety limits
+        // More restrictive level-up system - only allow 1 level-up at a time
+        // This further slows down progression
         let levelUpCount = 0
-        const maxLevelUps = 5 // Prevent more than 5 level ups at once for auto-level
+        const maxLevelUps = 1 // Reduced from 5 to 1 - only allow one level at a time
         
-        while (levelling.canLevelUp(user.level || 0, user.exp || 0, global.multiplier || 1) && 
-               user.level < 100 && 
-               levelUpCount < maxLevelUps) {
+        // Add a random chance to sometimes skip auto-level ups (20% chance)
+        // This makes users need to run the .levelup command manually more often
+        const skipChance = Math.random();
+        if (skipChance > 0.2 && 
+            levelling.canLevelUp(user.level || 0, user.exp || 0, global.multiplier || 1) && 
+            user.level < 100 && 
+            levelUpCount < maxLevelUps) {
           user.level++
           levelUpCount++
         }
@@ -45,24 +50,19 @@ module.exports = {
         // Update the role
         user = updateRole(user)
         
-        // Notify the user if level or role changed
+        // No automatic notification for level up
+        // Now users need to check their .profile or use .levelup manually
+        // This creates a more "discovery-based" progression system
+        
+        // Update user role silently
         if (beforeLevel !== user.level) {
-          let roleChanged = beforeRole !== user.role
-          let levelMessage = `
-Herzlichen Glückwunsch, du bist aufgestiegen!
-*${beforeLevel}* -> *${user.level}*`
+          // Log level up event for admin monitoring (console only)
+          console.log(`User ${m.sender} leveled up: ${beforeLevel} -> ${user.level}`);
           
-          if (roleChanged) {
-            levelMessage += `
-
-Deine Rolle wurde aktualisiert:
-*${beforeRole}* -> *${user.role}*`
+          // If role changed, log that too
+          if (beforeRole !== user.role) {
+            console.log(`User ${m.sender} role changed: ${beforeRole} -> ${user.role}`);
           }
-          
-          levelMessage += `
-Verwende *.profile*, um deinen Fortschritt zu überprüfen`
-          
-          m.reply(levelMessage.trim())
         }
       } else {
         // If no level up, still update the role to ensure consistency

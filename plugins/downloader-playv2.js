@@ -322,27 +322,73 @@ _Starting download, please wait..._`);
         // Create the output file path
         const outputPath = path.join(TMP_DIR, `yt_${videoId}.mp3`);
         
-        // Download and convert the video
+        try {
+        // Alternative direct download method for Heroku
         const startTime = Date.now();
-        const result = await downloadAndConvertAudio(videoUrl, outputPath);
+        
+        // Get video info
+        const basicInfo = await ytdl.getInfo(videoUrl, {
+            requestOptions: {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                }
+            }
+        });
+        
+        // Get audio formats and select best one
+        const audioFormats = ytdl.filterFormats(basicInfo.formats, 'audioonly');
+        const format = audioFormats
+            .filter(format => format.hasAudio)
+            .sort((a, b) => {
+                // Prefer formats with known bitrates between 128-192kbps
+                const aScore = a.audioBitrate ? (a.audioBitrate >= 128 && a.audioBitrate <= 192 ? 100 : 50) : 0;
+                const bScore = b.audioBitrate ? (b.audioBitrate >= 128 && b.audioBitrate <= 192 ? 100 : 50) : 0;
+                return bScore - aScore;
+            })[0];
+        
+        if (!format) {
+            return m.reply('❌ Could not find a suitable audio format.');
+        }
+        
+        // Create a direct download URL
+        const audioUrl = format.url;
+        
+        // Download the file using axios
+        const response = await axios({
+            method: 'GET',
+            url: audioUrl,
+            responseType: 'arraybuffer',
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+        });
+        
+        // Write the audio buffer to a file
+        fs.writeFileSync(outputPath, Buffer.from(response.data));
+        
         const downloadTime = ((Date.now() - startTime) / 1000).toFixed(2);
         
-        console.log(`[Play] Download and conversion completed in ${downloadTime}s`);
+        console.log(`[Play] Download completed in ${downloadTime}s`);
         
         // Get file stats
         const fileStats = fs.statSync(outputPath);
         const fileSize = formatFileSize(fileStats.size);
         
+        // Get video metadata for displaying
+        const title = basicInfo.videoDetails.title;
+        const author = basicInfo.videoDetails.author.name;
+        const thumbnail = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+        
         // Show some info about the download
         await conn.sendMessage(m.chat, {
             audio: { url: outputPath },
             mimetype: 'audio/mpeg',
-            fileName: `${result.title}.mp3`,
+            fileName: `${title}.mp3`,
             contextInfo: {
                 externalAdReply: {
-                    title: result.title,
-                    body: result.author,
-                    thumbnailUrl: result.thumbnail,
+                    title: title,
+                    body: author,
+                    thumbnailUrl: thumbnail,
                     sourceUrl: videoUrl,
                     mediaType: 1,
                     renderLargerThumbnail: true
@@ -354,8 +400,60 @@ _Starting download, please wait..._`);
         await m.reply(`✅ *Download complete*
 ⏱️ Process time: ${downloadTime}s
 📦 File size: ${fileSize}
-🔊 Quality: ${result.bitrate || 'Unknown'}kbps`);
+🔊 Quality: ${format.audioBitrate || 'Unknown'}kbps`);
         
+        // Clean up the file after sending to manage Heroku's limited disk space
+        setTimeout(() => {
+            try {
+                if (fs.existsSync(outputPath)) {
+                    fs.unlinkSync(outputPath);
+                    console.log(`Cleaned up file: ${outputPath}`);
+                }
+            } catch (cleanupErr) {
+                console.error('Error cleaning up file:', cleanupErr);
+            }
+        }, 60000); // Wait 1 minute before deleting
+    } catch (downloadError) {
+        console.error('[Play] Direct download error:', downloadError);
+        
+        // Fall back to the original method as backup
+        try {
+            const startTime = Date.now();
+            const result = await downloadAndConvertAudio(videoUrl, outputPath);
+            const downloadTime = ((Date.now() - startTime) / 1000).toFixed(2);
+            
+            console.log(`[Play] Fallback download completed in ${downloadTime}s`);
+            
+            // Get file stats
+            const fileStats = fs.statSync(outputPath);
+            const fileSize = formatFileSize(fileStats.size);
+            
+            // Show some info about the download
+            await conn.sendMessage(m.chat, {
+                audio: { url: outputPath },
+                mimetype: 'audio/mpeg',
+                fileName: `${result.title}.mp3`,
+                contextInfo: {
+                    externalAdReply: {
+                        title: result.title,
+                        body: result.author,
+                        thumbnailUrl: result.thumbnail,
+                        sourceUrl: videoUrl,
+                        mediaType: 1,
+                        renderLargerThumbnail: true
+                    }
+                }
+            }, { quoted: m });
+            
+            // Send additional info
+            await m.reply(`✅ *Download complete*
+⏱️ Process time: ${downloadTime}s
+📦 File size: ${fileSize}
+🔊 Quality: ${result.bitrate || 'Unknown'}kbps`);
+        } catch (fallbackError) {
+            throw fallbackError;
+        }
+    }
     } catch (e) {
         console.error('[Play] Error:', e);
         m.reply(`❌ *Error:* ${e.message}\n\nPlease try again later or try another video.`);
