@@ -1,0 +1,145 @@
+const {
+    BufferJSON, 
+    WA_DEFAULT_EPHEMERAL, 
+    generateWAMessageFromContent, 
+    proto, 
+    generateWAMessageContent, 
+    generateWAMessage, 
+    prepareWAMessageMedia, 
+    areJidsSameUser, 
+    getContentType
+} = require('@adiwajshing/baileys');
+
+process.env.TZ = 'Europe/Berlin';
+let fs = require('fs');
+let path = require('path');
+let fetch = require('node-fetch');
+let moment = require('moment-timezone');
+let levelling = require('../lib/levelling');
+
+let arrayMenü = [
+    'all', 'ai', 'spielen', 'database', 'herunterladener', 'rpg', 'rpgG', 'sticker', 'advanced', 'xp', 'fun', 'spiel', 'github', 'group', 'image', 'nsfw', 'info', 'internet', 'islam', 'kerang', 'maker', 'news', 'owner', 'voice', 'quotes', 'store', 'stalk', 'shortlink', 'tools', 'anonymous'
+];
+
+const allTags = arrayMenü.reduce((acc, tag) => {
+    acc[tag] = `MENÜ ${tag.toUpperCase()}`;
+    return acc;
+}, {});
+allTags['all'] = 'ALLE MENÜS';
+
+const defaultMenü = {
+    before: `Hallo %name\nIch bin ein automatisiertes System (WhatsApp Bot), das dir helfen kann, verschiedene Aufgaben zu erledigen, Informationen zu finden und Daten direkt über WhatsApp zu erhalten.\n\n◦ *Bibliothek:* Baileys\n◦ *Funktion:* Assistent\n\n┌  ◦ Laufzeit : %uptime\n│  ◦ Datum : %date\n│  ◦ Uhrzeit : %time\n└  ◦ Verwendetes Präfix : *[ %_p ]*`.trimStart(),
+    header: '┌  ◦ *%category*',
+    body: '│  ◦ %cmd %islimit %isPremium',
+    footer: '└  ',
+    after: `*Hinweis:* Tippe .menu <kategorie>, um ein bestimmtes Menü anzuzeigen\nBeispiel: .menu tools\n\nMit .hilfe oder .info erhältst du zusätzliche Informationen.`
+};
+
+let handler = async (m, { conn, usedPrefix: _p, args = [], command }) => {
+    try {
+        let { exp, limit, Stufe } = global.db.data.users[m.sender];
+        let name = `@${m.sender.split`@`[0]}`;
+        let teks = args[0] || '';
+        
+        let d = new Date();
+        let locale = 'de-DE';
+        let date = d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
+        let time = d.toLocaleTimeString(locale, { hour: 'numeric', minute: 'numeric', second: 'numeric' });
+        let uptime = clockString(process.uptime() * 1000);
+        
+        let help = Object.values(global.plugins).filter(plugin => !plugin.disabled).map(plugin => ({
+            help: Array.isArray(plugin.help) ? plugin.help : [plugin.help],
+            tags: Array.isArray(plugin.tags) ? plugin.tags : [plugin.tags],
+            limit: plugin.limit,
+            Premium: plugin.Premium
+        }));
+        
+        if (!teks) {
+            let menuList = `${defaultMenü.before}\n\n┌  ◦ *MENÜLISTE*\n`;
+            for (let tag of arrayMenü) {
+                menuList += `│  ◦ ${_p}menu ${tag}\n`;
+            }
+            menuList += `└  \n\n${defaultMenü.after}`;
+            return sendMenü(m, conn, menuList, { name, uptime, date, time, _p });
+        }
+        
+        if (teks.toLowerCase() === 'all') {
+            let allMenüs = `${defaultMenü.before}\n\n`;
+            for (let tag of arrayMenü) {
+                let categoryCommands = help.filter(Menü => Menü.tags.includes(tag));
+                if (categoryCommands.length > 0) {
+                    allMenüs += `${defaultMenü.header.replace(/%category/g, allTags[tag])}\n`;
+                    for (let Menü of categoryCommands) {
+                        for (let help of Menü.help) {
+                            allMenüs += defaultMenü.body
+                                .replace(/%cmd/g, _p + help)
+                                .replace(/%islimit/g, Menü.limit ? '(Ⓛ)' : '')
+                                .replace(/%isPremium/g, Menü.Premium ? '(Ⓟ)' : '') + '\n';
+                        }
+                    }
+                    allMenüs += `${defaultMenü.footer}\n\n`;
+                }
+            }
+            allMenüs += defaultMenü.after;
+            return sendMenü(m, conn, allMenüs, { name, uptime, date, time, _p });
+        }
+        
+        if (!allTags[teks]) return m.reply(`Menü "${teks}" ist nicht verfügbar.\nBitte tippe ${_p}menu, um die vollständige Liste zu sehen.`);
+        
+        let menuCategory = `${defaultMenü.before}\n\n${defaultMenü.header.replace(/%category/g, allTags[teks])}\n`;
+        let categoryCommands = help.filter(Menü => Menü.tags.includes(teks));
+        
+        for (let Menü of categoryCommands) {
+            for (let help of Menü.help) {
+                menuCategory += defaultMenü.body
+                    .replace(/%cmd/g, _p + help)
+                    .replace(/%islimit/g, Menü.limit ? '(Ⓛ)' : '')
+                    .replace(/%isPremium/g, Menü.Premium ? '(Ⓟ)' : '') + '\n';
+            }
+        }
+        menuCategory += `${defaultMenü.footer}\n\n${defaultMenü.after}`;
+        return sendMenü(m, conn, menuCategory, { name, uptime, date, time, _p });
+    } catch (e) {
+        console.error(e);
+        conn.reply(m.chat, 'Entschuldigung, im Menü ist ein Fehler aufgetreten.', m);
+    }
+};
+
+handler.help = ['menu', 'hilfe', 'info'];
+handler.tags = ['spielen'];
+handler.command = /^(menu|hilfe|help|info|bot)$/i;
+handler.exp = 3;
+
+module.exports = handler;
+
+function sendMenü(m, conn, text, replace) {
+    text = text.replace(/%\w+/g, match => replace[match.slice(1)] || match);
+    conn.relayMessage(m.chat, {
+        extendedTextMessage: {
+            text,
+            contextInfo: {
+                mentionedJid: [m.sender],
+                externalAdReply: {
+                    title: replace.date,
+                    mediaType: 1,
+                    previewType: 0,
+                    renderLargerThumbnail: true,
+                    thumbnailUrl: 'https://i.supa.codes/SLfSX',
+                    sourceUrl: 'https://whatsapp.com/channel/0029Va8ZH8fFXUuc69TGVw1q'
+                }
+            },
+            mentions: [m.sender]
+        }
+    }, {});
+}
+
+function clockString(ms) {
+    let h = Math.floor(ms / 3600000);
+    let m = Math.floor(ms / 60000) % 60;
+    let s = Math.floor(ms / 1000) % 60;
+    return [h, m, s].map(v => v.toString().padStart(2, 0)).join(':');
+}
+':');
+}
+oString().padStart(2, 0)).join(':');
+}

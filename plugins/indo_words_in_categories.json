@@ -1,0 +1,441 @@
+[
+  {
+    "file": "fun-cekkodam.js",
+    "words": {
+      "menjadi": {
+        "count": 1,
+        "contexts": [
+          " Goyang\", meaning: \"Menjadi pasangan das/der/di"
+        ]
+      },
+      "segala": {
+        "count": 9,
+        "contexts": [
+          "ing: \"Immer enak in segala suasana\" },",
+          "ng: \"Immer cocok in segala Zeit\" },",
+          "ing: \"Immer enak in segala acara\" },",
+          "ing: \"Immer enak in segala suasana\" },",
+          "ng: \"Immer segar in segala suasana\" },",
+          ": \"Immer praktis in segala acara\" },",
+          ": \"Immer tangguh in segala medan\" },",
+          " \"Immer gewinnen in segala medan\" },",
+          ": \"Immer tangguh in segala medan\" },"
+        ]
+      },
+      "banyak": {
+        "count": 1,
+        "contexts": [
+          "i und dinanti durch banyak person, penuh kelez"
+        ]
+      },
+      "jarang": {
+        "count": 1,
+        "contexts": [
+          "e macan das/der/die jarang teransehen aber imm"
+        ]
+      },
+      "jauh": {
+        "count": 2,
+        "contexts": [
+          "ansehen peluang von jauh.\" },",
+          "p für springen mehr jauh.\" },"
+        ]
+      },
+      "tinggi": {
+        "count": 1,
+        "contexts": [
+          "telligenz teknologi tinggi.\" },"
+        ]
+      },
+      "pintar": {
+        "count": 7,
+        "contexts": [
+          "umba\", meaning: \"du pintar und immer membawa k",
+          "  { name: \"Panci Pintar\", meaning: \"Immer g",
+          "  { name: \"Ponsel Pintar\", meaning: \"Immer g",
+          "  { name: \"Rak Buku Pintar\", meaning: \"Immer g",
+          "  { name: \"Pulpen Pintar\", meaning: \"Immer g",
+          "  { name: \"Gelas Pintar\", meaning: \"Immer g",
+          "  { name: \"Tas Pintar\", meaning: \"Immer g"
+        ]
+      },
+      "malas": {
+        "count": 9,
+        "contexts": [
+          "eaning: \"Teransehen malas-malasan aber immer ",
+          " name: \"Lampu Malam Malas\", meaning: \"Teranse",
+          "hen malas aber immer geben ca",
+          " { name: \"Korek Api Malas\", meaning: \"Teranse",
+          "hen malas aber immer geben ap",
+          " name: \"Sabun Mandi Malas\", meaning: \"Teranse",
+          "hen malas aber immer geben ke",
+          "  { name: \"Kardus Malas\", meaning: \"Immer t",
+          "eransehen malas aber immer geben pe"
+        ]
+      },
+      "kaya": {
+        "count": 8,
+        "contexts": [
+          "bing\", meaning: \"du kaya rasa und immer biki",
+          "Sapi\", meaning: \"du kaya rasa und immer biki",
+          "m\", meaning: \"Immer kaya rasa und gurih\" },",
+          "g: \"Immer empuk und kaya rempah\" },",
+          "g\", meaning: \"Immer kaya rasa und lezat\" },",
+          "a\", meaning: \"Immer kaya rasa und lezat\" },",
+          "t\", meaning: \"Immer kaya rasa und nikmat\" },",
+          "u\", meaning: \"Immer kaya bumbu und enak\" },"
+        ]
+      },
+      "makanan": {
+        "count": 2,
+        "contexts": [
+          "die serasi in jeder makanan\" },",
+          "etar wenn diisi mit makanan\" },"
+        ]
+      },
+      "kayu": {
+        "count": 1,
+        "contexts": [
+          "  { name: \"Talenan Kayu\", meaning: \"Immer s"
+        ]
+      },
+      "batu": {
+        "count": 1,
+        "contexts": [
+          "  { name: \"Es Batu Menangis\", meaning:"
+        ]
+      }
+    }
+  },
+  {
+    "file": "fun-menfess.js",
+    "words": {
+      "contoh": {
+        "count": 2,
+        "contexts": [
+          "oder anonymous.\\n\\n*Contoh:* ${usedPrefix + co",
+          "oder anonymous.\\n\\n*Contoh:* ${usedPrefix + co"
+        ]
+      }
+    }
+  },
+  {
+    "file": "fun-mimpi.js",
+    "words": {
+      "beberapa": {
+        "count": 1,
+        "contexts": [
+          "│ Bitte coba beberapa wenn wieder"
+        ]
+      },
+      "dekat": {
+        "count": 2,
+        "contexts": [
+          "d terungkap in Zeit dekat',",
+          "d terbentuk in Zeit dekat',"
+        ]
+      },
+      "contoh": {
+        "count": 1,
+        "contexts": [
+          "│ 📌 *Contoh:*"
+        ]
+      }
+    }
+  },
+  {
+    "file": "fun-soulmatch.js",
+    "words": {
+      "banyak": {
+        "count": 1,
+        "contexts": [
+          "         \"│ ✨ Butuh banyak adaptasi und penger"
+        ]
+      },
+      "beberapa": {
+        "count": 1,
+        "contexts": [
+          "│ Bitte coba beberapa wenn wieder"
+        ]
+      },
+      "justru": {
+        "count": 1,
+        "contexts": [
+          " \"│ ✨ Perbedaan ihr justru menciptakan\","
+        ]
+      },
+      "contoh": {
+        "count": 1,
+        "contexts": [
+          "│ 📌 *Contoh:*"
+        ]
+      }
+    }
+  },
+  {
+    "file": "fun-tembak.js",
+    "words": {
+      "menunggu": {
+        "count": 2,
+        "contexts": [
+          "berpacaran\\n\\nBitte menunggu jawabannya nur ya!\\",
+          "berpacaran\\n\\nBitte menunggu jawabannya nur ya!\\"
+        ]
+      }
+    }
+  },
+  {
+    "file": "fun-terima.js",
+    "words": {
+      "semoga": {
+        "count": 1,
+        "contexts": [
+          "split('@')[0]}*\\n\\n*Semoga langgeng und bahagi"
+        ]
+      }
+    }
+  },
+  {
+    "file": "fun-top.js",
+    "words": {
+      "contoh": {
+        "count": 1,
+        "contexts": [
+          "  if (!text) throw `Contoh penggunaan:\\n.top *"
+        ]
+      }
+    }
+  },
+  {
+    "file": "game-asahotak.js",
+    "words": {
+      "dia": {
+        "count": 1,
+        "contexts": [
+          "    // in hier dia ngambil data von ap"
+        ]
+      }
+    }
+  },
+  {
+    "file": "game-family100_ans.js",
+    "words": {
+      "tinggi": {
+        "count": 1,
+        "contexts": [
+          "d = 0.72 // semakin tinggi nilai, semakin miri"
+        ]
+      }
+    }
+  },
+  {
+    "file": "game-kuis_kemerdekaan.js",
+    "words": {
+      "dia": {
+        "count": 1,
+        "contexts": [
+          "    // in hier dia ngambil data von ap"
+        ]
+      }
+    }
+  },
+  {
+    "file": "game-lirik.js",
+    "words": {
+      "dia": {
+        "count": 1,
+        "contexts": [
+          "    // in hier dia ngambil data von ap"
+        ]
+      }
+    }
+  },
+  {
+    "file": "game-suit.js",
+    "words": {
+      "batu": {
+        "count": 4,
+        "contexts": [
+          "n\\ngunting, kertas, batu\\n\\n${usedPrefix}sui",
+          "        astro = 'batu'",
+          "} else if (text == 'batu') {",
+          "      if (astro == 'batu') {"
+        ]
+      }
+    }
+  },
+  {
+    "file": "game-suitpvp.js",
+    "words": {
+      "contoh": {
+        "count": 1,
+        "contexts": [
+          "g?_\\nTag orangnya.. Contoh\\n\\n${usedPrefix}sui"
+        ]
+      }
+    }
+  },
+  {
+    "file": "game-suitpvp_ans.js",
+    "words": {
+      "batu": {
+        "count": 6,
+        "contexts": [
+          "oom.poin_lose}XP`, 'Batu🗿', 'Batu', 'Kertas",
+          "oom.poin_lose}XP`, 'Batu🗿', 'Batu', 'Kertas",
+          "    let b = /batu/i",
+          "et reg = /^(gunting|batu|kertas)/i"
+        ]
+      }
+    }
+  },
+  {
+    "file": "game-susunkata.js",
+    "words": {
+      "dia": {
+        "count": 1,
+        "contexts": [
+          "    // in hier dia ngambil data von ap"
+        ]
+      }
+    }
+  },
+  {
+    "file": "game-tebak-islami.js",
+    "words": {
+      "dia": {
+        "count": 1,
+        "contexts": [
+          "    // in hier dia ngambil data von fi"
+        ]
+      }
+    }
+  },
+  {
+    "file": "game-tebakbendera.js",
+    "words": {
+      "dia": {
+        "count": 1,
+        "contexts": [
+          "    // in hier dia ngambil data von ap"
+        ]
+      }
+    }
+  },
+  {
+    "file": "game-tebakjenaka.js",
+    "words": {
+      "dia": {
+        "count": 1,
+        "contexts": [
+          "    // in hier dia ngambil data von ap"
+        ]
+      }
+    }
+  },
+  {
+    "file": "game-tebakkata.js",
+    "words": {
+      "dia": {
+        "count": 1,
+        "contexts": [
+          "    // in hier dia ngambil data von ap"
+        ]
+      }
+    }
+  },
+  {
+    "file": "game-tebakkimia.js",
+    "words": {
+      "dia": {
+        "count": 1,
+        "contexts": [
+          "    // in hier dia ngambil data von ap"
+        ]
+      }
+    }
+  },
+  {
+    "file": "game-tebakkode.js",
+    "words": {
+      "dia": {
+        "count": 1,
+        "contexts": [
+          "    // in hier dia ngambil data von ap"
+        ]
+      }
+    }
+  },
+  {
+    "file": "game-tebaktebakan.js",
+    "words": {
+      "dia": {
+        "count": 1,
+        "contexts": [
+          "    // in hier dia ngambil data von ap"
+        ]
+      }
+    }
+  },
+  {
+    "file": "game-ulartangga.js",
+    "words": {
+      "di": {
+        "count": 2,
+        "contexts": [
+          "ge(m.chat, { text: `Di karenakan host ausg",
+          "nd herausforderung! Di hier, Spieler müsse"
+        ]
+      },
+      "bukan": {
+        "count": 1,
+        "contexts": [
+          ") !== turns) throw \"Bukan giliran Sie!\";"
+        ]
+      },
+      "beberapa": {
+        "count": 1,
+        "contexts": [
+          "\udfaf🎮\\n\\nBerikut dies beberapa command ular tangga"
+        ]
+      },
+      "masih": {
+        "count": 1,
+        "contexts": [
+          "(ut[m.chat]) throw \"Masih gibt sesi Spiel in "
+        ]
+      }
+    }
+  },
+  {
+    "file": "game-wwgc.js",
+    "words": {
+      "belum": {
+        "count": 3,
+        "contexts": [
+          "t]) return m.reply(\"Belum gibt sesi Spiel\");",
+          "t]) return m.reply(\"Belum gibt sesi Spiel\");",
+          "t]) return m.reply(\"Belum gibt sesi Spiel\");"
+        ]
+      },
+      "beberapa": {
+        "count": 1,
+        "contexts": [
+          "Jang Berlangsung In Beberapa Putaran/ronde. Para"
+        ]
+      },
+      "malah": {
+        "count": 1,
+        "contexts": [
+          "icht malam dies ist malah letzter untukmu\","
+        ]
+      },
+      "mensuchen": {
+        "count": 1,
+        "contexts": [
+          "Pemain Dituntut Für Mensuchen Seorang Penjahat Ja"
+        ]
+      }
+    }
+  }
+]
