@@ -40,7 +40,7 @@
     },
     "license": "MIT",
     "dependencies": {
-        "@adiwajshing/baileys": "npm:@whiskeysockets/baileys@^6.7.16",
+        "@adiwajshing/baileys": "npm:@whiskeysockets/baileys@^6.17.16",
         "@adiwajshing/keyed-db": "^0.2.4",
         "@distube/ytdl-core": "^4.16.8",
         "@vitalets/google-translate-api": "^9.2.1",
@@ -94,10 +94,6 @@
         "ws": "^8.18.1",
         "yargs": "^17.7.2",
         "yt-search": "^2.12.1",
-        "ytdl-core": "^4.11.4"
-    },
-    "engines": {
-        "node": "16.x",
-        "npm": "8.x"
+        "ytdl-core": "^4.11.5"
     }
 }
