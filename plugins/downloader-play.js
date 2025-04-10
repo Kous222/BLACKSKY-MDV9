@@ -1,28 +1,33 @@
 const ytdl = require('@distube/ytdl-core');
 const ytSearch = require('yt-search');
-const { Readable } = require('stream');
+const { pipeline } = require('stream');
+const { PassThrough } = require('stream');
 
 let handler = async (m, { conn, text }) => {
     if (!text) return m.reply('❌ Gib den Songtitel oder YouTube-Link an.');
 
     try {
-        const searchResult = await ytSearch(text);
-        const video = searchResult.videos[0];
+        const search = await ytSearch(text);
+        const video = search.videos[0];
         if (!video) return m.reply('❌ Kein Video gefunden.');
 
-        const videoUrl = video.url;
         const title = video.title;
+        const url = video.url;
         const thumbnail = video.thumbnail;
 
-        const audioStream = ytdl(videoUrl, {
+        const stream = ytdl(url, {
             filter: 'audioonly',
-            quality: 'highestaudio'
+            quality: 'highestaudio',
+            highWaterMark: 1 << 25 // wichtig für Heroku!
         });
 
-        const streamBuffer = Readable.from(audioStream);
+        const pass = new PassThrough();
+        pipeline(stream, pass, (err) => {
+            if (err) console.error('Stream error:', err);
+        });
 
         await conn.sendMessage(m.chat, {
-            audio: { stream: streamBuffer },
+            audio: { stream: pass },
             mimetype: 'audio/mp4',
             fileName: `${title}.mp3`,
             contextInfo: {
@@ -30,16 +35,17 @@ let handler = async (m, { conn, text }) => {
                     title: title,
                     body: "YouTube Music",
                     thumbnailUrl: thumbnail,
-                    sourceUrl: videoUrl,
+                    sourceUrl: url,
                     mediaType: 1,
                     renderLargerThumbnail: true,
                     showAdAttribution: true
                 }
             }
         }, { quoted: m });
+
     } catch (err) {
-        console.error(err);
-        return m.reply(`❌ Ein Fehler ist aufgetreten:\n${err.message}`);
+        console.error('Play error:', err);
+        m.reply('❌ Fehler beim Abrufen oder Senden der Audiodatei.\n\n' + err.message);
     }
 };
 
