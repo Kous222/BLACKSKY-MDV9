@@ -14,5 +14,38 @@
         "whiskeysockets",
         "botcahx",
         "baileys"
-  ]
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    },
+    {
+      "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest.git"
+    },
+    {
+      "url": "https://github.com/DuckyTeam/heroku-buildpack-imagemagick.git"
+    }
+  ],
+  "env": {
+    "SESSION_ID": {
+      "description": "WhatsApp session ID",
+      "required": false
+    },
+    "PREFIX": {
+      "description": "Bot command prefix",
+      "value": ".",
+      "required": false
+    },
+    "CACHE_CLEANING_INTERVAL": {
+      "description": "Time in minutes to clean temporary files",
+      "value": "30",
+      "required": false
+    }
+  },
+  "formation": {
+    "worker": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  }
 }
