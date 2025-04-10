@@ -3,10 +3,7 @@ const search = require('yt-search');
 const fs = require('fs');
 const path = require('path');
 
-const TMP_DIR = path.join(process.cwd(), 'tmp');
-if (!fs.existsSync(TMP_DIR)) {
-    fs.mkdirSync(TMP_DIR, { recursive: true });
-}
+const TMP_DIR = '/tmp'; // Nur auf Heroku beschreibbar
 
 let handler = async (m, { conn, text, usedPrefix }) => {
     if (!text) return m.reply(`Bitte gib einen Songtitel oder YouTube-Link an.\n\nBeispiel: ${usedPrefix}play Despacito`);
@@ -29,14 +26,19 @@ let handler = async (m, { conn, text, usedPrefix }) => {
 
         const videoId = videoInfo.videoDetails.videoId;
         const title = videoInfo.videoDetails.title;
+        const duration = parseInt(videoInfo.videoDetails.lengthSeconds || '0');
         const thumbnail = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
+
+        if (duration > 600) return m.reply('❌ Das Video ist zu lang. Maximal 10 Minuten erlaubt.');
 
         await conn.sendMessage(m.chat, { 
             text: `🎵 *Gefunden:* ${title}\n⌛ *Lade Audio herunter...*`,
             edit: searchMessage
         });
 
-        const audioFormats = ytdl.filterFormats(videoInfo.formats, 'audioonly');
+        const audioFormats = ytdl.filterFormats(videoInfo.formats, 'audioonly').filter(f =>
+            f.mimeType.includes('audio/mp4') || f.mimeType.includes('audio/mpeg')
+        );
         const format = audioFormats
             .filter(f => f.hasAudio)
             .sort((a, b) => b.audioBitrate - a.audioBitrate)[0];
@@ -48,7 +50,7 @@ let handler = async (m, { conn, text, usedPrefix }) => {
             format: format,
             requestOptions: {
                 headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+                    'User-Agent': 'Mozilla/5.0'
                 }
             }
         });
@@ -60,8 +62,12 @@ let handler = async (m, { conn, text, usedPrefix }) => {
             audioStream.pipe(writer);
         });
 
+        await new Promise(resolve => setTimeout(resolve, 1000)); // kurze Wartezeit nach Schreibvorgang
+
+        const audioBuffer = fs.readFileSync(outputPath);
+
         await conn.sendMessage(m.chat, {
-            audio: { url: outputPath },
+            audio: audioBuffer,
             mimetype: 'audio/mpeg',
             fileName: `${title}.mp3`,
             contextInfo: {
