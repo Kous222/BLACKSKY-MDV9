@@ -1,6 +1,11 @@
+// Main owner number - this has highest privileges
 global.owner = ['4915561048015']  
+// Moderators with elevated access
 global.mods = ['4915561048015'] 
+// Premium users
 global.prems = ['4915561048015']
+// Additional owner validation
+global.validateOwner = (sender) => global.owner.includes(sender.split('@')[0])
 global.nameowner = 'Lann'
 global.numberowner = '4915561048015'
 global.mail = 'support@tioprm.eu.org' 
