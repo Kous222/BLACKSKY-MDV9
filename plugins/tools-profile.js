@@ -40,8 +40,25 @@ let handler = async (m, { conn, text, usedPrefix }) => {
     pp = await conn.profilePictureUrl(who, 'image')
   } catch (e) {}
 
+  if (!global.db.data) {
+    throw 'Database not initialized! Please restart the bot.'
+  }
   if (typeof global.db.data.users[who] === 'undefined') {
-    throw 'Benutzer ist nicht in der Datenbank'
+    global.db.data.users[who] = {
+        exp: 0,
+        limit: 10,
+        lastclaim: 0,
+        registered: false,
+        name: conn.getName(who),
+        age: -1,
+        regTime: -1,
+        afk: -1,
+        afkReason: '',
+        banned: false,
+        level: 0,
+        role: 'Newbie ㋡',
+        autolevelup: true
+    }
   }
 
   let user = global.db.data.users[who]
@@ -50,27 +67,27 @@ let handler = async (m, { conn, text, usedPrefix }) => {
 
   // Extract user data
   let { name, pasangan, limit, exp = 0, money = 0, bank = 0, age = 0, level = 0, role = 'Newbie ㋡', registered = false, regTime = 0, premium = false, dailyXP = 0, lastDailyReset = 0 } = user
-  
+
   // Initialize daily XP tracking if not present
   if (typeof dailyXP === 'undefined') user.dailyXP = dailyXP = 0
   if (typeof lastDailyReset === 'undefined') user.lastDailyReset = lastDailyReset = 0
-  
+
   // Check if it's a new day and reset daily XP if needed
   const today = new Date().setHours(0, 0, 0, 0)
   if (lastDailyReset < today) {
     user.dailyXP = dailyXP = 0
     user.lastDailyReset = lastDailyReset = today
   }
-  
+
   // Get daily XP cap (should match the value in _auto-xp.js)
   const DAILY_XP_CAP = 1500
-  
+
   // Get user display info
   let username = conn.getName(who)
   let about = (await conn.fetchStatus(who).catch(() => ({}))).status || ''
   let sn = createHash('md5').update(who).digest('hex')
   let jodoh = pasangan ? `${pasangan}` : 'Single'
-  
+
   // Calculate level and XP info safely with enhanced error handling
   let xpInfo = { min: 0, xp: 1, max: 1 };  // Default values
   try {
@@ -83,19 +100,19 @@ let handler = async (m, { conn, text, usedPrefix }) => {
   } catch (e) {
     console.error('XP calculation error:', e);
   }
-  
+
   // Safely extract XP range values with fallbacks
   let minXP = xpInfo.min !== undefined ? xpInfo.min : 0;
   let requiredXP = xpInfo.xp !== undefined ? xpInfo.xp : 100;
   let maxXP = xpInfo.max !== undefined ? xpInfo.max : minXP + requiredXP;
-  
+
   // Safe calculations for current level progress with typecasting to avoid NaN
   const safeExp = Number(exp) || 0;
-  
+
   // Special handling for level 100 (max level)
   const isMaxLevel = level >= 100;
   let currentXP, xpLeft;
-  
+
   if (isMaxLevel) {
     // At max level, show 100% progress
     currentXP = requiredXP;
@@ -105,7 +122,7 @@ let handler = async (m, { conn, text, usedPrefix }) => {
     currentXP = Math.max(0, safeExp - minXP);
     xpLeft = Math.max(0, maxXP - safeExp);
   }
-  
+
   // Calculate progress percentage with safety checks
   let progressPercent = 0;
   if (requiredXP > 0) {
@@ -113,12 +130,12 @@ let handler = async (m, { conn, text, usedPrefix }) => {
   } else if (xpLeft <= 0) {
     progressPercent = 100;
   }
-  
+
   // Create a visual progress bar
   let progressBar = '';
   let barLength = 15;
   let filledLength = Math.floor((progressPercent / 100) * barLength);
-  
+
   for (let i = 0; i < barLength; i++) {
     progressBar += i < filledLength ? '█' : '░';
   }
