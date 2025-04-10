@@ -9,10 +9,10 @@ if (!fs.existsSync(TMP_DIR)) {
 }
 
 let handler = async (m, { conn, text, usedPrefix }) => {
-    if (!text) return m.reply(`Please provide a song title or YouTube link\n\nExample: ${usedPrefix}play Despacito`);
+    if (!text) return m.reply(`Bitte gib einen Songtitel oder YouTube-Link an.\n\nBeispiel: ${usedPrefix}play Despacito`);
 
     try {
-        let searchMessage = await m.reply('🔍 *Searching...*');
+        let searchMessage = await m.reply('🔍 *Suche läuft...*');
         let videoUrl, videoInfo;
 
         if (text.match(/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)/)) {
@@ -20,7 +20,7 @@ let handler = async (m, { conn, text, usedPrefix }) => {
             videoInfo = await ytdl.getInfo(videoUrl);
         } else {
             const searchResults = await search(text);
-            if (!searchResults?.videos?.length) return m.reply('❌ No videos found.');
+            if (!searchResults?.videos?.length) return m.reply('❌ Keine Videos gefunden.');
 
             const video = searchResults.videos[0];
             videoUrl = video.url;
@@ -32,7 +32,7 @@ let handler = async (m, { conn, text, usedPrefix }) => {
         const thumbnail = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
 
         await conn.sendMessage(m.chat, { 
-            text: `🎵 *Found:* ${title}\n⌛ *Downloading audio...*`,
+            text: `🎵 *Gefunden:* ${title}\n⌛ *Lade Audio herunter...*`,
             edit: searchMessage
         });
 
@@ -41,10 +41,17 @@ let handler = async (m, { conn, text, usedPrefix }) => {
             .filter(f => f.hasAudio)
             .sort((a, b) => b.audioBitrate - a.audioBitrate)[0];
 
-        if (!format) throw new Error('No suitable audio format found');
+        if (!format) throw new Error('Kein geeignetes Audioformat gefunden');
 
         const outputPath = path.join(TMP_DIR, `${videoId}.mp3`);
-        const audioStream = ytdl(videoUrl, { format: format });
+        const audioStream = ytdl(videoUrl, {
+            format: format,
+            requestOptions: {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+                }
+            }
+        });
         const writer = fs.createWriteStream(outputPath);
 
         await new Promise((resolve, reject) => {
@@ -69,20 +76,19 @@ let handler = async (m, { conn, text, usedPrefix }) => {
             }
         }, { quoted: m });
 
-        // Clean up file
         setTimeout(() => {
             try {
                 if (fs.existsSync(outputPath)) {
                     fs.unlinkSync(outputPath);
                 }
             } catch (err) {
-                console.error('Error cleaning up file:', err);
+                console.error('Fehler beim Löschen:', err);
             }
         }, 60000);
 
     } catch (error) {
-        console.error('Play command error:', error);
-        m.reply(`❌ Error: ${error.message}\nPlease try again or use a different video.`);
+        console.error('Fehler im Play-Befehl:', error);
+        m.reply(`❌ Fehler: ${error.message.includes("captcha") ? "YouTube blockiert den Zugriff von diesem Server.\nVersuche ein anderes Lied oder verwende einen Proxy/VPS." : error.message}`);
     }
 };
 
