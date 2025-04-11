@@ -3,7 +3,7 @@ let Reg = /\|?(.*)([.|] *?)([0-9]*)$/i
 let handler = async function (m, { text, usedPrefix }) {
   let user = global.db.data.users[m.sender]
   if (user.registered === true) throw `Sie bereits registriert\nMau liste wiederholen? ${usedPrefix}unreg <SN|UNENTSCHIEDENAL NUMBER>`
-  if (!Reg.test(text)) throw `Format salah\n*${usedPrefix}liste name.umur*`
+  if (!Reg.test(text)) throw `Format salah\n*${usedPrefix}liste name.alter*`
   let [_, name, splitter, age] = text.match(Reg)
   if (!name) throw 'Name nicht darf kosong (Alphanumeric)'
   if (!age) throw 'Umur nicht darf kosong (Angka)'
@@ -20,7 +20,7 @@ register erfolgreich!
 
 ╭─「 Info 」
 │ Name: ${name}
-│ Umur: ${age} Jahr 
+│ Alter: ${age} Jahre 
 ╰────
 Serial Number: 
 ${sn}
