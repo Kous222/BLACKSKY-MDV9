@@ -1,4 +1,10 @@
+            BLACKSKY-MD
 
+Fork
+
+Run bot Local and put your creds.json to sessions folder
+
+Deploy to heroku create new app 
 # Heroku Buildpack
 ### Instal Buildpack
 ```bash
