@@ -1,106 +1,83 @@
-const ytdl = require('ytdl-core');
-const search = require('yt-search');
-const fs = require('fs');
-const path = require('path');
+const axios = require("axios");
+const ytSearch = require("yt-search");
 
-const TMP_DIR = '/tmp'; // Nur auf Heroku beschreibbar
+let handler = async (m, { conn, text, command }) => {
+  if (!text) return m.reply("❌ Was möchtest du herunterladen?");
 
-let handler = async (m, { conn, text, usedPrefix }) => {
-    if (!text) return m.reply(`Bitte gib einen Songtitel oder YouTube-Link an.\n\nBeispiel: ${usedPrefix}play Despacito`);
+  await m.reply("🔄 *BLACKSKY-MD Bot lädt deinen Song... Bitte warte...*");
 
-    try {
-        let searchMessage = await m.reply('🔍 *Suche läuft...*');
-        let videoUrl, videoInfo;
+  try {
+    let search = await ytSearch(text);
+    let video = search.videos[0];
 
-        if (text.match(/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)/)) {
-            videoUrl = text;
-            videoInfo = await ytdl.getInfo(videoUrl);
-        } else {
-            const searchResults = await search(text);
-            if (!searchResults?.videos?.length) return m.reply('❌ Keine Videos gefunden.');
+    if (!video) return m.reply("❌ Keine Ergebnisse gefunden. Versuche es mit einem anderen Titel.");
 
-            const video = searchResults.videos[0];
-            videoUrl = video.url;
-            videoInfo = await ytdl.getInfo(videoUrl);
+    let link = video.url;
+    let apis = [
+      `https://fastrestapis.fasturl.cloud/downup/ytmp3?url=${encodeURIComponent(link)}&quality=128kbps&server=server2`,
+      `https://fastrestapis.fasturl.cloud/downup/ytmp3?url=${encodeURIComponent(link)}&quality=128kbps&server=auto`,
+      `https://fastrestapis.fasturl.cloud/downup/ytmp3?url=${encodeURIComponent(link)}&quality=128kbps&server=server1`
+    ];
+
+    async function fetchWithRetry(apiList, retries = 3, delay = 5000) {
+      for (let api of apiList) {
+        for (let i = 0; i < retries; i++) {
+          try {
+            const res = await axios.get(api, {
+              timeout: 30000,
+              headers: { "accept": "application/json" }
+            });
+            if (res.data && res.data.status === 200) {
+              return res.data.result;
+            }
+            throw new Error("Ungültige API-Antwort");
+          } catch (err) {
+            console.error(`Versuch ${i + 1} fehlgeschlagen für ${api}: ${err.message}`);
+            if (i < retries - 1) await new Promise(r => setTimeout(r, delay));
+          }
         }
-
-        const videoId = videoInfo.videoDetails.videoId;
-        const title = videoInfo.videoDetails.title;
-        const duration = parseInt(videoInfo.videoDetails.lengthSeconds || '0');
-        const thumbnail = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
-
-        if (duration > 600) return m.reply('❌ Das Video ist zu lang. Maximal 10 Minuten erlaubt.');
-
-        await conn.sendMessage(m.chat, { 
-            text: `🎵 *Gefunden:* ${title}\n⌛ *Lade Audio herunter...*`,
-            edit: searchMessage
-        });
-
-        const audioFormats = ytdl.filterFormats(videoInfo.formats, 'audioonly').filter(f =>
-            f.mimeType.includes('audio/mp4') || f.mimeType.includes('audio/mpeg')
-        );
-        const format = audioFormats
-            .filter(f => f.hasAudio)
-            .sort((a, b) => b.audioBitrate - a.audioBitrate)[0];
-
-        if (!format) throw new Error('Kein geeignetes Audioformat gefunden');
-
-        const outputPath = path.join(TMP_DIR, `${videoId}.mp3`);
-        const audioStream = ytdl(videoUrl, {
-            format: format,
-            requestOptions: {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0'
-                }
-            }
-        });
-        const writer = fs.createWriteStream(outputPath);
-
-        await new Promise((resolve, reject) => {
-            writer.on('finish', resolve);
-            writer.on('error', reject);
-            audioStream.pipe(writer);
-        });
-
-        await new Promise(resolve => setTimeout(resolve, 1000)); // kurze Wartezeit nach Schreibvorgang
-
-        const audioBuffer = fs.readFileSync(outputPath);
-
-        await conn.sendMessage(m.chat, {
-            audio: audioBuffer,
-            mimetype: 'audio/mpeg',
-            fileName: `${title}.mp3`,
-            contextInfo: {
-                externalAdReply: {
-                    title: title,
-                    body: videoInfo.videoDetails.author.name,
-                    thumbnailUrl: thumbnail,
-                    sourceUrl: videoUrl,
-                    mediaType: 1,
-                    renderLargerThumbnail: true
-                }
-            }
-        }, { quoted: m });
-
-        setTimeout(() => {
-            try {
-                if (fs.existsSync(outputPath)) {
-                    fs.unlinkSync(outputPath);
-                }
-            } catch (err) {
-                console.error('Fehler beim Löschen:', err);
-            }
-        }, 60000);
-
-    } catch (error) {
-        console.error('Fehler im Play-Befehl:', error);
-        m.reply(`❌ Fehler: ${error.message.includes("captcha") ? "YouTube blockiert den Zugriff von diesem Server.\nVersuche ein anderes Lied oder verwende einen Proxy/VPS." : error.message}`);
+      }
+      throw new Error("Fehler beim Abrufen des Liedes nach mehreren Versuchen.");
     }
+
+    let data = await fetchWithRetry(apis);
+
+    let songData = {
+      title: data.title,
+      artist: data.author.name,
+      thumbnail: data.metadata.thumbnail,
+      videoUrl: data.url,
+      audioUrl: data.media
+    };
+
+    await conn.sendMessage(m.chat, {
+      image: { url: songData.thumbnail },
+      caption: `BLACKSKY-MD BOT
+╭═════════════════⊷
+║ 🎶 *Titel:* ${songData.title}
+║ 🎤 *Künstler:* ${songData.artist}
+╰═════════════════⊷
+*Powered by BLACKSKY-MD BOT*`
+    }, { quoted: m });
+
+    await conn.sendMessage(m.chat, {
+      audio: { url: songData.audioUrl },
+      mimetype: "audio/mp4",
+      ptt: false
+    }, { quoted: m });
+
+    await m.reply("✅ *Erfolgreich gesendet! 🎶*");
+
+  } catch (e) {
+    console.error("Fehler:", e.message);
+    return m.reply("❌ Fehler beim Download:\n" + e.message);
+  }
 };
 
-handler.help = ['play'];
-handler.tags = ['downloader'];
-handler.command = /^(play|song|music)$/i;
+handler.help = ["play"].map(v => v + " <titel>");
+handler.tags = ["downloader"];
+handler.command = /^play$/i;
 handler.limit = true;
+handler.register = true;
 
 module.exports = handler;
