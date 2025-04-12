@@ -1,15 +1,15 @@
 let handler = async (m, { conn, text, isROwner, isOwner, isAdmin }) => {
-  // Check if the user is an Admin or the owner
+  // Überprüfen, ob der Benutzer ein Admin oder Besitzer ist
   if (!(isAdmin || isOwner)) {
     throw 'Du bist kein Admin oder Besitzer!';
   }
 
   if (text) {
-    // Set the custom "bye" message based on role
+    // Setze die benutzerdefinierte "Tschüss"-Nachricht basierend auf der Rolle
     if (isROwner) global.conn.bye = text;
     else if (isOwner) conn.bye = text;
 
-    // Store the custom "bye" message in the database for the specific chat
+    // Speichern der benutzerdefinierten "Tschüss"-Nachricht in der Datenbank für den spezifischen Chat
     global.db.data.chats[m.chat].sBye = text;
     m.reply(`„Tschüss“-Nachricht erfolgreich festgelegt! ${text}`);
   } else {

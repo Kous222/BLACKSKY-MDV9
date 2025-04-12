@@ -25,10 +25,10 @@ handler.events = {
       const welcomeMessage = global.db.data.chats[chat].sWelcome || conn.welcome;
 
       if (welcomeMessage) {
-        // Der @user wird durch die Benutzer-ID ersetzt
+        // Ersetzen des @user Platzhalters durch die Benutzer-ID
         const message = welcomeMessage.replace('@user', `@${user.split('@')[0]}`).replace('@subject', chatUpdate.chat).replace('@desc', chatUpdate.desc || 'Keine Beschreibung');
         
-        // Verwenden von mentions, um den Benutzer richtig zu erwähnen
+        // Senden der Nachricht mit Erwähnung des Benutzers
         await conn.sendMessage(chat, { text: message, mentions: [user] });
       }
     }
