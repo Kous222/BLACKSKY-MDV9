@@ -4,66 +4,66 @@ const util = require('util')
 const isNumber = x => typeof x === 'number' && !isNaN(x)
 const delay = ms => isNumber(ms) && new Promise(resolve => setTimeout(resolve, ms))
 
-// Initialize global configuration with default values
-// Owner numbers should be set by the app before loading this handler
+// Initialisiere globale Konfiguration mit Standardwerten
+// Besitzernummern sollten von der App gesetzt werden, bevor dieser Handler geladen wird
 if (!global.owner) {
-    global.owner = ['628123456789'] // Default owner, should be replaced by the app
-    console.log("Warning: Using default owner value. Please set your own number in bot configuration.")
+    global.owner = ['628123456789'] // Standard-Besitzer, sollte durch die eigene Nummer in der App ersetzt werden
+    console.log("Warnung: Standardwert für Besitzer wird verwendet. Bitte setze deine eigene Nummer in der Bot-Konfiguration.")
 }
 
-// Performance optimizations
+// Leistungsoptimierungen
 
-// Command cache for faster matching - stores command matching results
+// Befehlscache für schnelleres Matching - speichert Befehlsvergleichsergebnisse
 const commandCache = new Map();
-const COMMAND_CACHE_MAX = 300; // Increased cache size for better performance
+const COMMAND_CACHE_MAX = 300; // Erhöhte Cache-Größe für bessere Leistung
 
-// Cache for user data - frequently accessed user information
+// Cache für Benutzerdaten - häufig abgerufene Benutzerinformationen
 const userDataCache = new Map();
-const USER_CACHE_TTL = 180000; // 3 minutes for better caching
+const USER_CACHE_TTL = 180000; // 3 Minuten für besseres Caching
 
-// Cache for prefix regex patterns - avoid recompiling same regex
+// Cache für Präfix-Regex-Muster - vermeidet erneutes Kompilieren gleicher Regex
 const prefixRegexCache = new Map();
 
-// Pre-compiled common regex patterns
+// Vorkompilierte häufige Regex-Muster
 const COMMON_PATTERNS = {
-    // Command prefixes
+    // Befehlspräfixe
     dotPrefix: new RegExp('^[\\.]'),
     exclamationPrefix: new RegExp('^[\\!]'),
     slashPrefix: new RegExp('^[/]'),
-    // Message types
+    // Nachrichtentypen
     imageType: new RegExp('image|bild', 'i'),
     videoType: new RegExp('video|vid', 'i'),
     audioType: new RegExp('audio|mp3|voice', 'i'),
-    // Common command matches
-    helpCommand: new RegExp('^(help|menu|commands|list)$', 'i'),
-    infoCommand: new RegExp('^(info|about|status)$', 'i'),
-    ownerCommand: new RegExp('^(owner|creator|admin)$', 'i')
+    // Häufige Befehlsübereinstimmungen
+    helpCommand: new RegExp('^(help|hilfe|menu|befehle|liste)$', 'i'),
+    infoCommand: new RegExp('^(info|über|status)$', 'i'),
+    ownerCommand: new RegExp('^(besitzer|ersteller|admin)$', 'i')
 };
 
-// Commonly accessed plugin matching utilities - optimized for speed
+// Häufig verwendete Plugin-Matching-Hilfsprogramme - für Geschwindigkeit optimiert
 const str2Regex = str => {
     if (!str) return new RegExp('');
-    // Most common patterns are now precompiled in COMMON_PATTERNS
+    // Die meisten häufigen Muster sind jetzt in COMMON_PATTERNS vorkompiliert
     return str.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
 }
 
-// These owner numbers will have full access to the bot
-console.log("Current bot owner(s):", global.owner)
+// Diese Besitzernummern haben vollen Zugriff auf den Bot
+console.log("Aktuelle(r) Bot-Besitzer:", global.owner)
 
-// Clean up caches periodically
+// Caches regelmäßig bereinigen
 setInterval(() => {
     const now = Date.now();
     
-    // Clean up user cache
+    // Benutzer-Cache bereinigen
     for (const [key, { timestamp }] of userDataCache.entries()) {
         if (now - timestamp > USER_CACHE_TTL) {
             userDataCache.delete(key);
         }
     }
     
-    // Limit command cache size
+    // Befehlscache-Größe begrenzen
     if (commandCache.size > COMMAND_CACHE_MAX) {
-        // Remove oldest 20% of entries
+        // Entferne die ältesten 20% der Einträge
         const keysToRemove = Array.from(commandCache.keys())
             .slice(0, Math.floor(commandCache.size * 0.2));
         
@@ -71,7 +71,7 @@ setInterval(() => {
             commandCache.delete(key);
         }
     }
-}, 30000); // Run every 30 seconds
+}, 30000); // Alle 30 Sekunden ausführen
 
 module.exports = {
     async handler(chatUpdate) {
@@ -91,53 +91,53 @@ module.exports = {
             m.exp = 0
             m.limit = false
             
-            // Early ban check - Process every message from banned users
+            // Frühe Bann-Prüfung - Verarbeite jede Nachricht von gebannten Benutzern
             try {
                 if (m.sender) {
                     let userBan = global.db.data.users[m.sender]
                     if (userBan) {
-                        // Global ban check
+                        // Globale Bann-Prüfung
                         if (userBan.banned === true) {
-                            // Check if this is a command message
+                            // Prüfe, ob dies eine Befehlsnachricht ist
                             const isCommand = m.text && (m.text.startsWith('.') || m.text.startsWith('/') || m.text.startsWith('!'))
                             
-                            // Get the command used
+                            // Hole den verwendeten Befehl
                             let messageCommand = '';
                             if (isCommand) {
                                 messageCommand = m.text.trim().split(' ')[0].slice(1).toLowerCase();
                             }
                             
-                            // Check if it's the owner trying to use unban command
+                            // Prüfe, ob es der Besitzer ist, der den Entbann-Befehl verwenden möchte
                             const isOwnerUser = global.owner.some(owner => m.sender.includes(owner.replace(/[^0-9]/g, '')))
                             const isUnbanCommand = messageCommand === 'unban'
                             
-                            // Only allow owner to use unban command when banned user is not the owner
+                            // Erlaube nur dem Besitzer, den Entbann-Befehl zu verwenden
                             if (!(isOwnerUser && isUnbanCommand)) {
-                                console.log(`Blocked command from banned user: ${m.sender} - Command: ${m.text}`)
+                                console.log(`Blockierter Befehl von gebanntem Benutzer: ${m.sender} - Befehl: ${m.text}`)
                                 m.reply(`❌ Du bist gebannt und kannst keine Bot-Befehle verwenden.\nNur ein Bot-Admin kann dich entbannen.`)
                                 return
                             }
                         }
                         
-                        // Check for temporary ban
+                        // Prüfe auf temporären Bann
                         if (userBan.bannedTime && userBan.bannedTime > Date.now()) {
-                            // Check if this is a command message
+                            // Prüfe, ob dies eine Befehlsnachricht ist
                             const isCommand = m.text && (m.text.startsWith('.') || m.text.startsWith('/') || m.text.startsWith('!'))
                             
-                            // Get the command used
+                            // Hole den verwendeten Befehl
                             let messageCommand = '';
                             if (isCommand) {
                                 messageCommand = m.text.trim().split(' ')[0].slice(1).toLowerCase();
                             }
                             
-                            // Check if it's the owner trying to use unban command
+                            // Prüfe, ob es der Besitzer ist, der den Entbann-Befehl verwenden möchte
                             const isOwnerUser = global.owner.some(owner => m.sender.includes(owner.replace(/[^0-9]/g, '')))
                             const isUnbanCommand = messageCommand === 'unban'
                             
-                            // Only allow owner to use unban command when banned user is not the owner
+                            // Erlaube nur dem Besitzer, den Entbann-Befehl zu verwenden
                             if (!(isOwnerUser && isUnbanCommand)) {
-                                const remainingTime = Math.ceil((userBan.bannedTime - Date.now()) / 1000 / 60) // minutes
-                                console.log(`Blocked command from temporarily banned user: ${m.sender} for ${remainingTime} more minutes - Command: ${m.text}`)
+                                const remainingTime = Math.ceil((userBan.bannedTime - Date.now()) / 1000 / 60) // Minuten
+                                console.log(`Blockierter Befehl von temporär gebanntem Benutzer: ${m.sender} für weitere ${remainingTime} Minuten - Befehl: ${m.text}`)
                                 m.reply(`❌ Du bist temporär gebannt für weitere ${remainingTime} Minuten und kannst keine Bot-Befehle verwenden.`)
                                 return
                             }
@@ -145,7 +145,7 @@ module.exports = {
                     }
                 }
             } catch (banErr) {
-                console.error("Error in early ban check:", banErr)
+                console.error("Fehler bei der frühen Bann-Prüfung:", banErr)
             }
             
             try {
@@ -1682,15 +1682,15 @@ module.exports = {
                     }
                     m.isCommand = true
                     let xp = 'exp' in plugin ? parseInt(plugin.exp) : 17 // XP Earning per command
-                    if (xp > 200) m.reply('Ngecit -_-') // Hehehe
+                    if (xp > 200) m.reply('Schummler -_-') // Hehehe
                     else m.exp += xp
                     if (!isPrems && plugin.limit && global.db.data.users[m.sender].limit < plugin.limit * 1) {
-                        this.reply(m.chat, `Limit anda habis, silahkan beli melalui *${usedPrefix}buy* atau beli di *${usedPrefix}shop*`, m)
+                        this.reply(m.chat, `Dein Limit ist aufgebraucht, bitte kaufe mehr über *${usedPrefix}buy* oder im *${usedPrefix}shop*`, m)
                         continue // Limit habis
                     }
                     if (plugin.level > _user.level) {
-                        this.reply(m.chat, `diperlukan level ${plugin.level} untuk menggunakan perintah ini. Level kamu ${_user.level}\m gunakan .levelup untuk menaikan level!`, m)
-                        continue // If the level has not been reached
+                        this.reply(m.chat, `Level ${plugin.level} wird benötigt, um diesen Befehl zu verwenden. Dein Level ist ${_user.level}\nVerwende .levelup, um dein Level zu erhöhen!`, m)
+                        continue // Wenn das erforderliche Level nicht erreicht wurde
                     }
                     let extra = {
                         match,
@@ -1951,31 +1951,31 @@ Um diese Funktion zu deaktivieren, tippe
     async connectionUpdate(update) {
         const { connection, lastDisconnect, qr } = update
         
-        // Log connection state changes
+        // Protokolliere Verbindungsstatusänderungen
         if (connection) {
-            console.log('Connection status:', connection)
+            console.log('Verbindungsstatus:', connection)
         }
         
-        // If successfully connected, send a startup message
+        // Wenn erfolgreich verbunden, sende eine Startnachricht
         if (connection === 'open') {
-            console.log('\x1b[32m%s\x1b[0m', '✅ CONNECTED! Bot is now online and ready.')
+            console.log('\x1b[32m%s\x1b[0m', '✅ VERBUNDEN! Bot ist jetzt online und bereit.')
             
-            // Send startup message after a short delay to ensure connection is stable
+            // Sende Startnachricht nach kurzer Verzögerung, um sicherzustellen, dass die Verbindung stabil ist
             setTimeout(async () => {
                 try {
                     if (!this.user) {
-                        console.log('\x1b[33m%s\x1b[0m', '⚠️ Cannot send startup message: Bot user information not available yet')
+                        console.log('\x1b[33m%s\x1b[0m', '⚠️ Kann Startnachricht nicht senden: Bot-Benutzerinformationen noch nicht verfügbar')
                         return
                     }
                     
-                    // Bot's own JID
+                    // Bot's eigene JID
                     const botNumber = this.user.jid
-                    console.log('\x1b[36m%s\x1b[0m', `📱 Bot number: ${botNumber}`)
+                    console.log('\x1b[36m%s\x1b[0m', `📱 Bot-Nummer: ${botNumber}`)
                     
-                    // Current date and time
+                    // Aktuelles Datum und Uhrzeit
                     const now = new Date().toLocaleString()
                     
-                    // Get system information
+                    // Systeminformationen abrufen
                     const os = require('os')
                     const systemInfo = {
                         platform: os.type(),
@@ -1987,54 +1987,54 @@ Um diese Funktion zu deaktivieren, tippe
                         nodeVersion: process.version
                     }
                     
-                    // Format the startup message
+                    // Formatiere die Startnachricht
                     const startupMessage = `
-┌─⊷ *BOT STARTUP NOTIFICATION* ⊶
+┌─⊷ *BOT-STARTBENACHRICHTIGUNG* ⊶
 │
-│ 🤖 *WhatsApp Bot is now ONLINE!*
+│ 🤖 *WhatsApp Bot ist jetzt ONLINE!*
 │ ⏰ ${now}
 │
-│ 💻 *System Information:*
-│ • Platform: ${systemInfo.platform}
-│ • OS Version: ${systemInfo.version}
-│ • Architecture: ${systemInfo.arch}
+│ 💻 *Systeminformationen:*
+│ • Plattform: ${systemInfo.platform}
+│ • BS-Version: ${systemInfo.version}
+│ • Architektur: ${systemInfo.arch}
 │ • Node.js: ${systemInfo.nodeVersion}
 │
-│ 🖥️ *Resources:*
-│ • Total RAM: ${systemInfo.totalRAM}
-│ • Free RAM: ${systemInfo.freeRAM}
-│ • System Uptime: ${systemInfo.uptime}
+│ 🖥️ *Ressourcen:*
+│ • Gesamter RAM: ${systemInfo.totalRAM}
+│ • Freier RAM: ${systemInfo.freeRAM}
+│ • System-Laufzeit: ${systemInfo.uptime}
 │
-│ 📲 *Bot Number:* ${botNumber.split('@')[0]}
+│ 📲 *Bot-Nummer:* ${botNumber.split('@')[0]}
 │
 └───────────────────────
 `.trim()
                     
-                    // Send the message to the bot's own number
-                    console.log('\x1b[33m%s\x1b[0m', '🟡 Sending startup message to bot...')
+                    // Sende die Nachricht an die Bot-eigene Nummer
+                    console.log('\x1b[33m%s\x1b[0m', '🟡 Sende Startnachricht an Bot...')
                     await this.sendMessage(botNumber, { text: startupMessage })
-                    console.log('\x1b[32m%s\x1b[0m', '✅ Startup message sent successfully!')
+                    console.log('\x1b[32m%s\x1b[0m', '✅ Startnachricht erfolgreich gesendet!')
                 } catch (err) {
-                    console.error('\x1b[31m%s\x1b[0m', `❌ Error sending startup message: ${err}`)
+                    console.error('\x1b[31m%s\x1b[0m', `❌ Fehler beim Senden der Startnachricht: ${err}`)
                 }
-            }, 5000) // Wait 5 seconds before sending
+            }, 5000) // Warte 5 Sekunden vor dem Senden
         }
         
-        // Handle disconnects
+        // Verarbeite Verbindungsabbrüche
         if (connection === 'close') {
             let reason = lastDisconnect?.error?.output?.statusCode
             if (reason === 401) {
-                console.log('\x1b[31m%s\x1b[0m', '❌ Session logged out, please delete sessions and scan again.')
+                console.log('\x1b[31m%s\x1b[0m', '❌ Sitzung abgemeldet, bitte lösche die Sitzungen und scanne erneut.')
             } else if (reason === 408) {
-                console.log('\x1b[33m%s\x1b[0m', '⚠️ Connection timed out, reconnecting...')
+                console.log('\x1b[33m%s\x1b[0m', '⚠️ Zeitüberschreitung der Verbindung, verbinde neu...')
             } else {
-                console.log('\x1b[33m%s\x1b[0m', '⚠️ Connection closed, attempting to reconnect...')
+                console.log('\x1b[33m%s\x1b[0m', '⚠️ Verbindung geschlossen, versuche neu zu verbinden...')
             }
         }
     }
 }
 
-// Helper function to format uptime
+// Hilfsfunktion zur Formatierung der Laufzeit
 function formatUptime(seconds) {
     const days = Math.floor(seconds / (3600 * 24))
     const hours = Math.floor((seconds % (3600 * 24)) / 3600)
