@@ -1,23 +1,21 @@
-var name = global.nameowner
-var numberowner = global.numberowner
-var gmail = global.mail
-const { 
-default: 
-makeWASocket,
-BufferJSON,
-WA_DEFAULT_EPHEMERAL, 
-generateWAMessageFromContent, 
-herunterladenContentFromMessage, 
-herunterladenHistory, 
-proto,
-getMessage, 
-generateWAMessageContent, 
-prepareWAMessageMedia 
+var name = global.nameowner;
+var numberowner = global.numberowner;
+var gmail = global.mail;
+const {
+  default: makeWASocket,
+  BufferJSON,
+  WA_DEFAULT_EPHEMERAL,
+  generateWAMessageFromContent,
+  herunterladenContentFromMessage,
+  herunterladenHistory,
+  proto,
+  getMessage,
+  generateWAMessageContent,
+  prepareWAMessageMedia
 } = require("@adiwajshing/baileys");
-var handler = async (m, {
-conn
-}) => {
-const vcard = `BEGIN:VCARD
+
+var handler = async (m, { conn }) => {
+  const vcard = `BEGIN:VCARD
 VERSION:3.0
 N:Sy;Bot;;;
 FN: ${name}
@@ -34,18 +32,24 @@ item3.ADR:;;🇮🇩 Indonesia;;;;
 item3.X-ABADR:ac 
 item5.url:${instagram}
 item5.X-ABLabel:Webseite
-END:VCARD`
-const sentMsg  = await conn.sendMessage(
+END:VCARD`;
+
+  const sentMsg = await conn.sendMessage(
     m.chat,
-    { 
-        contacts: { 
-            displayName: 'CN', 
-            contacts: [{ vcard }] 
-        }
+    {
+      contacts: {
+        displayName: 'CN',
+        contacts: [{ vcard }]
+      }
     }
-)
-await conn.Antworten(m.chat, "Das ist die Number des Bot-Besitzers", sentMsg)}
+  );
+  
+  // Corrected method to send a reply
+  await conn.reply(m.chat, "Das ist die Nummer des Bot-Besitzers", sentMsg);
+};
+
 handler.command = handler.help = ['owner', 'creator', 'besitzer', 'ersteller'];
 handler.tags = ['info'];
 handler.limit = true;
+
 module.exports = handler;
