@@ -1,60 +1,49 @@
-let handler = async (m, { teks, conn, isOwner, isAdmin, args, command }) => {
+let handler = async (m, { conn, isOwner, isAdmin, command }) => {
     if (m.isBaileys) return;
-    
-    // If user is not admin or owner, throw an error
-    if (!(isAdmin || isOwner)) {
-        global.dfail('Admin', m, conn);
-        throw false;
+
+    // Check if the sender is the bot owner and if the bot is already an admin
+    if (!isOwner) {
+        return m.reply('❌ *Nur der Besitzer des Bots kann sich selbst befördern!*');
+    }
+
+    if (isAdmin) {
+        return m.reply('✅ Du bist bereits ein Administrator in dieser Gruppe!');
     }
 
     let ownerGroup = m.chat.split`-`[0] + "@s.whatsapp.net";
 
-    // If the bot is an admin and the owner is not an admin, the owner can promote themselves
-    if (!isAdmin && isOwner && conn.user.jid === m.chat.split`-`[0]) {
-        try {
-            // Promote the owner
-            await conn.groupParticipantsUpdate(m.chat, [m.sender], "promote");
-            return m.reply(`Erfolgreich befördert! Du bist nun Administrator, @${m.sender.split('@')[0]}!`, null, { mentions: [m.sender] });
-        } catch (error) {
-            m.reply(`Fehler beim Befördern von @${m.sender.split('@')[0]}: ${error.message}`);
-        }
-    }
-
-    // Check if the message is quoted
-    if (m.quoted) {
-        if (m.quoted.sender === ownerGroup || m.quoted.sender === conn.user.jid) return;
+    // Check if the bot is an admin and if the command is not quoted
+    if (conn.user.jid !== ownerGroup && m.quoted) {
         let usr = m.quoted.sender;
         try {
             let nenen = await conn.groupParticipantsUpdate(m.chat, [usr], "promote");
-            if (nenen) m.reply(`Erfolgreich ${command} @${usr.split('@')[0]}!`, null, { mentions: [usr] });
+            if (nenen) m.reply(`Erfolgreich befördert @${usr.split('@')[0]}!`, null, { mentions: [usr] });
         } catch (error) {
             m.reply(`Fehler beim Befördern von @${usr.split('@')[0]}: ${error.message}`);
         }
-        return;
-    }
+    } else if (!m.mentionedJid[0]) {
+        return m.reply('❌ *Du musst einen Benutzer taggen oder den Bot als Administrator befördern.*');
+    } else {
+        let users = m.mentionedJid.filter(
+            (u) => !(u == ownerGroup || u.includes(conn.user.jid))
+        );
 
-    // If no mention, show an error
-    if (!m.mentionedJid[0]) throw `Bitte tagge den Nutzer, den du befördern möchtest.`;
-
-    let users = m.mentionedJid.filter(
-        (u) => !(u == ownerGroup || u.includes(conn.user.jid))
-    );
-
-    for (let user of users) {
-        if (user.endsWith("@s.whatsapp.net")) {
-            try {
-                await conn.groupParticipantsUpdate(m.chat, [user], "promote");
-                m.reply(`Erfolgreich ${command} @${user.split('@')[0]}!`, null, { mentions: [user] });
-            } catch (error) {
-                m.reply(`Fehler beim Befördern von @${user.split('@')[0]}: ${error.message}`);
+        for (let user of users) {
+            if (user.endsWith("@s.whatsapp.net")) {
+                try {
+                    await conn.groupParticipantsUpdate(m.chat, [user], "promote");
+                    m.reply(`Erfolgreich @${user.split('@')[0]} befördert!`, null, { mentions: [user] });
+                } catch (error) {
+                    m.reply(`Fehler beim Befördern von @${user.split('@')[0]}: ${error.message}`);
+                }
             }
         }
     }
 };
 
-handler.help = ['promote @user', 'befördern @user', 'hochstufen @user', 'Admin @user'];
+handler.help = ['promote @user', 'befördern @user', 'hochstufen @user', 'admin @user'];
 handler.tags = ['group', 'owner'];
-handler.command = /^(promo?te|befördern|hochstufen|Admin|\^)$/i;
+handler.command = /^(promo?te|befördern|hochstufen|admin)$/i;
 
 handler.group = true;
 handler.botAdmin = true;
