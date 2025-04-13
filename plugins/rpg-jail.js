@@ -1,29 +1,44 @@
 let handler = async (m, { conn, args, text, usedPrefix, command }) => {
- const JAIL_TEAME = 60 * 60 * 1000
- let who = (m.mentionedJid && m.mentionedJid[0]) ? m.mentionedJid[0] : args[0] ? ((args.join('').replace(/[@ .+-]/g, '')).replace(/^\+/, '').replace(/-/g, '') + '@s.whatsapp.net') : '';
- const user = global.db.data.users[who]
- const usar = global.db.data.users[m.sender]
- if (usar.job == 'polisi') {
-    if (!text) throw '*Wer soll ins Gefängnis?*'
-    if (!who) return m.reply('*Markiere das Ziel oder gib die Nummer ein*')
-    if (!user) return m.reply(`*Nutzer ${who} existiert nicht in der Datenbank*`)
-    
-    user.jail = true
-    user.perkerjaandua = Date.now() + JAIL_TEAME
-    
+    const JAIL_TIME = 60 * 60 * 1000; // 1 Stunde
+    let who = (m.mentionedJid && m.mentionedJid[0])
+        ? m.mentionedJid[0]
+        : args[0]
+            ? ((args.join('').replace(/[@ .+-]/g, '')).replace(/^\+/, '') + '@s.whatsapp.net')
+            : '';
+    const user = global.db.data.users[who];
+    const usar = global.db.data.users[m.sender];
+
+    if (usar.job?.toLowerCase() !== 'polizist') {
+        return m.reply(`❌ *Nur Polizisten dürfen Personen verhaften!*\n\nDu bist aktuell als *${usar.job || 'kein Beruf'}* registriert.\n\nNutze den Befehl *.job polizist* um als Ordnungshüter zu arbeiten.`);
+    }
+
+    if (!who) return m.reply('*Markiere das Ziel oder gib die Nummer ein*');
+    if (!user) return m.reply(`*Nutzer ${who} existiert nicht in der Datenbank*`);
+
+    user.jail = true;
+    user.perkerjaandua = Date.now() + JAIL_TIME;
+
+    // Belohnung
+    usar.exp = (usar.exp || 0) + 100;
+    usar.level = (usar.level || 0) + 1;
+    usar.money = (usar.money || 0) + 250;
+
     setTimeout(() => {
-    conn.reply(who, `*du wurdest ins Gefängnis gebracht durch ${usar.name}*`, fverif)
-    }, 5000)
-    conn.reply(m.chat, `erfolgreich ins Gefängnis gebracht *@${(who || '').replace(/@s\.whatsapp\.net/g, '')}*\n🧤 +1 Level für harte Arbeit\n\n_Wenn die Polizei jemanden ohne bestimmten Grund ins Gefängnis bringt, wird sie direkt von der Behörde gesperrt._`, m, { mentions: [who] })
-    return
-   }
-   await conn.reply(m.chat, '*Diese Funktion ist nur für Personen verfügbar, die als Polizist arbeiten*', m)
-}
+        conn.reply(who, `*Du wurdest ins Gefängnis gebracht von ${usar.name}!*`, m);
+    }, 5000);
 
-handler.help = ['gefängnis', 'jail', 'prison']
-handler.tags = ['rpg']
-handler.command = /^(gefängnis|jail|prison)$/i
-handler.register = true
-handler.rpg = true
+    conn.reply(
+        m.chat,
+        `✅ *@${(who || '').replace(/@s\.whatsapp\.net/g, '')} wurde verhaftet!*\n\n👮 *Polizist:* ${usar.name}\n🎖️ +1 Level\n💰 +250 Geld\n🧠 +100 XP\n\nGute Arbeit, weiter so!`,
+        m,
+        { mentions: [who] }
+    );
+};
 
-module.exports = handler
+handler.help = ['gefängnis', 'jail', 'prison'];
+handler.tags = ['rpg'];
+handler.command = /^(gefängnis|jail|prison)$/i;
+handler.register = true;
+handler.rpg = true;
+
+module.exports = handler;
