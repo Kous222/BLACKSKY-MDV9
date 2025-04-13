@@ -91,55 +91,42 @@ module.exports = {
             m.exp = 0
             m.limit = false
             
-            // Frühe Bann-Prüfung - Verarbeite jede Nachricht von gebannten Benutzern
+            // Frühe Bann-Prüfung - Prüfe nur Befehlsnachrichten von gebannten Benutzern
             try {
                 if (m.sender) {
-                    let userBan = global.db.data.users[m.sender]
-                    if (userBan) {
-                        // Globale Bann-Prüfung
-                        if (userBan.banned === true) {
-                            // Prüfe, ob dies eine Befehlsnachricht ist
-                            const isCommand = m.text && (m.text.startsWith('.') || m.text.startsWith('/') || m.text.startsWith('!'))
+                    // Prüfe zuerst, ob es sich um einen Befehl handelt
+                    const isCommand = m.text && (m.text.startsWith('.') || m.text.startsWith('/') || m.text.startsWith('!'))
+                    
+                    // Nur Befehle prüfen - normale Nachrichten von gebannten Benutzern ignorieren
+                    if (isCommand) {
+                        let userBan = global.db.data.users[m.sender]
+                        if (userBan) {
+                            // Befehlsname extrahieren
+                            let messageCommand = m.text.trim().split(' ')[0].slice(1).toLowerCase();
                             
-                            // Hole den verwendeten Befehl
-                            let messageCommand = '';
-                            if (isCommand) {
-                                messageCommand = m.text.trim().split(' ')[0].slice(1).toLowerCase();
-                            }
-                            
-                            // Prüfe, ob es der Besitzer ist, der den Entbann-Befehl verwenden möchte
+                            // Prüfe, ob es der Besitzer ist
                             const isOwnerUser = global.owner.some(owner => m.sender.includes(owner.replace(/[^0-9]/g, '')))
                             const isUnbanCommand = messageCommand === 'unban'
                             
-                            // Erlaube nur dem Besitzer, den Entbann-Befehl zu verwenden
-                            if (!(isOwnerUser && isUnbanCommand)) {
-                                console.log(`Blockierter Befehl von gebanntem Benutzer: ${m.sender} - Befehl: ${m.text}`)
-                                m.reply(`❌ Du bist gebannt und kannst keine Bot-Befehle verwenden.\nNur ein Bot-Admin kann dich entbannen.`)
-                                return
-                            }
-                        }
-                        
-                        // Prüfe auf temporären Bann
-                        if (userBan.bannedTime && userBan.bannedTime > Date.now()) {
-                            // Prüfe, ob dies eine Befehlsnachricht ist
-                            const isCommand = m.text && (m.text.startsWith('.') || m.text.startsWith('/') || m.text.startsWith('!'))
-                            
-                            // Hole den verwendeten Befehl
-                            let messageCommand = '';
-                            if (isCommand) {
-                                messageCommand = m.text.trim().split(' ')[0].slice(1).toLowerCase();
+                            // Globale Bann-Prüfung
+                            if (userBan.banned === true) {
+                                // Erlaube nur dem Besitzer, den Entbann-Befehl zu verwenden
+                                if (!(isOwnerUser && isUnbanCommand)) {
+                                    console.log(`Blockierter Befehl von gebanntem Benutzer: ${m.sender} - Befehl: ${m.text}`)
+                                    m.reply(`❌ Du bist gebannt und kannst keine Bot-Befehle verwenden.\nNur ein Bot-Admin kann dich entbannen.`)
+                                    return
+                                }
                             }
                             
-                            // Prüfe, ob es der Besitzer ist, der den Entbann-Befehl verwenden möchte
-                            const isOwnerUser = global.owner.some(owner => m.sender.includes(owner.replace(/[^0-9]/g, '')))
-                            const isUnbanCommand = messageCommand === 'unban'
-                            
-                            // Erlaube nur dem Besitzer, den Entbann-Befehl zu verwenden
-                            if (!(isOwnerUser && isUnbanCommand)) {
-                                const remainingTime = Math.ceil((userBan.bannedTime - Date.now()) / 1000 / 60) // Minuten
-                                console.log(`Blockierter Befehl von temporär gebanntem Benutzer: ${m.sender} für weitere ${remainingTime} Minuten - Befehl: ${m.text}`)
-                                m.reply(`❌ Du bist temporär gebannt für weitere ${remainingTime} Minuten und kannst keine Bot-Befehle verwenden.`)
-                                return
+                            // Prüfe auf temporären Bann
+                            if (userBan.bannedTime && userBan.bannedTime > Date.now()) {
+                                // Erlaube nur dem Besitzer, den Entbann-Befehl zu verwenden
+                                if (!(isOwnerUser && isUnbanCommand)) {
+                                    const remainingTime = Math.ceil((userBan.bannedTime - Date.now()) / 1000 / 60) // Minuten
+                                    console.log(`Blockierter Befehl von temporär gebanntem Benutzer: ${m.sender} für weitere ${remainingTime} Minuten - Befehl: ${m.text}`)
+                                    m.reply(`❌ Du bist temporär gebannt für weitere ${remainingTime} Minuten und kannst keine Bot-Befehle verwenden.`)
+                                    return
+                                }
                             }
                         }
                     }
@@ -1676,7 +1663,7 @@ module.exports = {
                         fail('private', m, this)
                         continue
                     }
-                    if (plugin.register == true && _user.registered == false) { // Butuh daftar?
+                    if (plugin.register == true && _user.registered == false) { // Bist du Registriert?
                         fail('unreg', m, this)
                         continue
                     }
@@ -1858,24 +1845,57 @@ module.exports = {
                     let groupMetadata = await this.groupMetadata(id) || (conn.chats[id] || {}).metadata
                     for (let user of participants) {
                         let pp = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT9mFzSckd12spppS8gAJ2KB2ER-ccZd4pBbw&usqp=CAU'
+                        let ppgroup = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT9mFzSckd12spppS8gAJ2KB2ER-ccZd4pBbw&usqp=CAU'
                         try {
                              pp = await this.profilePictureUrl(user, 'image')
+                             ppgroup = await this.profilePictureUrl(id, 'image')
                         } catch (e) {
+                             console.log('Error getting profile picture:', e)
                         } finally {
-                            text = (action === 'add' ? (chat.sWelcome || this.welcome || conn.welcome || 'Willkommen, @user!').replace('@subject', await this.getName(id)).replace('@desc', groupMetadata.desc ? groupMetadata.desc.toString() : '') :
-                          (chat.sBye || this.bye || conn.bye || 'Auf Wiedersehen, @user!')).replace('@user', '@' + user.split('@')[0])
-                            this.sendMessage(id, {
-                            text: text,
-                            contextInfo: {
-                            mentionedJid: [user],
-                            externalAdReply: {  
-                            title: action === 'add' ? 'Willkommen' : 'Auf Wiedersehen',
-                            body: global.wm,
-                            thumbnailUrl: pp,
-                            sourceUrl: 'https://api.betabotz.eu.org',
-                            mediaType: 1,
-                            renderLargerThumbnail: true 
-                            }}}, { quoted: null})
+                            // Get text template
+                            text = (action === 'add' ? 
+                                (chat.sWelcome || this.welcome || conn.welcome || 'Willkommen, @user!').replace('@subject', await this.getName(id)).replace('@desc', groupMetadata.desc ? groupMetadata.desc.toString() : '') :
+                                (chat.sBye || this.bye || conn.bye || 'Auf Wiedersehen, @user!')).replace('@user', '@' + user.split('@')[0])
+                            
+                            // Format the message as a card with the user's profile picture
+                            const userName = '@' + user.split('@')[0]
+                            const groupName = await this.getName(id)
+                            const memberCount = groupMetadata.participants.length
+                            
+                            // Create a formatted message with the profile picture
+                            if (action === 'add') {
+                                // Welcome message
+                                await this.sendMessage(id, {
+                                    text: text,
+                                    contextInfo: {
+                                        mentionedJid: [user],
+                                        externalAdReply: {
+                                            title: '👋 WILLKOMMEN',
+                                            body: `In der Gruppe: ${groupName}`,
+                                            mediaType: 1,
+                                            thumbnailUrl: pp,
+                                            sourceUrl: '',
+                                            renderLargerThumbnail: true
+                                        }
+                                    }
+                                })
+                            } else {
+                                // Goodbye message
+                                await this.sendMessage(id, {
+                                    text: text,
+                                    contextInfo: {
+                                        mentionedJid: [user],
+                                        externalAdReply: {
+                                            title: '👋 AUF WIEDERSEHEN',
+                                            body: `Aus der Gruppe: ${groupName}`,
+                                            mediaType: 1,
+                                            thumbnailUrl: pp,
+                                            sourceUrl: '',
+                                            renderLargerThumbnail: true
+                                        }
+                                    }
+                                })
+                            }
                         }
                     }
                 }
@@ -2055,7 +2075,7 @@ global.dfail = (type, m, conn) => {
         private: 'Dieser Befehl kann nur im privaten Chat verwendet werden!',
         admin: 'Dieser Befehl ist nur für *Gruppen-Administratoren* verfügbar!',
         botAdmin: 'Der Bot muss *Administrator* sein, um diesen Befehl zu verwenden!',
-        unreg: 'Bitte registriere dich, um diese Funktion zu nutzen, indem du folgendes eingibst:\n\n*.daftar Name.Alter*\n\nBeispiel: *#daftar max.16*',
+        unreg: 'Bitte registriere dich, um diese Funktion zu nutzen, indem du folgendes eingibst:\n\n*.register Name.Alter*\n\nBeispiel: *#register max.16*',
         restrict: 'Diese Funktion ist *deaktiviert*!'
     }[type]
     if (msg) return m.reply(msg)
