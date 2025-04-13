@@ -1,80 +1,106 @@
 let reg = 100
+
 let handler = async (m, { conn, args, usedPrefix, command }) => {
-    let fa = `
+    let infoText = `
+🎰 *Slot Game – Gacha Money*
+
 Wie viel möchtest du setzen?
 
-📌 Beispiel :
-*${usedPrefix + command}* 100`.trim()
-    if (!args[0]) throw fa
-    if (isNaN(args[0])) throw fa
-    let apuesta = parseInt(args[0])
-    let users = global.db.data.users[m.sender]
-    let time = users.lastslot + 20000 // 20 Sekunden Cooldown
-    if (new Date - users.lastslot < 20000) throw `⏳ Warte *${msToTime(time - new Date())}* bis du es wieder verwenden kannst`
-    if (apuesta < 100) throw '✳️ Setze mindestens *100 MONEY*, um fortzufahren'
-    if (users.Münzen < apuesta) {
-        throw `✳️ Du hast nicht genug *MONEY*\nÜberprüfe dein MONEY mit *.balance*`
-    }
+📌 *Beispiel:* 
+${usedPrefix + command} 100
+    `.trim()
 
-    // Setze die Cooldown-Zeit zu Beginn
-    users.lastslot = new Date * 1
+    if (!args[0]) throw infoText
+    if (isNaN(args[0])) throw '❌ Bitte gib eine gültige Zahl als Einsatz an.'
+    
+    let bet = parseInt(args[0])
+    let user = global.db.data.users[m.sender]
+    let cooldown = 20000 // 20 Sekunden
+    let now = new Date * 1
 
-    let emojis = ["🕊️", "🦀", "🦎"];
-    let x = [],
-        y = [],
-        z = [];
-    let key = await m.reply('Slot wird gedreht...');
+    if (now - user.lastslot < cooldown)
+        throw `⏳ Bitte warte *${msToTime(user.lastslot + cooldown - now)}*, bevor du erneut spielst.`
+
+    if (bet < 100) throw '⚠️ Der Mindesteinsatz beträgt *100 MONEY*.'
+    if (user.Münzen < bet) throw `❌ Du hast nicht genug *MONEY*.\nPrüfe deinen Kontostand mit *.balance*`
+
+    user.lastslot = now
+
+    const emojis = ["🍒", "🍋", "🍇", "⭐", "💎"]
+    let x = [], y = [], z = []
+
+    let msg = await m.reply('🎰 Slot wird gestartet...')
 
     for (let i = 0; i < 3; i++) {
-        x[i] = emojis[Math.floor(Math.random() * emojis.length)];
-        y[i] = emojis[Math.floor(Math.random() * emojis.length)];
-        z[i] = emojis[Math.floor(Math.random() * emojis.length)];
+        x[i] = rand(emojis)
+        y[i] = rand(emojis)
+        z[i] = rand(emojis)
     }
 
-    for (let i = 0; i < 5; i++) {
-        for (let j = 0; j < 3; j++) {
-            x[j] = emojis[Math.floor(Math.random() * emojis.length)];
-            y[j] = emojis[Math.floor(Math.random() * emojis.length)];
-            z[j] = emojis[Math.floor(Math.random() * emojis.length)];
-        }
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        await conn.sendMessage(m.chat, { text: `
-       🎰 ┃ *Gacha Money* 
-     ───────────
-       ${x[0]} : ${y[0]} : ${z[0]}
-       ${x[1]} : ${y[1]} : ${z[1]}
-       ${x[2]} : ${y[2]} : ${z[2]}
-     ───────────
-        🎰┃🎰┃ 🎰
-        `, bearbeiten: key });
+    for (let spin = 0; spin < 5; spin++) {
+        x = [rand(emojis), rand(emojis), rand(emojis)]
+        y = [rand(emojis), rand(emojis), rand(emojis)]
+        z = [rand(emojis), rand(emojis), rand(emojis)]
+
+        await delay(800)
+        await conn.sendMessage(m.chat, {
+            text: formatSlot(x, y, z),
+            edit: msg.key
+        })
     }
 
-    let end;
-    if (x[1] == y[1] && y[1] == z[1]) {
-        end = `🎁 *JACKPOT!!!* DU HAST GEWONNEN\n *+${apuesta + apuesta} MONEY*`
-        users.Münzen += apuesta + apuesta
-    } else if (x[1] == y[1] || x[1] == z[1] || y[1] == z[1]) {
-        end = `🔮 Weiter so, noch nicht gewonnen, versuch es noch einmal 💲💲 \nZusätzlich *+${reg} MONEY*`
-        users.Münzen += reg
+    let resultMessage
+    if (x[1] === y[1] && y[1] === z[1]) {
+        user.Münzen += bet * 2
+        resultMessage = `🎉 *JACKPOT!* Du hast *${bet * 2} MONEY* gewonnen!`
+    } else if (x[1] === y[1] || x[1] === z[1] || y[1] === z[1]) {
+        user.Münzen += reg
+        resultMessage = `✨ Guter Versuch! Du erhältst *${reg} MONEY* als Trostpreis.`
     } else {
-        end = `😔 Leider verloren *-${apuesta} MONEY*`
-        users.Münzen -= apuesta
+        user.Münzen -= bet
+        resultMessage = `💔 Leider verloren! Du verlierst *${bet} MONEY*.`
     }
-    await conn.sendMessage(m.chat, { text: `
-       🎰 ┃ *Gacha Money* 
-     ───────────
-       ${x[0]} : ${y[0]} : ${z[0]}
-       ${x[1]} : ${y[1]} : ${z[1]}
-       ${x[2]} : ${y[2]} : ${z[2]}
-     ───────────
-        🎰┃🎰┃ 🎰
-        `, bearbeiten: key });
-    return await m.reply(end);
+
+    await conn.sendMessage(m.chat, {
+        text: formatSlot(x, y, z),
+        edit: msg.key
+    })
+    await m.reply(resultMessage)
 }
-handler.help = ['slot <apuesta>']
+
+handler.help = ['slot <betrag>']
 handler.tags = ['spiel']
 handler.command = ['slot']
 handler.group = true
+handler.rpg = true
+
+module.exports = handler
+
+function rand(arr) {
+    return arr[Math.floor(Math.random() * arr.length)]
+}
+
+function delay(ms) {
+    return new Promise(res => setTimeout(res, ms))
+}
+
+function formatSlot(x, y, z) {
+    return `
+🎰 ┃ *Gacha Money*
+╭───────────────
+│ ${x[0]} : ${y[0]} : ${z[0]}
+│ ${x[1]} : ${y[1]} : ${z[1]}
+│ ${x[2]} : ${y[2]} : ${z[2]}
+╰───────────────
+        🎰┃🎰┃🎰
+`.trim()
+}
+
+function msToTime(ms) {
+    let sec = Math.floor(ms / 1000)
+    return `${sec} Sekunde${sec !== 1 ? 'n' : ''}`
+}
+up = true
 handler.rpg = true
 
 module.exports = handler

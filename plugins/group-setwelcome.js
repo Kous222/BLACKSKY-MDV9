@@ -1,43 +1,12 @@
 let handler = async (m, { conn, text, isROwner, isOwner }) => {
-  // Überprüfen, ob ein Text eingegeben wurde
   if (text) {
-    // Setze die benutzerdefinierte Willkommensnachricht für die Gruppe
-    if (isROwner) global.conn.welcome = text;
-    else if (isOwner) conn.welcome = text;
-
-    // Speichern der Willkommensnachricht in der Datenbank für die Gruppe
-    global.db.data.chats[m.chat].sWelcome = text;
-
-    // Bestätigung an den Benutzer senden
-    m.reply(`Willkommensnachricht erfolgreich festgelegt! ✨\nVerwendbare Platzhalter:\n- @user (für den Nutzer)\n- @subject (Gruppenname)\n- @desc (Gruppenbeschreibung)`);
-  } else {
-    // Wenn kein Text eingegeben wurde, nach einem fragen
-    throw 'Bitte gib eine Willkommensnachricht ein!';
-  }
-};
-
-// Event für neue Mitglieder, die der Gruppe beitreten
-handler.events = {
-  async 'group-participants-update' (chatUpdate) {
-    const { participants, action, chat } = chatUpdate;
-    if (action === 'add') {
-      const user = participants[0];
-      const welcomeMessage = global.db.data.chats[chat].sWelcome || conn.welcome;
-
-      if (welcomeMessage) {
-        // Der @user wird durch die Benutzer-ID ersetzt
-        const message = welcomeMessage.replace('@user', `@${user.split('@')[0]}`).replace('@subject', chatUpdate.chat).replace('@desc', chatUpdate.desc || 'Keine Beschreibung');
-        
-        // Verwenden von mentions, um den Benutzer richtig zu erwähnen
-        await conn.sendMessage(chat, { text: message, mentions: [user] });
-      }
-    }
-  }
+    global.db.data.chats[m.chat].sWelcome = text
+    m.reply('Willkommensnachricht erfolgreich festgelegt\n@user (Erwähnung)\n@subject (Gruppenname)\n@desc (Gruppenbeschreibung)')
+  } else throw '_Bitte gib einen Text ein!_\n\nVerwende folgendes Schlüsselwort\nDer Bot wird automatisch den *Nutzernamen, Gruppennamen & die Gruppenbeschreibung* verwenden\n\n@user (Erwähnung/Text)\n@subject (Gruppenname)\n@desc (Gruppenbeschreibung)'
 }
 
-handler.help = ['setwelcome <text>'];
-handler.tags = ['owner', 'group'];
-handler.command = /^setwelcome$/i;
-handler.botAdmin = true;  // Der Bot muss ein Admin in der Gruppe sein
+handler.help = ['setwelcome <text>']
+handler.tags = ['owner', 'group']
+handler.command = /^setwelcome$/i
 
-module.exports = handler;
+module.exports = handler
