@@ -1,23 +1,23 @@
-const cooldown = 300000; // Cooldown default (5 menit in miliSekunden)
-const cooldownAfterWork = 5 * 60 * 1000; // Cooldown nach arbeiten während 5 menit (in miliSekunden)
+const cooldown = 300000; // Standard-Cooldown (5 Minuten in Millisekunden)
+const cooldownAfterWork = 5 * 60 * 1000; // Cooldown nach der Arbeit für 5 Minuten
 
 let handler = async (m, { isPrems, conn, text, usedPrefix, command }) => {
     const user = global.db.data.users[m.sender];
 
-    if (user.job === 'Pengangguran') {
-        throw `du noch nicht haben pekerjaan. Tippe *${usedPrefix}lamarkerja* für melamar pekerjaan`;
+    // Überprüfen, ob der Benutzer einen Job hat
+    if (user.job === 'Arbeitslos') {
+        throw `Du hast noch keinen Job. Tippe *${usedPrefix}applyjob*, um dich zu bewerben.`;
     }
 
-
+    // Überprüfen, ob der Benutzer im Gefängnis oder entführt ist
     if (user.jail === true) {
-        throw '*du nicht kann durchführen aktivitas weil noch in penjara!*';
+        throw '*Du kannst keine Aktivitäten durchführen, da du im Gefängnis bist!*';
     }
     if (user.culik === true) {
-        throw '*du nicht kann durchführen aktivitas weil noch in sel penculik!*';
+        throw '*Du kannst keine Aktivitäten durchführen, da du entführt wurdest!*';
     }
-        
 
-    // Cek cooldown zwischen pekerjaan und cooldown nach arbeiten während 5 menit
+    // Überprüfen, ob der Benutzer bereits auf Arbeit ist und Cooldown
     if (new Date() - user.pekerjaansatu < cooldown || user.pekerjaansatu + cooldownAfterWork > new Date()) {
         let remainingTime;
         if (new Date() - user.pekerjaansatu < cooldown) {
@@ -26,52 +26,83 @@ let handler = async (m, { isPrems, conn, text, usedPrefix, command }) => {
             remainingTime = user.pekerjaansatu + cooldownAfterWork - new Date();
         }
         let formattedTime = new Date(remainingTime).toISOString().substr(11, 8);
-        throw `du bereits pergi arbeiten vorher. warten während *${formattedTime}* für arbeiten wieder`;
+        throw `Du warst bereits arbeiten. Bitte warte *${formattedTime}*, bevor du erneut arbeitest.`;
     }
 
-  
+    // Job-Liste mit deutschen Jobnamen
     const jobList = {
-        'gojek': [11000, 10000, 10000],
-        'kantoran': [32000, 32000, 40000],
-        'spiel developer': [420000, 410000, 400000],
-        'backend developer': [130000, 130000, 140000],
-        'web developer': [72000, 72000, 80000],
-        'sopir': [26000, 25000, 25000],
-        'kurir': [15000, 14000, 14000],
-        'frontend developer': [52000, 52000, 60000],
-        'fullstack developer': [210000, 210000, 200000],
-        'Spieler sepak bola': [900000, 900000, 1000000],
-        'karyawan indomaret': [27000, 27000, 30000],
-        'pembunuh bayaran': [31000, 31000, 40000],    
-        'pemburu manusia': [31000, 31000, 40000],        
-        'polisi': [31000, 31000, 40000],
-        'trader': [1700000, 1700000, 2000000],
-        'dokter': [1700000, 1700000, 2000000],
-        'hunter': [1700000, 1700000, 2000000]
+        'motorradtaxi-fahrer': [11000, 10000, 10000],
+        'büroangestellter': [32000, 32000, 40000],
+        'spieleentwickler': [420000, 410000, 400000],
+        'backend-entwickler': [130000, 130000, 140000],
+        'webentwickler': [72000, 72000, 80000],
+        'fahrer': [26000, 25000, 25000],
+        'kurier': [15000, 14000, 14000],
+        'frontend-entwickler': [52000, 52000, 60000],
+        'fullstack-entwickler': [210000, 210000, 200000],
+        'fußballspieler': [900000, 900000, 1000000],
+        'supermarktmitarbeiter': [27000, 27000, 30000],
+        'auftragskiller': [31000, 31000, 40000],    
+        'kopfgeldjäger': [31000, 31000, 40000],        
+        'polizist': [31000, 31000, 40000], 
+        'händler': [1700000, 1700000, 2000000],
+        'arzt': [1700000, 1700000, 2000000],
+        'jäger': [1700000, 1700000, 2000000]
     };
 
-    if (jobList[user.job]) {
-        let [MünzenMax, expMax, bankMax] = jobList[user.job];
-        let Münzen = Math.floor(Math.random() * MünzenMax);
-        let exp = Math.floor(Math.random() * expMax);
-        let bank = Math.floor(Math.random() * bankMax);
+    // Job-Übersetzung bleibt nun mit deutschen Bezeichnungen
+    const jobTranslation = {
+        'motorradtaxi-fahrer': 'Motorradtaxi-Fahrer',
+        'büroangestellter': 'Büroangestellter',
+        'spieleentwickler': 'Spieleentwickler',
+        'backend-entwickler': 'Backend-Entwickler',
+        'webentwickler': 'Webentwickler',
+        'fahrer': 'Fahrer',
+        'kurier': 'Kurier',
+        'frontend-entwickler': 'Frontend-Entwickler',
+        'fullstack-entwickler': 'Fullstack-Entwickler',
+        'fußballspieler': 'Fußballspieler',
+        'supermarktmitarbeiter': 'Supermarktmitarbeiter',
+        'auftragskiller': 'Auftragskiller',
+        'kopfgeldjäger': 'Kopfgeldjäger',
+        'polizist': 'Polizist',
+        'händler': 'Händler',
+        'arzt': 'Arzt',
+        'jäger': 'Jäger'
+    };
 
-        user.Münzen += Münzen;
-        user.exp += exp;
-        user.jobexp += 1;
-        user.pekerjaansatu = new Date().getTime();
-
-        let message = `*folgende pendapatan von pekerjaan ${user.job}* 
-        \n• Money : Rp. ${Münzen}
-        \n• Exp : ${exp}
-        \n• Tingkat arbeiten Keras : +1 🧟‍♂️`;
-
-        conn.reply(m.chat, message, m);
+    // Sicherstellen, dass der Job des Benutzers in der Job-Liste vorhanden ist
+    if (!jobList[user.job]) {
+        throw `Dein aktueller Job "${user.job}" ist nicht bekannt oder ungültig. Bitte bewirb dich neu mit *${usedPrefix}applyjob*!`;
     }
+
+    // Job-Daten abrufen
+    let [geldMax, expMax, bankMax] = jobList[user.job];
+    let geld = Math.floor(Math.random() * geldMax);
+    let exp = Math.floor(Math.random() * expMax);
+    let bank = Math.floor(Math.random() * bankMax);
+
+    // Benutzer-Statistiken aktualisieren
+    user.Münzen += geld;
+    user.exp += exp;
+    user.jobexp += 1;
+    user.pekerjaansatu = new Date().getTime();
+
+    // Jobname aus der Übersetzungsliste
+    let jobName = jobTranslation[user.job] || user.job;
+
+    // Antwortnachricht
+    let message = `*Einnahmen aus deinem Job als ${jobName}:* 
+• Münzen: €${geld}
+• Erfahrung: ${exp} XP
+• Arbeitsfortschritt: +1%`;
+
+    conn.reply(m.chat, message, m);
 };
-handler.help = ['jobkerja'];
+
+handler.help = ['work'];
 handler.tags = ['rpg'];
-handler.command = /^(jobkerja)$/i;
+handler.command = /^(work)$/i;
 handler.limit = true;
 
 module.exports = handler;

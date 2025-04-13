@@ -27,22 +27,22 @@ let handler = async (m, { isPrems, args, conn, text, command, usedPrefix }) => {
         return words.join(" ");
     }
 
-    //const COOLDOWN_PERIOD = 3 * 24 * 60 * 60 * 1000; // 3 Tage in Millisekunden
+    const COOLDOWN_PERIOD = 3 * 24 * 60 * 60 * 1000; // 3 Tage in Millisekunden
 
-    // Prüfen, ob der Nutzer in der Abklingperiode ist
-    /*if (user.lastjobchange) {
-        let lastjobchange = new Date(lastjobchange);
+    // Cooldown-Prüfung
+    if (user.lastjobchange) {
+        let lastChange = new Date(user.lastjobchange);
         let now = new Date();
-        if (now - lastjobchange < COOLDOWN_PERIOD) {
-            let timeLeft = COOLDOWN_PERIOD - (now - lastjobchange);
+        if (now - lastChange < COOLDOWN_PERIOD) {
+            let timeLeft = COOLDOWN_PERIOD - (now - lastChange);
             let daysLeft = Math.floor(timeLeft / (24 * 60 * 60 * 1000));
             let hoursLeft = Math.floor((timeLeft % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
             let minutesLeft = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
-            throw `Sie haben Ihren Beruf erst kürzlich gewechselt. Bitte warten Sie ${daysLeft} Tage, ${hoursLeft} Stunden und ${minutesLeft} Minuten, bevor Sie Ihren Beruf erneut wechseln können.`;
+            throw `⏳ Du hast deinen Beruf erst kürzlich gewechselt.\nBitte warte noch ${daysLeft} Tag(e), ${hoursLeft} Stunde(n) und ${minutesLeft} Minute(n), bevor du erneut wechseln kannst.`;
         }
-    }*/
+    }
 
-    // Prüfen, ob der vom Benutzer eingegebene Text ein gültiger Beruf ist
+    // Beruf gültig?
     if (!text || !Object.keys(jobRequirements).includes(text.toLowerCase())) {
         let kerjaan = `乂 *J O B - L I S T E*
 
@@ -71,40 +71,33 @@ let handler = async (m, { isPrems, args, conn, text, command, usedPrefix }) => {
     let kapital = capitalizeFirstLetter(job);
     let jobLevelRange = jobRequirements[job];
 
-    // Prüfen, ob das Level des Nutzers im erforderlichen Bereich für den gewählten Beruf liegt
+    // Levelprüfung
     if (user.Stufe < jobLevelRange.min || user.Stufe > jobLevelRange.max) {
         throw `Entschuldigung, Deine Stufe ist nicht ausreichend, um ${kapital} zu werden. Die benötigte Stufe ist zwischen ${jobLevelRange.min} und ${jobLevelRange.max}. Deine aktuelle Stufe ist ${user.Stufe}.`;
     }
 
-    // Nachricht senden, dass der Nutzer einen Beruf gewählt hat und auf Genehmigung wartet
-    setTimeout(() => {
-        let lamarkerja1 = `Du hast *${kapital}* als deinen Beruf gewählt.
+    // Beruf speichern und Zeit setzen
+    user.job = job;
+    user.lastjobchange = new Date().toISOString();
+
+    // Erste Nachricht sofort senden
+    let lamarkerja1 = `Du hast *${kapital}* als deinen Beruf gewählt.
 
 ⤷ Bitte warte 1 Minute auf die Genehmigung des Unternehmens, um mit der Arbeit beginnen zu können.`.trim();
-        conn.reply(m.chat, lamarkerja1, m);
-    }, 0);
+    conn.reply(m.chat, lamarkerja1, m);
 
-    // Nachricht senden, dass die Bewerbung akzeptiert wurde und den Nutzer als arbeitend markieren
+    // 30 Sekunden später: Bestätigungsnachricht
     setTimeout(() => {
         let lamarkerja2 = `🎉 Herzlichen Glückwunsch! Deine Bewerbung wurde vom Unternehmen akzeptiert und du kannst heute mit der Arbeit beginnen.
 
 ⤷ Tippe *.job* um deine Berufsdetails anzusehen.`.trim();
-
-        // Beruf des Nutzers speichern, ihn als arbeitend markieren und den Zeitpunkt des letzten Berufswechsels notieren
-        user.job = job;
+        conn.reply(m.chat, lamarkerja2, m);
     }, 30000);
 };
 
 handler.help = ['bewerben', 'bewerbung', 'arbeit'];
 handler.tags = ['rpg'];
 handler.command = /^(bewerben|bewerbung|arbeit)$/i;
-handler.rpg = true
-module.exports = handler;
+handler.rpg = true;
 
-function capitalizeFirstLetter(str) {
-    let words = str.split(" ");
-    for (let i = 0; i < words.length; i++) {
-        words[i] = words[i].charAt(0).toUpperCase() + words[i].slice(1).toLowerCase();
-    }
-    return words.join(" ");
-}
+module.exports = handler;

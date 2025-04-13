@@ -15,30 +15,34 @@ const handler = async (m, { conn, text, command }) => {
     let groupMetadata = await conn.groupMetadata(m.chat);
     let botAdmin = groupMetadata.participants.find(participant => participant.id === conn.user.jid)?.Admin;
 
-    if (!botAdmin) {
-        return conn.reply(m.chat, 'Bot müssen werden Admin für mengelola blacklist und durchführen kick.', m);
+    let isAdminOrOwner = groupMetadata.participants.some(participant => 
+        participant.id === m.sender && (participant.Admin || participant.id === groupMetadata.owner)
+    );
+
+    if (!isAdminOrOwner) {
+        return conn.reply(m.chat, 'Du musst Admin oder Besitzer sein, um diese Aktion auszuführen.', m);
     }
 
     switch (command) {
         case 'blacklist':
-            if (!who) return conn.reply(m.chat, 'Tag oder reply person das/der/die ingin in-blacklist.', m);
+            if (!who) return conn.reply(m.chat, 'Markiere oder antworte auf die Person, die du in die Blacklist setzen möchtest.', m);
 
             try {
-                if (globalBlacklist.includes(who)) throw `Nomor ${who.split(`@`)[0]} bereits gibt in liste *Blacklist* in einer Weise global.`;
+                if (globalBlacklist.includes(who)) throw `Die Nummer ${who.split(`@`)[0]} ist bereits in der globalen Blacklist.`;
 
-                // Hinzufügenkan Nutzer zu liste blacklist global
+                // Nutzer zur globalen Blacklist hinzufügen
                 globalBlacklist.push(who);
                 db.data.globalBlacklist = globalBlacklist;
 
-                await conn.reply(m.chat, `Sukses hinzufügen @${who.split(`@`)[0]} zu *Blacklist* in einer Weise global.`, m, {
+                await conn.reply(m.chat, `Erfolgreich @${who.split(`@`)[0]} zur globalen Blacklist hinzugefügt.`, m, {
                     contextInfo: { mentionedJid: [who] }
                 });
 
-                // Fetch alle Gruppe Ort Bot werden mitglied
+                // Alle Gruppen holen, in denen der Bot Mitglied ist
                 const allGroups = await conn.groupFetchAllParticipating();
                 const groupIds = Object.keys(allGroups);
 
-                // Kick Nutzer von alle Gruppe in welche Bot und Nutzer erwähnt werden mitglied
+                // Nutzer aus allen Gruppen entfernen, in denen der Bot und der Nutzer Mitglieder sind
                 for (let groupId of groupIds) {
                     const groupInfo = allGroups[groupId];
                     const isMember = groupInfo.participants.some(member => member.id === who);
@@ -48,15 +52,15 @@ const handler = async (m, { conn, text, command }) => {
                         try {
                             await conn.groupParticipantsUpdate(groupId, [who], 'remove');
                             await conn.sendMessage(groupId, {
-                                text: `Nutzer @${who.split('@')[0]} hat in-blacklist in einer Weise global und dikeluarkan von Gruppe dies.`,
+                                text: `Nutzer @${who.split('@')[0]} ist in der globalen Blacklist und wurde aus der Gruppe entfernt.`,
                                 mentions: [who]
                             });
                         } catch (error) {
-                            console.error(`fehlgeschlagen meng-kick Nutzer von Gruppe ${groupId}:`, error.message || error);
+                            console.error(`Fehler beim Kicken des Nutzers aus der Gruppe ${groupId}:`, error.message || error);
                         }
                     }
 
-                    // Hinzufügenkan jeda 1 Sekunden in zwischen jeder permintaan kick
+                    // 1 Sekunde warten zwischen jedem Kick-Versuch
                     await new Promise(resolve => setTimeout(resolve, 1000));
                 }
             } catch (e) {
@@ -65,17 +69,17 @@ const handler = async (m, { conn, text, command }) => {
             break;
 
         case 'unblacklist':
-            if (!who) throw 'Tag oder reply person das/der/die ingin in-unblacklist.';
+            if (!who) throw 'Markiere oder antworte auf die Person, die du von der Blacklist entfernen möchtest.';
 
             try {
                 const index = globalBlacklist.indexOf(who);
-                if (index === -1) throw `Nomor ${who.split(`@`)[0]} nicht gibt in liste *Blacklist* global.`;
+                if (index === -1) throw `Die Nummer ${who.split(`@`)[0]} ist nicht in der globalen Blacklist.`;
 
-                // delete Nutzer von blacklist global
+                // Nutzer aus der globalen Blacklist entfernen
                 globalBlacklist.splice(index, 1);
                 db.data.globalBlacklist = globalBlacklist;
 
-                await conn.reply(m.chat, `Sukses menglöschen @${who.split(`@`)[0]} von *Blacklist* global.`, m, {
+                await conn.reply(m.chat, `Erfolgreich @${who.split(`@`)[0]} von der globalen Blacklist entfernt.`, m, {
                     contextInfo: { mentionedJid: [who] }
                 });
             } catch (e) {
@@ -85,7 +89,7 @@ const handler = async (m, { conn, text, command }) => {
 
         case 'listblacklist':
         case 'listbl':
-            let txt = `*「 register Nomor Blacklist Global 」*\n\n*Total:* ${globalBlacklist.length}\n\n┌─[ *Blacklist* ]\n`;
+            let txt = `*「 Registrierte Nummern in der globalen Blacklist 」*\n\n*Gesamt:* ${globalBlacklist.length}\n\n┌─[ *Blacklist* ]\n`;
 
             for (let id of globalBlacklist) {
                 txt += `├ @${id.split("@")[0]}\n`;
@@ -99,7 +103,7 @@ const handler = async (m, { conn, text, command }) => {
     }
 };
 
-// Mengeluarkan otomatis Nutzer das/der/die in-blacklist wenn senden nachricht in Gruppe welche auch
+// Nutzer automatisch aus der Gruppe entfernen, wenn er/sie eine Nachricht sendet und in der Blacklist ist
 handler.before = function (m, { conn, isAdmin }) {
     if (!m.isGroup || m.fromMe) return;
 
@@ -107,7 +111,7 @@ handler.before = function (m, { conn, isAdmin }) {
 
     if (globalBlacklist.includes(m.sender) && !isAdmin) {
         conn.sendMessage(m.chat, {
-            text: `Nutzer @${m.sender.split('@')[0]} gibt in liste blacklist global und wird dikeluarkan von Gruppe.`,
+            text: `Nutzer @${m.sender.split('@')[0]} ist in der globalen Blacklist und wurde aus der Gruppe entfernt.`,
             mentions: [m.sender]
         });
         conn.groupParticipantsUpdate(m.chat, [m.sender], 'remove');
@@ -121,5 +125,3 @@ handler.admin = handler.group = true;
 handler.owner = true;
 
 module.exports = handler;
-
-//apalah
