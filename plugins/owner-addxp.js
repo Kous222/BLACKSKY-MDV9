@@ -1,44 +1,47 @@
-const { MessageType } = require('@adiwajshing/baileys');
-
 let handler = async (m, { conn, text }) => {
   if (!text) {
-    throw 'Anmeldenkan Anzahl xp das/der/die ingin ditambahkan auf Nutzer. Beispiel: .addxp @user 10';
+    throw 'Bitte gib die Anzahl der XP an, die einem Nutzer hinzugefügt werden soll.\nBeispiel: *.addxp @user 10*';
   }
-    
- 	conn.chatRead(m.chat)
-	conn.sendMessage(m.chat, {
-		react: {
-			text: '🕒',
-			key: m.key,
-		}
-	})
 
-  let mentionedJid = m.mentionedJid[0];
-  if (!mentionedJid) {
-    throw 'Tag Nutzer das/der/die ingin ditambahkan xpnya Beispiel: .addxp @user 10';
-  }
+  conn.chatRead(m.chat);
+  conn.sendMessage(m.chat, {
+    react: {
+      text: '🕒',
+      key: m.key,
+    }
+  });
+
+  let userMention = text.split(' ')[0].replace(/[@+]/g, '');
+  let mentionedJid = userMention.includes('@s.whatsapp.net') ? userMention : userMention + '@s.whatsapp.net';
 
   let pointsToAdd = parseInt(text.split(' ')[1]);
   if (isNaN(pointsToAdd)) {
-    throw 'anzahl xp das/der/die dieingeben müssen berupa angka. Beispiel: .addxp @user 10';
+    throw 'Die XP-Anzahl muss eine gültige Zahl sein.\nBeispiel: *.addxp @user 10*';
   }
 
   let users = global.db.data.users;
+
+  // Ensure the user exists in the database
   if (!users[mentionedJid]) {
     users[mentionedJid] = {
-      exp: 0,
+      exp: 0,  // Initialize XP if it doesn't exist
       lastclaim: 0
     };
   }
 
+  // Add the XP
   users[mentionedJid].exp += pointsToAdd;
 
-  conn.reply(m.chat, `erfolgreich hinzufügen ${pointsToAdd}exp für @${mentionedJid.split('@')[0]}.`, m, {
+  // Make sure the updated XP is saved
+  global.db.data.users = users;
+
+  // Send feedback to the user
+  conn.reply(m.chat, `✅ Erfolgreich *${pointsToAdd}* XP hinzugefügt für @${mentionedJid.split('@')[0]}.`, m, {
     mentions: [mentionedJid]
   });
 };
 
-handler.help = ['addxp @user <Anzahl xp>'];
+handler.help = ['addxp @user <Anzahl>'];
 handler.tags = ['xp'];
 handler.command = /^addxp$/i;
 handler.owner = true;

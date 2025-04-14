@@ -1,101 +1,110 @@
-let PhoneNumber = require('awesome-phonenumber')
-let levelling = require('../lib/levelling')
-const { createHash } = require('crypto')
-const fetch = require('node-fetch')
+const crypto = require('crypto');
+const { PhoneNumber } = require('libphonenumber-js');
 
-let handler = async (m, { conn, text, usedPrefix }) => {
-  function sanitizeNumber(number) {
-    return number.replace(/\s/g, '').replace(/[@+-]/g, '')
-  }
-
-  function msToDate(ms) {
-    let days = Math.floor(ms / (24 * 60 * 60 * 1000))
-    let hours = Math.floor((ms % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000))
-    let minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000))
-    return `${days} Tage ${hours} Stunden ${minutes} Minuten`
-  }
-
-  text = sanitizeNumber(text)
-  let number = isNaN(text) ? text.split`@`[1] : text
-
-  if (!text && !m.quoted) {
-    return conn.reply(m.chat, `*❏ NUMMER BEKOMMEN*
-
-• Markiere den Benutzer: *${usedPrefix}profile @Tag*
-• Gib die Nummer ein: *${usedPrefix}profile 6289654360447*
-• Überprüfe mein Profil: *(Antworten / Antwort auf deine eigene Nachricht)*`, m)
-  }
-
-  if (isNaN(number) || number.length > 15) {
-    return conn.reply(m.chat, `*❏ UNGÜLTIGE NUMMER*
-
-• Markiere den Benutzer: *${usedPrefix}profile @Tag*
-• Gib die Nummer ein: *${usedPrefix}profile 6289654360447*`, m)
-  }
-
-  let who = m.quoted ? m.quoted.sender : number + '@s.whatsapp.net'
-  let pp = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSXIdvC1Q4WL7_zA6cJm3yileyBT2OsWhBb9Q&usqp=CAU'
-
-  try {
-    pp = await conn.profilePictureUrl(who, 'image')
-  } catch (e) {}
-
-  if (typeof global.db.data.users[who] === 'undefined') {
-    throw 'Benutzer ist nicht in der Datenbank'
-  }
-
-  let user = global.db.data.users[who]
-  let now = Date.now()
-  let premiumTimeLeft = user.premiumTime > now ? msToDate(user.premiumTime - now) : '*Kein Ablaufdatum für Premium!*'
-
-  let { name, pasangan, limit, exp, money, bank, age, level, role, registered, regTime, premium } = user
-  let { min, xp, max } = levelling.xpRange(level, global.multiplier)
-  let username = conn.getName(who)
-  let about = (await conn.fetchStatus(who).catch(() => ({}))).status || ''
-  let sn = createHash('md5').update(who).digest('hex')
+let profileHandler = async (m, { conn, text }) => {
+  let who = m.mentionedJid[0] || m.sender;
   
-  // Correct XP calculations
-  let currentXP = exp - min
-  let xpLeft = max - exp
-  let jodoh = pasangan ? `${pasangan}` : 'Single'
+  // Handle profile data retrieval or initialization
+  if (!global.db.data) {
+    throw 'Datenbank nicht initialisiert! Bitte starte den Bot neu.';
+  }
+  if (typeof global.db.data.users[who] === 'undefined') {
+    global.db.data.users[who] = {
+      exp: 0,
+      level: 0,
+      role: 'Newbie ㋡',
+      registered: false,
+      name: conn.getName(who),
+      age: -1,
+      regTime: -1,
+      afk: -1,
+      afkReason: '',
+      banned: false,
+      premiumTime: 0
+    };
+  }
+
+  let user = global.db.data.users[who];
+  let now = Date.now();
+  let { exp, level, role, name, age, regTime, premiumTime, premium, dailyXP, lastDailyReset } = user;
+
+  // Daily XP reset logic
+  if (typeof dailyXP === 'undefined') user.dailyXP = dailyXP = 0;
+  if (typeof lastDailyReset === 'undefined') user.lastDailyReset = lastDailyReset = 0;
+
+  const today = new Date().setHours(0, 0, 0, 0);
+  if (lastDailyReset < today) {
+    user.dailyXP = dailyXP = 0;
+    user.lastDailyReset = lastDailyReset = today;
+  }
+
+  const DAILY_XP_CAP = 1500;
+  
+  // Level and XP calculations
+  let xpInfo = { min: 0, xp: 1, max: 1 };  // Default values for XP calculation
+  try {
+    xpInfo = levelling.xpRange(level, 1); // Assuming you have a levelling module
+  } catch (e) {
+    console.error('XP calculation error:', e);
+  }
+
+  let minXP = xpInfo.min || 0;
+  let requiredXP = xpInfo.xp || 100;
+  let maxXP = xpInfo.max || minXP + requiredXP;
+
+  const isMaxLevel = level >= 100;
+  let currentXP, xpLeft;
+
+  if (isMaxLevel) {
+    currentXP = requiredXP;
+    xpLeft = 0;
+  } else {
+    currentXP = Math.max(0, exp - minXP);
+    xpLeft = Math.max(0, maxXP - exp);
+  }
+
+  let progressPercent = Math.min(100, Math.floor((currentXP / requiredXP) * 100));
+  let progressBar = '█'.repeat(Math.floor((progressPercent / 100) * 15)) + '░'.repeat(15 - Math.floor((progressPercent / 100) * 15));
 
   let profileText = `
 ┌─⊷ *PROFIL*
-👤 • Benutzername: ${username} ${registered ? `(${name})` : ''} (@${who.split`@`[0]})
-👥 • Über: ${about}
-🏷 • Status: ${jodoh}
-📞 • Nummer: ${PhoneNumber('+' + who.replace('@s.whatsapp.net', '')).getNumber('international')}
-🔢 • Seriennummer: ${sn}
-🔗 • Link: https://wa.me/${who.split`@`[0]}
-👥 • Alter: ${registered ? age : ''}
+👤 • Benutzername: ${name} (@${who.split`@`[0]})
+📞 • Nummer: ${new PhoneNumber('+' + who.replace('@s.whatsapp.net', '')).formatInternational()}
+🔢 • Seriennummer: ${crypto.createHash('md5').update(who).digest('hex')}
+🎂 • Alter: ${age}
 └──────────────
 
-┌─⊷ *PROFIL RPG*
-▢ XP: TOTAL ${exp} (${currentXP} / ${xp}) [${xpLeft <= 0 ? `Bereit für *${usedPrefix}levelup*` : `${xpLeft} XP übrig bis zum Levelaufstieg`}]
-▢ Level: ${level}
-▢ Rolle: ${role}
-▢ Limit: ${limit}
-▢ Geld: ${money}
+┌─⊷ *LEVEL & ROLLE*
+🏅 • Level: ${level}
+⭐ • Rolle: ${role}
+└──────────────
+
+┌─⊷ *XP FORTSCHRITT*
+🔰 • XP: ${currentXP} / ${requiredXP} (Total: ${exp})
+📊 • ${progressBar} ${progressPercent}%
+${isMaxLevel ? `🏆 *MAXIMALES LEVEL ERREICHT!*` : (xpLeft <= 0 ? `✅ Bereit für *levelup*` : `⏳ ${xpLeft} XP übrig bis zum nächsten Level`)}
+🕒 • Heute: ${dailyXP}/${DAILY_XP_CAP} XP
 └──────────────
 
 ┌─⊷ *STATUS*
-📑 • Registriert: ${registered ? `Ja (${new Date(regTime).toLocaleString()})` : 'Nein'}
 🌟 • Premium: ${premium ? 'Ja' : 'Nein'}
-⏰ • PremiumZeit: ${premiumTimeLeft}
-└──────────────`.trim()
+⏰ • PremiumZeit: ${premiumTime > now ? msToDate(premiumTime - now) : '*Kein Ablaufdatum für Premium!*'}
+└──────────────
+`.trim();
 
-  let mentionedJid = [who]
+  let pp = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSXIdvC1Q4WL7_zA6cJm3yileyBT2OsWhBb9Q&usqp=CAU';
+  try {
+    pp = await conn.profilePictureUrl(who, 'image');
+  } catch (e) {}
+
   conn.sendFile(m.chat, pp, 'pp.jpg', profileText, m, false, {
-    contextInfo: { mentionedJid: conn.parseMention(profileText) }
-  })
-}
+    contextInfo: { mentionedJid: [who] }
+  });
+};
 
-handler.help = ['profile [@user]']
-handler.tags = ['info']
-handler.command = /^profile$/i
-handler.limit = true
-handler.register = false
-handler.group = true
+profileHandler.help = ['profile [@user]'];
+profileHandler.tags = ['info'];
+profileHandler.command = /^profile$/i;
+profileHandler.limit = true;
 
-module.exports = handler
-ndler
+module.exports = profileHandler;

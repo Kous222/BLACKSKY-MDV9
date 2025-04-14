@@ -1,112 +1,79 @@
-let handler = async (m, { conn }) => {
-    let __timers = (new Date - global.db.data.users[m.sender].lasttaxi)
-    let _timers = (3600000 - __timers)
-    let order = global.db.data.users[m.sender].taxi
-    let timers = clockString(_timers)
-    let name = conn.getName(m.sender)
-    let user = global.db.data.users[m.sender]
-    let id = m.sender
-    let arbeiten = 'taxi'
-    conn.Mission = conn.Mission ? conn.Mission : {}
-    if (id in conn.Mission) {
-        conn.reply(m.chat, `Selesaikan orderan taxi du ${conn.Mission[id][0]} zuerst vorher`, m)
-        throw false
+let handler = async (m, { conn, text, usedPrefix, command }) => {
+  // Zielbenutzer ermitteln
+  let target = text ? (text.includes('@') ? text.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : text) : m.sender;
+  const user = global.db.data.users[target];
+
+  // Wenn der Benutzer nicht existiert
+  if (!user) return m.reply('Benutzer nicht gefunden. Bitte überprüfe den Benutzernamen.');
+
+  // Wenn Jail-Status und Arbeitszeit nicht definiert sind, initialisieren
+  if (user.jail === undefined) user.jail = false;
+  if (user.perkerjaandua === undefined) user.perkerjaandua = 0;
+
+  // Falls der Benutzer im Gefängnis ist und die Zeit noch läuft
+  if (user.jail && user.perkerjaandua > Date.now()) {
+    let remainingTime = user.perkerjaandua - Date.now();
+    let minutes = Math.floor((remainingTime / (1000 * 60)) % 60);
+    let seconds = Math.floor((remainingTime / 1000) % 60);
+
+    // Wenn der Zielbenutzer der Absender ist
+    if (target === m.sender) {
+      return m.reply(`*Du befindest dich noch im Gefängnis!* 😞\n*Verbleibende Zeit:* ${minutes} Minuten und ${seconds} Sekunden.`);
+    } else {
+      return m.reply(`*Diese Person ist noch im Gefängnis!* ⛓️\n*Verbleibende Zeit:* ${minutes} Minuten und ${seconds} Sekunden.`, null, {
+        mentions: [target]
+      });
     }
-    if (new Date - user.lasttaxi > 3600000) {
-        let randomaku1 = Math.floor(Math.random() * 1000000)
-        let randomaku2 = Math.floor(Math.random() * 10000)
-        
-        var njir = `
-🚶⬛⬛⬛⬛⬛⬛⬛⬛⬛
-⬛⬜⬜⬜⬛⬜⬜⬜⬛⬛
-⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛
-🏘️🏘️🏘️🏘️🌳  🌳 🏘️       🚕
+  }
 
+  // Wenn der Benutzer lebenslänglich im Gefängnis ist
+  if (user.jail === true && user.perkerjaandua === 0) {
+    if (target === m.sender) {
+      return m.reply('*Du bist lebenslang im Gefängnis!* 🚨\nEs gibt kein Entkommen mehr!');
+    } else {
+      return m.reply(`*Diese Person ist lebenslang im Gefängnis!* 🚨\nEs gibt kein Entkommen mehr.`, null, {
+        mentions: [target]
+      });
+    }
+  }
 
-✔️ erhalten orderan....
-`.trim()
+  // Wenn der Benutzer nicht im Gefängnis ist
+  if (target === m.sender) {
+    return m.reply('*Du bist nicht im Gefängnis.* ✅\nDu kannst frei agieren!');
+  } else {
+    return m.reply(`*Diese Person ist nicht im Gefängnis.* ✅\nKeine Haftstrafe für sie!`, null, {
+      mentions: [target]
+    });
+  }
 
-        var njirr = `
-🚶⬛⬛⬛⬛⬛🚐⬛⬛⬛🚓🚚
-🚖⬜⬜⬜⬛⬜⬜⬜🚓⬛🚑
-⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛🚙
-🏘️🏘️🏢️🌳  🌳 🏘️  🏘️🏡
+  // Taxi-Auftrag (siehe deine zusätzliche Logik)
+  if (user.lasttaxi + 1800000 > new Date * 1) {
+    let timers = ms((user.lasttaxi + 1800000) - (new Date * 1))
+    m.reply(`Du musst noch ${timers} warten, bevor du wieder einen Auftrag annehmen kannst!`)
+  } else {
+    // Bei erfolgreicher Auftragannahme
+    m.reply('🔍 Auftrag wird gesucht...')
+    setTimeout(() => {
+        m.reply('🚗 Auftragsvermittlung abgeschlossen, steige ein!')
+    }, 15000)
 
+    setTimeout(() => {
+        m.reply('🛑 Auftrag wurde storniert.')
+    }, 10000)
 
-🚖 Fahrt zu tujuan.....
-`.trim()
+    setTimeout(() => {
+        m.reply('🔍 Auftrag wird gesucht...')
+    }, 0)
 
-        var njirrr = `
-⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛🚓
-⬛⬜🚗⬜⬜⬛⬜🚐⬜⬜⬛🚙🚚🚑
-⬛⬛⬛⬛🚒⬛⬛⬛⬛⬛⬛🚚
-🏘️🏘️🏘️🏘️🌳  🌳 🏘️
+    user.lasttaxi = new Date * 1
+  }
+};
 
-
-🚖 fertig Mengantar Pelanggan....
-`.trim()
-
-        var njirrrr = `
-➕ 💹Empfangen gaji....
-`.trim()
-
-        var Ergebnis = `
-*—[ Ergebnis taxi ${name} ]—*
-➕ 💹 Geld = [ ${randomaku1} ]
-➕ ✨ Exp = [ ${randomaku2} ]
-➕ 😍 Order fertig = +1
-➕ 📥Total Order Zurück : ${order}
-`.trim()
-
-        user.Münzen += randomaku1
-        user.exp += randomaku2
-        user.taxi += 1
-        
-        conn.Mission[id] = [
-            arbeiten,
-        setTimeout(() => {
-            delete conn.Mission[id]
-        }, 27000)
-        ]
-        
-        setTimeout(() => {
-            m.reply(Ergebnis)
-        }, 27000)
-
-        setTimeout(() => {
-            m.reply(njirrrr)
-        }, 25000)
-
-        setTimeout(() => {
-            m.reply(njirrr)
-        }, 20000)
-
-        setTimeout(() => {
-            m.reply(njirr)
-        }, 15000)
-
-        setTimeout(() => {
-            m.reply(njir)
-        }, 10000)
-
-        setTimeout(() => {
-            m.reply('🔍suchen orderan erstellen du.....')
-        }, 0)
-        user.lasttaxi = new Date * 1
-    } else m.reply(`du kecapean, Pause früher während ${timers}, neu gas ngorder wieder`)
-}
 handler.help = ['taxi']
 handler.tags = ['rpg']
 handler.command = /^(taxi)$/i
 handler.register = true
 handler.group = true
 handler.rpg = true
+
 module.exports = handler;
-
-
-function clockString(ms) {
-    let h = Math.floor(ms / 3600000)
-    let m = Math.floor(ms / 60000) % 60
-    let s = Math.floor(ms / 1000) % 60
-    return [h, m, s].map(v => v.toString().padStart(2, 0)).join(':')
-}

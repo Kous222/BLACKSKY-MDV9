@@ -1,19 +1,19 @@
-let handler = async (m, { isPrems, conn, text, usedPrefix, command }) => {  
-    const user = global.db.data.users[m.sender];  
-    const who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : text ? text.replace(/[@ .+-]/g, '').replace(/^\+/, '').replace(/-/g, '') + '@s.whatsapp.net' : m.sender;  
+let handler = async (m, { isPrems, conn, text, usedPrefix, command }) => {  
+    const user = global.db.data.users[m.sender];  
+    const who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : text ? text.replace(/[@ .+-]/g, '').replace(/^\+/, '').replace(/-/g, '') + '@s.whatsapp.net' : m.sender;  
 
     if (!user.job || user.job === '-') {    
-        throw 'Du hast dich noch nicht für einen Job beworben. Bitte bewirb dich zuerst, z. B. mit:\n\n*.bewerben lieferfahrer*';  
-    }  
+        throw 'Du hast dich noch nicht für einen Job beworben. Bitte bewirb dich zuerst, z. B. mit:\n\n*.bewerben lieferfahrer*';   
+    }   
 
-    if (user.jobexp === undefined) user.jobexp = 0;  
+    if (user.jobexp === undefined) user.jobexp = 0;   
 
     let job = (user.job || '').toLowerCase().trim();    
-    let kapital = capitalizeFirstLetter(job);  
+    let kapital = capitalizeFirstLetter(job);   
 
     if (user.jail === true) {    
-        throw '*Du kannst keine Aktivitäten durchführen, da du noch im Gefängnis bist!*';  
-    }  
+        throw '*Du kannst keine Aktivitäten durchführen, da du noch im Gefängnis bist!*';   
+    }   
 
     let jobs = {    
         'lieferfahrer': {
@@ -76,15 +76,15 @@ let handler = async (m, { isPrems, conn, text, usedPrefix, command }) => {
             thumb: 'https://telegra.ph/file/d34aa031a8035e13b5bbb.jpg',
             special: '*.gefängnis*'
         }
-    };  
+    };   
 
-    let jobInfo = jobs[job];  
+    let jobInfo = jobs[job];   
 
     if (jobInfo) {    
         let caption = `*JOB INFO*\n\nBeruf: ${kapital}\nArbeitseinsatz: ${user.jobexp}% / 500%\n\nDer Arbeitseinsatz steigt mit jedem *.jobkerja* Befehl um 1%.\nSpezialbefehl: ${jobInfo.special}`.trim();    
-        await conn.sendFile(m.chat, jobInfo.thumb, `${job}.jpg`, caption, m);  
+        await conn.sendFile(m.chat, jobInfo.thumb, `${job}.jpg`, caption, m);   
     } else {    
-        throw `Job nicht gefunden oder ungültig!\n\nGespeicherter Wert: *${user.job}*`;  
+        throw `Job nicht gefunden oder ungültig!\n\nGespeicherter Wert: *${user.job}*`;   
     }
 };
 
@@ -94,22 +94,10 @@ handler.command = /^(job)$/i;
 handler.rpg = true;  
 module.exports = handler;
 
-function capitalizeFirstLetter(str) {  
-    let words = str.split(" ");  
+function capitalizeFirstLetter(str) {   
+    let words = str.split(" ");   
     for (let i = 0; i < words.length; i++) {    
-        words[i] = words[i].charAt(0).toUpperCase() + words[i].slice(1).toLowerCase();  
-    }  
-    return words.join(" ");  
-}
-handler.tags = ['rpg'];  
-handler.command = /^(job)$/i;  
-handler.rpg = true;  
-module.exports = handler;
-
-function capitalizeFirstLetter(str) {  
-    let words = str.split(" ");  
-    for (let i = 0; i < words.length; i++) {    
-        words[i] = words[i].charAt(0).toUpperCase() + words[i].slice(1).toLowerCase();  
-    }  
-    return words.join(" ");  
+        words[i] = words[i].charAt(0).toUpperCase() + words[i].slice(1).toLowerCase();   
+    }   
+    return words.join(" ");   
 }
