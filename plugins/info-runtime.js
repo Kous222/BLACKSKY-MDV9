@@ -3,13 +3,14 @@ let handler = async (m, { conn, usedPrefix, command }) => {
     let tio = clockString(_uptime)
     let time = require('moment-timezone').tz('Europe/Berlin').format('HH:mm:ss')
 
-var ct = `
+    var ct = `
 *───「 LAUFZEIT Bot 」───*
 
 Laufzeit : ${tio}
     `
-m.Antworten(ct)
+    conn.reply(m.chat, ct, m) // Use conn.reply instead of m.Antworten
 }
+
 handler.help = ['runtime', 'laufzeit']
 handler.tags = ['info']
 handler.command = /^(uptime|runtime|laufzeit)$/i

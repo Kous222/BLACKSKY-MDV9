@@ -1,5 +1,5 @@
 let handler = async (m, { conn, command }) => {
-    if (!m.quoted) throw 'Reply nachricht das/der/die ingin dilöschen';
+    if (!m.quoted) throw 'Antworte auf eine Nachricht, die du löschen möchtest.';
     try {
         let res = m.message.extendedTextMessage.contextInfo;
         let deleteMsg = { delete: { remoteJid: m.chat, fromMe: false } };
@@ -14,6 +14,7 @@ let handler = async (m, { conn, command }) => {
         return conn.sendMessage(m.chat, { delete: m.quoted.vM.key });
     }
 };
+
 handler.help = ['del', 'delete'];
 handler.tags = ['tools'];
 handler.botaadmin = true;

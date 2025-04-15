@@ -1,7 +1,13 @@
-let PhoneNumber = require('awesome-phonenumber')
-let levelling = require('../lib/levelling')
+/**
+ * BocchiBot German Version - User Profile
+ * Enhanced profile display with visual indicators for XP, level and role
+ */
+
+const PhoneNumber = require('awesome-phonenumber')
+const levelling = require('../lib/levelling')
 const { createHash } = require('crypto')
 const fetch = require('node-fetch')
+const { getRoleBadge, getLevelColor, getRoleByLevel } = require('../lib/role')
 
 let handler = async (m, { conn, text, usedPrefix }) => {
   function sanitizeNumber(number) {
@@ -15,22 +21,26 @@ let handler = async (m, { conn, text, usedPrefix }) => {
     return `${days} Tage ${hours} Stunden ${minutes} Minuten`
   }
 
+  function formatNumber(num) {
+    return num.toLocaleString('de-DE')
+  }
+
   text = sanitizeNumber(text)
   let number = isNaN(text) ? text.split`@`[1] : text
 
   if (!text && !m.quoted) {
-    return conn.reply(m.chat, `*❏ NUMMER BEKOMMEN*
+    return conn.reply(m.chat, `*❏ PROFILABFRAGE*
 
 • Markiere den Benutzer: *${usedPrefix}profile @Tag*
-• Gib die Nummer ein: *${usedPrefix}profile 6289654360447*
-• Überprüfe mein Profil: *(Antworten / Antwort auf deine eigene Nachricht)*`, m)
+• Gib die Nummer ein: *${usedPrefix}profile 491234567890*
+• Dein eigenes Profil: *${usedPrefix}profile* (als Antwort auf deine Nachricht)`, m)
   }
 
   if (isNaN(number) || number.length > 15) {
     return conn.reply(m.chat, `*❏ UNGÜLTIGE NUMMER*
 
 • Markiere den Benutzer: *${usedPrefix}profile @Tag*
-• Gib die Nummer ein: *${usedPrefix}profile 6289654360447*`, m)
+• Gib die Nummer ein: *${usedPrefix}profile 491234567890*`, m)
   }
 
   let who = m.quoted ? m.quoted.sender : number + '@s.whatsapp.net'
@@ -41,23 +51,27 @@ let handler = async (m, { conn, text, usedPrefix }) => {
   } catch (e) {}
 
   if (!global.db.data) {
-    throw 'Database not initialized! Please restart the bot.'
+    throw 'Datenbank nicht initialisiert! Bitte starte den Bot neu.'
   }
+
   if (typeof global.db.data.users[who] === 'undefined') {
     global.db.data.users[who] = {
-        exp: 0,
-        limit: 10,
-        lastclaim: 0,
-        registered: false,
-        name: conn.getName(who),
-        age: -1,
-        regTime: -1,
-        afk: -1,
-        afkReason: '',
-        banned: false,
-        level: 0,
-        role: 'Newbie ㋡',
-        autolevelup: true
+      exp: 0,
+      limit: 10,
+      lastclaim: 0,
+      registered: false,
+      name: conn.getName(who),
+      age: -1,
+      regTime: -1,
+      afk: -1,
+      afkReason: '',
+      banned: false,
+      level: 0,
+      role: 'Rekrut ㋡',
+      autolevelup: true,
+      dailyXP: 0,
+      lastDailyReset: 0,
+      totalMessages: 0
     }
   }
 
@@ -65,117 +79,141 @@ let handler = async (m, { conn, text, usedPrefix }) => {
   let now = Date.now()
   let premiumTimeLeft = user.premiumTime > now ? msToDate(user.premiumTime - now) : '*Kein Ablaufdatum für Premium!*'
 
-  // Extract user data
-  let { name, pasangan, limit, exp = 0, money = 0, bank = 0, age = 0, level = 0, role = 'Newbie ㋡', registered = false, regTime = 0, premium = false, dailyXP = 0, lastDailyReset = 0 } = user
+  let { 
+    name, 
+    pasangan, 
+    limit, 
+    exp = 0, 
+    money = 0, 
+    bank = 0, 
+    age = 0, 
+    level = 0, 
+    role = 'Rekrut ㋡', 
+    registered = false, 
+    regTime = 0, 
+    premium = false, 
+    dailyXP = 0, 
+    lastDailyReset = 0,
+    totalMessages = 0,
+    autolevelup = true
+  } = user
 
-  // Initialize daily XP tracking if not present
   if (typeof dailyXP === 'undefined') user.dailyXP = dailyXP = 0
   if (typeof lastDailyReset === 'undefined') user.lastDailyReset = lastDailyReset = 0
+  if (typeof totalMessages === 'undefined') user.totalMessages = totalMessages = 0
+  if (typeof autolevelup === 'undefined') user.autolevelup = autolevelup = true
 
-  // Check if it's a new day and reset daily XP if needed
   const today = new Date().setHours(0, 0, 0, 0)
   if (lastDailyReset < today) {
     user.dailyXP = dailyXP = 0
     user.lastDailyReset = lastDailyReset = today
   }
 
-  // Get daily XP cap (should match the value in _auto-xp.js)
-  const DAILY_XP_CAP = 1500
+  const DAILY_XP_CAP = 3000
 
-  // Get user display info
+  // Always calculate the correct level based on XP
+  // This ensures any discrepancies in stored level values are fixed
+  const calculatedLevel = levelling.findLevel(exp, global.multiplier || 1)
+  const canLevelUp = calculatedLevel > level
+  
+  // Store old values for display purposes
+  const oldLevel = level
+  
+  // Always update level and role if they don't match the calculated values
+  let levelUpdated = false
+  if (calculatedLevel !== level) {
+    user.level = level = calculatedLevel // Update both local and stored values
+    levelUpdated = true
+    console.log(`[PROFILE-SYNC] Updated user level: ${who} from ${oldLevel} to ${calculatedLevel}`)
+  }
+  
+  // Update role if needed
+  const oldRole = role
+  const correctRole = getRoleByLevel(calculatedLevel)
+  if (correctRole !== role) {
+    user.role = role = correctRole // Update both local and stored values
+    console.log(`[PROFILE-SYNC] Updated user role: ${who} from ${oldRole} to ${correctRole}`)
+  }
+
+  // Now that we've ensured the level is correct, get accurate progress data
+  const progress = levelling.getProgressData(level, exp, global.multiplier || 1)
+  const { progressBar, progressPercent, currentXP, xpRequired, xpLeft } = progress
+
   let username = conn.getName(who)
-  let about = (await conn.fetchStatus(who).catch(() => ({}))).status || ''
+  let about = global.db.data.users[who]?.about || (await conn.fetchStatus(who).catch(() => ({}))).status || ''
   let sn = createHash('md5').update(who).digest('hex')
-  let jodoh = pasangan ? `${pasangan}` : 'Single'
+  let relationship = pasangan ? `${pasangan}` : 'Single'
 
-  // Calculate level and XP info safely with enhanced error handling
-  let xpInfo = { min: 0, xp: 1, max: 1 };  // Default values
-  try {
-    // Make sure we have a valid level and multiplier
-    // Cap level at 99 for XP calculation, since level 100 is max
-    const safeLevel = Math.min(99, Math.max(0, level || 0));
-    const safeMultiplier = Math.max(1, global.multiplier || 1);
-    xpInfo = levelling.xpRange(safeLevel, safeMultiplier);
-    console.log(`XP calculation for level ${safeLevel}: `, xpInfo);
-  } catch (e) {
-    console.error('XP calculation error:', e);
-  }
+  const badge = getRoleBadge(user.level)
+  const levelColor = getLevelColor(user.level)
 
-  // Safely extract XP range values with fallbacks
-  let minXP = xpInfo.min !== undefined ? xpInfo.min : 0;
-  let requiredXP = xpInfo.xp !== undefined ? xpInfo.xp : 100;
-  let maxXP = xpInfo.max !== undefined ? xpInfo.max : minXP + requiredXP;
+  const fExp = formatNumber(exp)
+  const fCurrentXP = formatNumber(currentXP)
+  const fRequired = formatNumber(xpRequired)
+  const fLeft = formatNumber(xpLeft)
+  const fMoney = formatNumber(money)
+  const fLimit = formatNumber(limit)
+  const fDailyXP = formatNumber(dailyXP)
+  const fDailyXPCap = formatNumber(DAILY_XP_CAP)
+  const fMessages = formatNumber(totalMessages)
 
-  // Safe calculations for current level progress with typecasting to avoid NaN
-  const safeExp = Number(exp) || 0;
-
-  // Special handling for level 100 (max level)
-  const isMaxLevel = level >= 100;
-  let currentXP, xpLeft;
-
-  if (isMaxLevel) {
-    // At max level, show 100% progress
-    currentXP = requiredXP;
-    xpLeft = 0;
-  } else {
-    // Normal level progress calculation
-    currentXP = Math.max(0, safeExp - minXP);
-    xpLeft = Math.max(0, maxXP - safeExp);
-  }
-
-  // Calculate progress percentage with safety checks
-  let progressPercent = 0;
-  if (requiredXP > 0) {
-    progressPercent = Math.min(100, Math.floor((currentXP / requiredXP) * 100));
-  } else if (xpLeft <= 0) {
-    progressPercent = 100;
-  }
-
-  // Create a visual progress bar
-  let progressBar = '';
-  let barLength = 15;
-  let filledLength = Math.floor((progressPercent / 100) * barLength);
-
-  for (let i = 0; i < barLength; i++) {
-    progressBar += i < filledLength ? '█' : '░';
-  }
+  let bonusesText = ''
+  if (premium) bonusesText += `✨ *Premium-Bonus:* 30% mehr XP\n`
+  if (new Date().getDay() === 0) bonusesText += `🌟 *Sonntags-Bonus:* 50% mehr XP heute\n`
 
   let profileText = `
-┌─⊷ *PROFIL*
-👤 • Benutzername: ${username} ${registered ? `(${name})` : ''} (@${who.split`@`[0]})
-👥 • Über: ${about}
-🏷 • Status: ${jodoh}
-📞 • Nummer: ${PhoneNumber('+' + who.replace('@s.whatsapp.net', '')).getNumber('international')}
-🔢 • Seriennummer: ${sn}
-🔗 • Link: https://wa.me/${who.split`@`[0]}
-👥 • Alter: ${registered ? age : ''}
-└──────────────
+╔═══❖•ೋ°❀°ೋ•❖═══╗
+   *BENUTZER PROFIL*  ${badge}
+╚═══❖•ೋ°❀°ೋ•❖═══╝
 
-┌─⊷ *LEVEL & ROLLE*
-🏅 • Level: ${level}
-⭐ • Rolle: *${role}*
-└──────────────
+┌─⊷ *PERSÖNLICHE DATEN*
+│ 
+│ 👤 *Name:* ${username} ${registered ? `(${name})` : ''}
+│ 🏷️ *ID:* @${who.split`@`[0]}
+│ 💭 *Über:* ${about || 'Keine Info'}
+│ 💌 *Status:* ${relationship}
+│ 📞 *Nummer:* ${PhoneNumber('+' + who.replace('@s.whatsapp.net', '')).getNumber('international')}
+│ 🌐 *Link:* wa.me/${who.split`@`[0]}
+│ ${registered ? `👤 *Alter:* ${age} Jahre` : ''}
+│ 📨 *Nachrichten:* ${fMessages}
+│ 
+└───────────
 
-┌─⊷ *XP FORTSCHRITT*
-🔰 • XP: ${currentXP} / ${requiredXP} (Total: ${exp})
-📊 • ${progressBar} ${progressPercent}%
-${isMaxLevel ? `🏆 *MAXIMALES LEVEL ERREICHT!* Herzlichen Glückwunsch!` : (xpLeft <= 0 ? `✅ Bereit für *${usedPrefix}levelup*` : `⏳ ${xpLeft} XP übrig bis zum nächsten Level`)}
-🕒 • Heute: ${dailyXP}/${DAILY_XP_CAP} XP (${DAILY_XP_CAP > 0 ? Math.floor((dailyXP/DAILY_XP_CAP)*100) : 0}% des Tageslimits)
-ℹ️ • Verwende *${usedPrefix}dailyxp* für Details
-└──────────────
+┌─⊷ *LEVEL & FORTSCHRITT*
+│ 
+│ ${badge} *Level:* ${user.level}${levelUpdated ? ` (Aktualisiert von ${oldLevel})` : ''}
+│ 🏅 *Rolle:* ${user.role}${correctRole !== oldRole ? ` (Aktualisiert)` : ''}
+│ 
+│ 📊 *Fortschritt: ${progressPercent}%*
+│ ${progressBar}
+│ 
+│ 💫 *XP:* ${fCurrentXP} / ${fRequired}
+│ 📚 *Gesamt XP:* ${fExp}
+│ ${xpLeft > 0 ? `🔄 *Benötigt:* ${fLeft} XP bis Level ${user.level+1}` : '🏆 *Level komplett!*'}
+│ 
+│ 📆 *Heute:* ${fDailyXP}/${fDailyXPCap} XP (${DAILY_XP_CAP > 0 ? Math.floor((dailyXP/DAILY_XP_CAP)*100) : 0}% Tagesgrenze)
+│ ${bonusesText ? `│ ${bonusesText.trim().replace(/\n/g, '\n│ ')}` : ''}
+│ 🤖 *Auto-Level:* ${autolevelup ? 'An ✅' : 'Aus ❌'}
+│ 
+└───────────
 
 ┌─⊷ *RESSOURCEN*
-💰 • Geld: ${money}
-🔮 • Limit: ${limit}
-└──────────────
+│ 
+│ 💰 *Geld:* ${fMoney}
+│ 🔮 *Limit:* ${fLimit}
+│ 
+└───────────
 
 ┌─⊷ *STATUS*
-📑 • Registriert: ${registered ? `Ja (${new Date(regTime).toLocaleString()})` : 'Nein'}
-🌟 • Premium: ${premium ? 'Ja' : 'Nein'}
-⏰ • PremiumZeit: ${premiumTimeLeft}
-└──────────────`.trim()
+│ 
+│ 📋 *Registriert:* ${registered ? `Ja (${new Date(regTime).toLocaleString()})` : 'Nein'}
+│ 💎 *Premium:* ${premium ? 'Ja' : 'Nein'}
+│ ⏱️ *Premium-Zeit:* ${premium ? premiumTimeLeft : '-'}
+│ 
+└───────────
 
-  let mentionedJid = [who]
+*Tipp:* Nutze *.levelup* um im Level aufzusteigen!`.trim()
+
   conn.sendFile(m.chat, pp, 'pp.jpg', profileText, m, false, {
     contextInfo: { mentionedJid: conn.parseMention(profileText) }
   })
@@ -183,9 +221,9 @@ ${isMaxLevel ? `🏆 *MAXIMALES LEVEL ERREICHT!* Herzlichen Glückwunsch!` : (xp
 
 handler.help = ['profile [@user]']
 handler.tags = ['info']
-handler.command = /^profile$/i
+handler.command = /^(profile|profil)$/i
 handler.limit = true
 handler.register = false
-handler.group = true
+handler.group = false
 
 module.exports = handler

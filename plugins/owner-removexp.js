@@ -1,6 +1,6 @@
 /**
- * BocchiBot German Version - Add XP Command
- * For owners to add XP to users with detailed level information
+ * BocchiBot German Version - Remove XP Command
+ * For owners to remove XP from users with detailed level information
  */
 
 const levelling = require('../lib/levelling');
@@ -8,7 +8,7 @@ const { getRoleByLevel, getRoleBadge } = require('../lib/role');
 
 let handler = async (m, { conn, text }) => {
   if (!text) {
-    throw 'Bitte gib die Anzahl der XP an, die einem Nutzer hinzugefügt werden soll.\nBeispiel: *.addxp @user 1000*';
+    throw 'Bitte gib die Anzahl der XP an, die von einem Nutzer entfernt werden soll.\nBeispiel: *.removexp @user 1000*';
   }
 
   // Show processing reaction
@@ -26,15 +26,15 @@ let handler = async (m, { conn, text }) => {
   // Parse the mentioned user and XP amount
   let parts = text.trim().split(/\s+/);
   if (parts.length < 2) {
-    throw 'Bitte gib sowohl einen Benutzer als auch die XP-Menge an.\nBeispiel: *.addxp @user 1000*';
+    throw 'Bitte gib sowohl einen Benutzer als auch die XP-Menge an.\nBeispiel: *.removexp @user 1000*';
   }
 
   let userMention = parts[0].replace(/[@+]/g, '');
   let mentionedJid = userMention.includes('@s.whatsapp.net') ? userMention : userMention + '@s.whatsapp.net';
 
-  let pointsToAdd = parseInt(parts[1]);
-  if (isNaN(pointsToAdd)) {
-    throw 'Die XP-Anzahl muss eine gültige Zahl sein.\nBeispiel: *.addxp @user 1000*';
+  let pointsToRemove = parseInt(parts[1]);
+  if (isNaN(pointsToRemove)) {
+    throw 'Die XP-Anzahl muss eine gültige Zahl sein.\nBeispiel: *.removexp @user 1000*';
   }
 
   // Get user data
@@ -55,8 +55,11 @@ let handler = async (m, { conn, text }) => {
   const beforeLevel = users[mentionedJid].level || 0;
   const beforeRole = users[mentionedJid].role || 'Rekrut ㋡';
 
-  // Add the XP
-  users[mentionedJid].exp += pointsToAdd;
+  // Ensure XP doesn't go below 0
+  const actualPointsRemoved = Math.min(beforeXP, pointsToRemove);
+  
+  // Remove the XP
+  users[mentionedJid].exp = Math.max(0, beforeXP - pointsToRemove);
   const afterXP = users[mentionedJid].exp;
 
   // Calculate new level based on XP
@@ -66,7 +69,7 @@ let handler = async (m, { conn, text }) => {
   let levelChanged = false;
   let roleChanged = false;
   
-  if (newLevel > beforeLevel) {
+  if (newLevel < beforeLevel) {
     levelChanged = true;
     users[mentionedJid].level = newLevel;
     
@@ -87,10 +90,10 @@ let handler = async (m, { conn, text }) => {
   // Create detailed feedback message
   let message = `
 ╔═══❖•ೋ°❀°ೋ•❖═══╗
-   *XP HINZUGEFÜGT*  ${badge}
+   *XP ENTFERNT*  ${badge}
 ╚═══❖•ೋ°❀°ೋ•❖═══╝
 
-✅ *${formatNumber(pointsToAdd)}* XP wurden @${mentionedJid.split('@')[0]} hinzugefügt.
+❌ *${formatNumber(actualPointsRemoved)}* XP wurden von @${mentionedJid.split('@')[0]} entfernt.
 
 ┌─⊷ *BENUTZER STATUS*
 │ 
@@ -115,9 +118,9 @@ let handler = async (m, { conn, text }) => {
   });
 };
 
-handler.help = ['addxp @user <Anzahl> - Fügt einem Benutzer XP hinzu. Nur für Bot-Besitzer verfügbar. Zeigt auch Informationen zu Leveländerungen an.'];
+handler.help = ['removexp @user <Anzahl> - Entfernt einem Benutzer XP. Nur für Bot-Besitzer verfügbar. Zeigt auch Informationen zu Leveländerungen an.'];
 handler.tags = ['xp', 'owner'];
-handler.command = /^(addxp|givexp|xpadd)$/i;
+handler.command = /^(removexp|rmxp|xpremove)$/i;
 handler.owner = true;
 
 module.exports = handler;

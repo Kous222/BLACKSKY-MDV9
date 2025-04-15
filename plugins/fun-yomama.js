@@ -40,7 +40,14 @@ let handler = async (m, { conn, usedPrefix, command }) => {
         "Deine Mutter ist so dumm, sie ist in der Apotheke angestanden, um ein iPhone zu kaufen.",
         "Deine Mutter ist so hässlich, wenn sie auf einer Demonstration ist, demonstrieren alle gegen sie.",
         "Deine Mutter ist so dick, sie hat ihr eigenes Kraftfeld.",
-        "Deine Mutter hat so viele Falten, dass ihr T-Shirt mehr Nähte hat als ein Baseball."
+        "Deine Mutter hat so viele Falten, dass ihr T-Shirt mehr Nähte hat als ein Baseball.",
+        "Deine Mutter ist so groß, sie geht in den Park, und der Rasen wird von ihr gemäht.",
+        "Deine Mutter ist so alt, sie hat in der ersten Staffel von *Friends* als Studiogast gespielt.",
+        "Deine Mutter ist so langsam, sie brauchte zwei Jahre, um 24 Stunden wach zu bleiben.",
+        "Deine Mutter ist so glatzköpfig, sie kann ihre Sonnebrille durch ihre Kopfhaut tragen.",
+        "Deine Mutter ist so schwer, dass sie die Waage als ihr persönliches Fitnessstudio benutzt.",
+        "Deine Mutter ist so lustig, dass sie sogar den Sensenmann zum Lachen bringt.",
+        "Deine Mutter ist so blind, dass sie eine Tüte Chips als Tablet hielt und versuchte, Netflix zu schauen."
     ];
 
     // Wähle einen zufälligen Yo Mama Witz aus
