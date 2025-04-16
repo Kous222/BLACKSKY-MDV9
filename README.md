@@ -13,7 +13,7 @@ Deploy to heroku create new app
 * https://github.com/clhuang/heroku-buildpack-webp-binaries.git
 
 ```javascript
-git clone https://github.com/ERLANRAHMAT/BLACKSKY-MDV9
+git clone https://github.com/madariss5/BLACKSKY-MDV9
 cd BLACKSKY-MDV9
 npm i
 npm start
