@@ -519,7 +519,7 @@ module.exports = {
                     if (!user.vip) user.vip = 'tidak'
                     if (!isNumber(user.vipPoin)) user.vipPoin = 0
                     if (!user.role) user.role = 'Newbie ㋡'
-                    if (!('autolevelup' in user)) user.autolevelup = true
+                    if (!('autolevelup' in user)) user.autolevelup = false
                     if (!('lastIstigfar' in user)) user.lastIstigfar = true
                   
                     //demon slayer dan rpg baru
