@@ -37,7 +37,7 @@ Verwende ${usedPrefix}${command} aus/off um es zu deaktivieren.
       return m.reply('🔄 Auto-Level ist bereits aktiviert!')
     }
     
-    user.autolevelup = false
+    user.autolevelup = true
     return m.reply('✅ Auto-Level wurde aktiviert! Du erhältst nun automatisch private Benachrichtigungen, wenn du ein Level aufsteigst.')
   }
   
