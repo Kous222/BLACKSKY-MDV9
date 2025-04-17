@@ -1,72 +1,95 @@
-const vorgestellt = {};
-const codes = {};
+let introCode = null;
+let vorgestellteUser = {};
 
-let handler = async (m, { conn, command, participants, isAdmin, isGroup }) => {
-    if (!isGroup) throw 'Dieser Befehl funktioniert nur in Gruppen.';
+function parseIntroInput(text) {
+    let parts = text.trim().split(/\s+/);
 
-    const groupId = m.chat;
+    let name = '', alter = '', ort = '', code = '';
 
-    // Vorstellung starten
-    if (command === 'vorstellung') {
-        if (!isAdmin) throw 'Nur Admins dürfen diesen Befehl nutzen.';
-
-        const code = Math.random().toString(36).substring(2, 7).toUpperCase();
-        codes[groupId] = code;
-        vorgestellt[groupId] = [];
-
-        const mentions = participants.map(p => p.id);
-        await conn.sendMessage(groupId, {
-            text: `*Vorstellung gestartet!*\n\nBitte stelle dich wie folgt vor:\n\n*${code}*\nName: Max\nAlter: 16\nWohnort/Bundesland: Bayern\n\nNur wer alle Angaben **und** den Code korrekt schreibt, wird als vorgestellt markiert.`,
-            mentions
-        });
-    }
-
-    // Nutzer stellt sich vor
-    if (codes[groupId]) {
-        const code = codes[groupId];
-        const msg = m.text?.trim();
-
-        if (msg && msg.includes(code)) {
-            const nameMatch = msg.match(/Name\s*[:\-]\s*(.+)/i);
-            const alterMatch = msg.match(/Alter\s*[:\-]\s*(\d+)/i);
-            const ortMatch = msg.match(/(Wohnort|Bundesland)\s*[:\-]\s*(.+)/i);
-
-            if (nameMatch && alterMatch && ortMatch) {
-                if (!vorgestellt[groupId].includes(m.sender)) {
-                    vorgestellt[groupId].push(m.sender);
-                    await conn.sendMessage(groupId, {
-                        text: `✅ *Vorstellung abgeschlossen:* @${m.sender.split('@')[0]}`,
-                        mentions: [m.sender]
-                    });
-                } else {
-                    m.reply('Du hast dich bereits vorgestellt.');
-                }
-            } else {
-                m.reply(`❌ Bitte stelle sicher, dass du folgende Angaben machst:\n- Name\n- Alter\n- Wohnort oder Bundesland\nUnd verwende den Code: *${code}*`);
-            }
+    for (let part of parts) {
+        if (/^\d{1,2}$/.test(part)) {
+            alter = part;
+        } else if (/^[A-Z0-9]{6,}$/.test(part)) {
+            code = part.toUpperCase();
+        } else if (!name) {
+            name = part;
+        } else {
+            ort += (ort ? ' ' : '') + part;
         }
     }
 
-    // Admin kann sehen, wer sich nicht vorgestellt hat
-    if (command === 'nichtvorgestellt') {
-        if (!isAdmin) throw 'Nur Admins dürfen diesen Befehl nutzen.';
+    return { name, alter, ort, code };
+}
 
-        const alle = participants.map(p => p.id);
-        const nicht = alle.filter(u => !vorgestellt[groupId]?.includes(u) && u !== conn.user.jid);
+let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
+    if (!m.isGroup) return m.reply('❌ Dieser Befehl funktioniert nur in Gruppen.');
 
-        if (nicht.length === 0) return m.reply('✅ *Alle Mitglieder haben sich vorgestellt!*');
+    let groupId = m.chat;
 
-        const liste = nicht.map(u => `@${u.split('@')[0]}`).join('\n');
-        await conn.sendMessage(groupId, {
-            text: `*Noch nicht vorgestellt:*\n${liste}`,
-            mentions: nicht
-        });
+    // Admin startet Vorstellungsrunde
+    if (command === 'introcode') {
+        if (!isAdmin && !isOwner) return m.reply('Nur Admins dürfen den Vorstellungsprozess starten.');
+        introCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+        vorgestellteUser[groupId] = {};
+        let participants = (await conn.groupMetadata(groupId)).participants.map(u => u.id);
+        let tagList = participants.map(p => '@' + p.split('@')[0]).join(' ');
+        return m.reply(
+            `*Vorstellungsrunde gestartet!*\n\n` +
+            `Verwende den Code: *${introCode}*\n` +
+            `Beispiel: .vorstellen Max 16 Berlin ${introCode}\n\n` +
+            `${tagList}`,
+            null,
+            { mentions: participants }
+        );
+    }
+
+    // Nutzer stellt sich vor
+    if (command === 'vorstellen') {
+        if (!introCode) return m.reply('❌ Es wurde noch kein Vorstellungscode festgelegt.');
+        if (!text) return m.reply('Bitte sende deine Daten wie z. B.: .vorstellen Max 16 Berlin ABC123');
+
+        let { name, alter, ort, code } = parseIntroInput(text);
+
+        if (code !== introCode) return m.reply('❌ Falscher oder fehlender Code.');
+        if (!name || !alter || !ort) {
+            return m.reply('❌ Bitte gib Name, Alter und Wohnort an.');
+        }
+
+        vorgestellteUser[groupId] = vorgestellteUser[groupId] || {};
+
+        if (vorgestellteUser[groupId][m.sender]) {
+            return m.reply('❌ Du hast dich bereits vorgestellt.');
+        }
+
+        vorgestellteUser[groupId][m.sender] = {
+            name,
+            alter,
+            ort
+        };
+
+        return m.reply(`✅ *Vorstellung erfolgreich!*\n\n*Name:* ${name}\n*Alter:* ${alter}\n*Wohnort:* ${ort}`);
+    }
+
+    // Admin überprüft wer fehlt
+    if (command === 'checkintro') {
+        if (!isAdmin && !isOwner) return m.reply('Nur Admins dürfen diesen Befehl nutzen.');
+        if (!vorgestellteUser[groupId]) return m.reply('Es gibt keine laufende Vorstellungsrunde.');
+
+        let participants = (await conn.groupMetadata(groupId)).participants.map(p => p.id);
+        let vorgestellt = Object.keys(vorgestellteUser[groupId]);
+        let nichtVorgestellt = participants.filter(p => !vorgestellt.includes(p) && !p.endsWith(conn.user.jid));
+
+        if (nichtVorgestellt.length === 0) return m.reply('✅ Alle Mitglieder haben sich vorgestellt!');
+
+        let list = nichtVorgestellt.map(p => '• @' + p.split('@')[0]).join('\n');
+        return m.reply(`*Noch nicht vorgestellt:*\n\n${list}`, null, { mentions: nichtVorgestellt });
     }
 };
 
-handler.help = ['vorstellung', 'nichtvorgestellt'];
+handler.help = ['introcode', 'vorstellen <Daten>', 'checkintro'];
 handler.tags = ['group'];
-handler.command = /^(vorstellung|nichtvorgestellt)$/i;
+handler.command = /^introcode$|^vorstellen$|^checkintro$/i;
 handler.group = true;
+handler.botAdmin = true;
 
 module.exports = handler;
