@@ -1,26 +1,20 @@
 let handler = async (m, { conn, usedPrefix, command, text }) => { 
-let memek = 'https://telegra.ph/file/1aa347ff346c2bf5ee181.jpg'
-let anu =`
+    let memek = 'https://telegra.ph/file/1aa347ff346c2bf5ee181.jpg'
+    let prozent = Math.floor(Math.random() * 101)
+    let eigenschaft = command.replace('cek', '').toUpperCase()
+    let antwort = `
 ────〔 *${command}* 〕────
 
-${command.replace('cek', '').toUpperCase()} STUFE *${Math.floor(Math.random() * 101)}*% 
+${eigenschaft} STUFE *${prozent}%*
 
-Seberapapun *${command.replace('cek', '').toUpperCase()}* Mu
-Tetap *SYUKURI* das`
-m.reply(anu)
+Egal, wie sehr du *${eigenschaft}* bist – 
+*sei einfach du selbst und sei dankbar!*
+`.trim()
+    m.reply(antwort)
 }
+
 handler.help = ['gay', 'pintar', 'cantik', 'ganteng', 'gabut', 'gila', 'lesbi', 'stress', 'bucin', 'jones', 'sadboy'].map(v => v + 'cek')
-handler.tags = ['kerang']
+handler.tags = ['spaß']
 handler.command = /^(gay|pintar|cantik|ganteng|gabut|gila|lesbi|stress?|bucin|jones|sadboy)cek/i
-handler.owner = false
-handler.mods = false
-handler.Premium = false
-handler.group = false
-handler.private = false
-
-handler.admin = false
-handler.botAdmin = false
-
-handler.fail = null
 
 module.exports = handler
