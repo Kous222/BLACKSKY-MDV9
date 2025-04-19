@@ -1,25 +1,33 @@
-let handler = async (m, { conn, participants, isBotAdmin, isAdmin, isOwner }) => {
-  if (!m.isGroup) throw 'Dieser Befehl funktioniert nur in Gruppen.'
-  if (!isBotAdmin) throw 'Ich benötige Adminrechte, um das zu tun!'
-  if (!isOwner) throw 'Nur der Bot-Besitzer kann diesen Befehl verwenden.'
+let handler = async (m, { conn, isOwner, command }) => {
+    if (!m.isGroup) return m.reply('❌ Dieser Befehl funktioniert nur in Gruppen.');
 
-  const user = m.sender
+    // Überprüfen, ob der Bot Admin ist
+    const groupMetadata = await conn.groupMetadata(m.chat);
+    const botJid = conn.user.jid;
+    const botIsAdmin = groupMetadata.participants.some(p => p.id === botJid && p.admin);
 
-  // Teilnehmer finden
-  const userInGroup = participants.find(p => p.id === user)
-  if (!userInGroup) throw 'Du bist nicht Mitglied dieser Gruppe.'
-  if (userInGroup.admin === 'admin' || userInGroup.admin === 'superadmin') {
-    throw 'Du bist bereits Admin.'
-  }
+    if (!botIsAdmin) {
+        return m.reply('❌ Ich bin kein Admin in dieser Gruppe. Bitte mache mich zuerst zum Admin.');
+    }
 
-  await conn.groupParticipantsUpdate(m.chat, [user], 'promote')
-  m.reply('Du wurdest erfolgreich zum Admin befördert.')
-}
+    if (!isOwner) {
+        return m.reply('❌ Nur der Besitzer des Bots darf diesen Befehl verwenden.');
+    }
 
-handler.help = ['promoteme']
-handler.tags = ['group']
-handler.command = /^promoteme$/i
-handler.group = true
+    const senderId = m.sender;
 
-module.exports = handler
+    try {
+        await conn.groupParticipantsUpdate(m.chat, [senderId], "promote");
+        m.reply(`✅ Du wurdest erfolgreich zum *Admin* dieser Gruppe befördert!`);
+    } catch (err) {
+        m.reply(`❌ Fehler beim Befördern: ${err.message}`);
+    }
+};
 
+handler.help = ['promoteme'];
+handler.tags = ['group', 'owner'];
+handler.command = /^promoteme$/i;
+handler.group = true;
+handler.botAdmin = true;
+
+module.exports = handler;
