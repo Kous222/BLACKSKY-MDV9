@@ -1,4 +1,3 @@
-
 let handler = async (m, { conn, usedPrefix }) => {
     
     // Bestimmen des Absenders, der den Befehl ausgeführt hat
@@ -28,13 +27,25 @@ Deine Antwort findest du hier:
     // Support-Gruppe (statische Gruppen-ID, die für alle Support-Anfragen verwendet wird)
     const supportGroupId = 'https://chat.whatsapp.com/FxyDG0AkovbBXc47OBSk9Q'; // Die Support-Gruppe, an die die Anfrage gesendet wird
 
+    // Stelle sicher, dass der Bot verbunden ist und die Verbindung stabil ist
+    if (!conn.user || !conn.user.jid) {
+        console.error('❌ Fehler: Die Verbindung des Bots ist nicht richtig initialisiert.');
+        return;
+    }
+
+    // Überprüfen, ob die Support-Gruppe existiert
+    if (!supportGroupId || !supportGroupId.includes('@g.us')) {
+        console.error('❌ Fehler: Ungültige Gruppen-ID für den Support.');
+        return;
+    }
+
     // Wenn der Befehl aus einer Gruppe kam, benachrichtige die Support-Gruppe über die Anfrage
-    if (supportGroupId) {
+    try {
         await conn.sendMessage(supportGroupId, {
             text: `🔧 Neue Support-Anfrage von ${who.split('@')[0]} (${who})\n🆔 Support-ID: ${supportId}\n📌 Anfrage: Der Nutzer möchte Unterstützung bei seinem Anliegen.`
         });
-    } else {
-        console.log('Die Anfrage kam nicht aus einer Gruppe.');
+    } catch (err) {
+        console.error('❌ Fehler beim Senden der Nachricht an die Support-Gruppe:', err);
     }
 }
 
