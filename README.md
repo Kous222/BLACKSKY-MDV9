@@ -23,3 +23,11 @@ npm start
 
 ```
 node index.js --pairing 
+
+
+
+
+
+SUPPORT GROUP
+
+https://chat.whatsapp.com/FxyDG0AkovbBXc47OBSk9Q
