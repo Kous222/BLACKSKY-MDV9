@@ -40,5 +40,5 @@ Deine Antwort findest du hier:
 handler.help = ['support'];
 handler.tags = ['support'];
 handler.command = ['support']; // Der Befehl, der das Skript aktiviert
-handler.rpg = true;
+handler.rpg = false;
 module.exports = handler;

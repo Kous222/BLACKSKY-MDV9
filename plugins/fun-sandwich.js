@@ -1,44 +1,35 @@
-let handler = async (m, { conn, usedPrefix, command, participants }) => {
-  try {
-    // Ensure there are at least 3 participants in the group
-    if (participants.length < 3) {
-      return m.reply('❌ Es sind nicht genügend Mitglieder in der Gruppe, um ein Sandwich zu erstellen. Mindestens 3 Mitglieder werden benötigt.');
-    }
+let handler = async (m, { conn, participants }) => {
+    if (!m.isGroup) throw '❌ Dieser Befehl kann nur in Gruppen verwendet werden.';
 
-    // Randomly pick users for the sandwich positions
-    let topUser = participants[Math.floor(Math.random() * participants.length)].jid;
-    let middleUser = participants[Math.floor(Math.random() * participants.length)].jid;
-    let bottomUser = participants[Math.floor(Math.random() * participants.length)].jid;
+    // Filtere alle Teilnehmer außer dem Bot
+    let members = participants.filter(p => p.id !== conn.user.jid).map(p => p.id);
 
-    // Ensure the users are not the same
-    while (topUser === middleUser || middleUser === bottomUser || topUser === bottomUser) {
-      topUser = participants[Math.floor(Math.random() * participants.length)].jid;
-      middleUser = participants[Math.floor(Math.random() * participants.length)].jid;
-      bottomUser = participants[Math.floor(Math.random() * participants.length)].jid;
-    }
+    if (members.length < 3) throw '⚠️ Es müssen mindestens 3 Teilnehmer in der Gruppe sein, um ein Sandwich zu bauen.';
 
-    // Prepare the sandwich message
-    let sandwichMessage = `🥪 *Das Sandwich der Gruppe* 🥪\n\n`;
-    sandwichMessage += `◦ *Oben*: @${topUser.split('@')[0]}\n`;
-    sandwichMessage += `◦ *Mitte*: @${middleUser.split('@')[0]}\n`;
-    sandwichMessage += `◦ *Unten*: @${bottomUser.split('@')[0]}\n`;
-    sandwichMessage += `Genießt das Sandwich!`;
+    // Mische Teilnehmer zufällig
+    let [top, middle, bottom] = members.sort(() => 0.5 - Math.random()).slice(0, 3);
 
-    // Send the message tagging the users
-    await conn.sendMessage(m.chat, {
-      text: sandwichMessage,
-      mentions: [topUser, middleUser, bottomUser],
-    }, { quoted: m });
-  } catch (err) {
-    // Log error for debugging
-    console.error('Error in sandwich plugin:', err);
-    m.reply('❌ Etwas ist schief gelaufen. Bitte versuche es später noch einmal.');
-  }
+    let topTag = '@' + top.split('@')[0];
+    let middleTag = '@' + middle.split('@')[0];
+    let bottomTag = '@' + bottom.split('@')[0];
+
+    let text = `
+╭━━━[ 🥪 *SANDWICH TIME* 🥪 ]━━━⬣
+┃ 🍞 *Obere Scheibe:* ${topTag}
+┃ 🧀 *Füllung:* ${middleTag}
+┃ 🍞 *Untere Scheibe:* ${bottomTag}
+╰━━━━━━━━━━━━━━━━━━━━━━⬣
+
+*Drei Zutaten – ein heißes Gruppen-Sandwich!*
+`;
+
+    await conn.sendMessage(m.chat, { text: text.trim(), mentions: [top, middle, bottom] });
 };
 
 handler.help = ['sandwich'];
 handler.tags = ['fun'];
-handler.command = /^(sandwich)$/i;
+handler.command = ['sandwich'];
 handler.group = true;
+handler.rpg = false;
 
 module.exports = handler;
