@@ -1,3 +1,4 @@
+
 let handler = async (m, { conn, usedPrefix }) => {
     
     // Bestimmen des Absenders, der den Befehl ausgeführt hat
@@ -24,11 +25,11 @@ Deine Antwort findest du hier:
 └──────────────
 `, m, { mentions: [who] });
 
-    // Nachricht an die Support-Gruppe senden
-    const supportGroupId = m.chat; // Die Gruppen-ID, in der der Befehl ausgeführt wurde
+    // Support-Gruppe (statische Gruppen-ID, die für alle Support-Anfragen verwendet wird)
+    const supportGroupId = 'https://chat.whatsapp.com/FxyDG0AkovbBXc47OBSk9Q'; // Die Support-Gruppe, an die die Anfrage gesendet wird
 
-    // Wenn der Befehl aus einer Gruppe kam, benachrichtige die Gruppe über die Anfrage
-    if (supportGroupId.includes('@g.us')) {
+    // Wenn der Befehl aus einer Gruppe kam, benachrichtige die Support-Gruppe über die Anfrage
+    if (supportGroupId) {
         await conn.sendMessage(supportGroupId, {
             text: `🔧 Neue Support-Anfrage von ${who.split('@')[0]} (${who})\n🆔 Support-ID: ${supportId}\n📌 Anfrage: Der Nutzer möchte Unterstützung bei seinem Anliegen.`
         });
