@@ -5,15 +5,15 @@ let handler = async (m, { conn, usedPrefix, command, participants }) => {
   }
 
   // Randomly pick users for the sandwich positions
-  const topUser = participants[Math.floor(Math.random() * participants.length)];
-  const middleUser = participants[Math.floor(Math.random() * participants.length)];
-  const bottomUser = participants[Math.floor(Math.random() * participants.length)];
+  const topUser = participants[Math.floor(Math.random() * participants.length)].jid;
+  const middleUser = participants[Math.floor(Math.random() * participants.length)].jid;
+  const bottomUser = participants[Math.floor(Math.random() * participants.length)].jid;
 
   // Ensure the users are not the same
   while (topUser === middleUser || middleUser === bottomUser || topUser === bottomUser) {
-    topUser = participants[Math.floor(Math.random() * participants.length)];
-    middleUser = participants[Math.floor(Math.random() * participants.length)];
-    bottomUser = participants[Math.floor(Math.random() * participants.length)];
+    topUser = participants[Math.floor(Math.random() * participants.length)].jid;
+    middleUser = participants[Math.floor(Math.random() * participants.length)].jid;
+    bottomUser = participants[Math.floor(Math.random() * participants.length)].jid;
   }
 
   // Prepare the sandwich message
