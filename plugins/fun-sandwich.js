@@ -5,9 +5,9 @@ let handler = async (m, { conn, usedPrefix, command, participants }) => {
   }
 
   // Randomly pick users for the sandwich positions
-  const topUser = participants[Math.floor(Math.random() * participants.length)].jid;
-  const middleUser = participants[Math.floor(Math.random() * participants.length)].jid;
-  const bottomUser = participants[Math.floor(Math.random() * participants.length)].jid;
+  let topUser = participants[Math.floor(Math.random() * participants.length)].jid;
+  let middleUser = participants[Math.floor(Math.random() * participants.length)].jid;
+  let bottomUser = participants[Math.floor(Math.random() * participants.length)].jid;
 
   // Ensure the users are not the same
   while (topUser === middleUser || middleUser === bottomUser || topUser === bottomUser) {
