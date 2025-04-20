@@ -1,25 +1,24 @@
-const timeout = 28800000
+const timeout = 28800000 // 8 Stunden
 
-let handler = async (m, { conn, usedPrefix, text }) => {
-  //      let timerand = `${Math.floor(Math.random() * 259200000)}`.trim()
-	    let time = global.db.data.users[m.sender].lastnebang + 28800000
-  if (new Date - global.db.data.users[m.sender].lastnebang< 28800000) throw `Sie bereits nebang\nBitte warten Ergebnis nebang mu\nTunggu während ${msToTime(time - new Date())} wieder`
-   // if (global.db.data.users[m.sender].aqua > 9) {
-   // let aquah = `${Math.floor(Math.random() * 5)}`.trim()
-    let kayu = `${Math.floor(Math.random() * 45)}`.trim()
-    // global.db.data.users[m.sender].aqua -= aquah * 1
-    global.db.data.users[m.sender].kayu += kayu * 1
-	/*let pisangnye = `${Math.floor(Math.random(global.db.data.users[m.sender].pisang = pisangpoin) * 1)}`.trim()
-	let jeruknye = `${Math.floor(Math.random(global.db.data.users[m.sender].jeruk = jerukpoin) * 1)}`.trim()
-	let mangganye = `${Math.floor(Math.random(global.db.data.users[m.sender].mangga = manggapoin) * 1)}`.trim()
-	let anggurnye = `${Math.floor(Math.random(global.db.data.users[m.sender].anggur = anggurpoin) * 1)}`.trim()
-	let apelnye = `${Math.floor(Math.random(global.db.data.users[m.sender].apel = apelpoin) * 10000)}`.trim()*/
-	global.db.data.users[m.sender].lastnebang = new Date * 1
-  conn.reply(m.chat, `Herzlichen Glückwunsch du erhalten : \n🪵Kayu\n+sebanyak: ${kayu}`, m)
+let handler = async (m, { conn }) => {
+  let user = global.db.data.users[m.sender]
+  let time = user.lastnebang + timeout
+
+  if (new Date - user.lastnebang < timeout) {
+    let restzeit = msToTime(time - new Date())
+    throw `⏳ Du hast heute schon Holz gehackt.\n\nBitte warte *${restzeit}*, bevor du erneut Holz hacken kannst.`
+  }
+
+  let kayu = Math.floor(Math.random() * 45)
+  user.kayu = (user.kayu || 0) + kayu
+  user.lastnebang = new Date * 1
+
+  conn.reply(m.chat, `🪓 Du hast erfolgreich Holz gehackt!\n\n🌲 Erhaltenes Holz: *+${kayu} Stück*`, m)
 }
-handler.help = ['nebang']
+
+handler.help = ['chop']
 handler.tags = ['rpg']
-handler.command = /^(nebang)/i
+handler.command = /^(chop)$/i
 handler.group = true
 handler.rpg = true
 handler.fail = null
@@ -30,15 +29,9 @@ handler.Münzen = 0
 module.exports = handler
 
 function msToTime(duration) {
-  var milliseconds = parseInt((duration % 1000) / 100),
-    seconds = Math.floor((duration / 1000) % 60),
-    minutes = Math.floor((duration / (1000 * 60)) % 60),
-    hours = Math.floor((duration / (1000 * 60 * 60)) % 24)
-    
-  
-  hours = (hours < 10) ? "0" + hours : hours
-  minutes = (minutes < 10) ? "0" + minutes : minutes
-  seconds = (seconds < 10) ? "0" + seconds : seconds
+  let seconds = Math.floor((duration / 1000) % 60)
+  let minutes = Math.floor((duration / (1000 * 60)) % 60)
+  let hours = Math.floor((duration / (1000 * 60 * 60)) % 24)
 
-  return hours + " jam " + minutes + " menit " + seconds + " Sekunden"
+  return `${hours} Std. ${minutes} Min. ${seconds} Sek.`
 }

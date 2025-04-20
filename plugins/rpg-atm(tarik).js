@@ -1,28 +1,21 @@
-const Münzenmins = 1
-let handler = async (m, { conn, command, args }) => {
-  let count = command.replace(/^pull/i, '')
-  count = count ? /all/i.test(count) ? Math.floor(global.db.data.users[m.sender].bank / Münzenmins) : parseInt(count) : args[0] ? parseInt(args[0]) : 1
-  count = Math.max(1, count)
-  if (global.db.data.users[m.sender].bank >= Münzenmins * count) {
-    global.db.data.users[m.sender].bank -= Münzenmins * count
-    global.db.data.users[m.sender].Münzen += count
-    conn.reply(m.chat, `🚩 -${Münzenmins * count} ATM\n+ ${count} Money`, m)
-  } else conn.reply(m.chat, `🚩 ATM you are left ${count} !!`, m)
-}
-handler.help = ['pull *<amount>*', 'pullall']
-handler.tags = ['rpg']
-handler.command = /^pull([0-9]+)|pull|pullall$/i
-handler.Besitzer = false
-handler.mods = false
-handler.Premium = false
-handler.group = false
-handler.private = false
-handler.limit = true
-handler.admin = false
-handler.botAdmin = false
-handler.rpg = true
+let handler = async (m, { conn, args }) => {
+  let user = global.db.data.users[m.sender]
+  user.Münzen ??= 0
+  user.bank ??= 0
 
-handler.fail = null
-handler.exp = 0
+  let amount = parseInt(args[0])
+  if (isNaN(amount) || amount <= 0) return m.reply('❌ Bitte gib einen gültigen Betrag zum Abheben an.\n\nBeispiel: *.pull 200*')
+  if (user.bank < amount) return m.reply('❌ Du hast nicht genug Guthaben auf deinem Bankkonto.')
+
+  user.bank -= amount
+  user.Münzen += amount
+
+  m.reply(`✅ Du hast erfolgreich *${amount} Münzen* von deinem Bankkonto abgehoben.`)
+}
+
+handler.help = ['pull <Betrag> - Hebe Geld von deinem Bankkonto ab.']
+handler.tags = ['rpg']
+handler.command = /^pull$/i
+handler.rpg = true
 
 module.exports = handler
