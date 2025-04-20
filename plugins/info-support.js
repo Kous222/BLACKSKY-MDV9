@@ -26,8 +26,8 @@ Deine Antwort findest du hier:
 
     // Array von Gruppen-IDs, an die die Anfrage gesendet werden soll
     const supportGroupIds = [
-        'https://chat.whatsapp.com/FxyDG0AkovbBXc47OBSk9Q', // Beispiel 1
-        'https://chat.whatsapp.com/LiESc5gBSCTG79iHL3uAUA', // Beispiel 2
+        'FxyDG0AkovbBXc47OBSk9Q@g.us', // Beispiel 1
+        'LiESc5gBSCTG79iHL3uAUA@g.us', // Beispiel 2
         'https://chat.whatsapp.com/AnotherGroupID2', // Beispiel 3
     ];
 
