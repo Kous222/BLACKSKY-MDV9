@@ -2,13 +2,11 @@ const TicTacToe = require("../lib/tictactoe")
 
 let handler = async (m, { conn, usedPrefix, command, text }) => {
     conn.spiel = conn.spiel ? conn.spiel : {}
-    if (Object.values(conn.spiel).find(room => room.id.startsWith('tictactoe') && [room.spiel.playerX, room.spiel.playerO].includes(m.sender)))
-        throw 'Du bist bereits in einem laufenden Spiel.'
-
+    if (Object.values(conn.spiel).find(room => room.id.startsWith('tictactoe') && [room.spiel.playerX, room.spiel.playerO].includes(m.sender))) throw 'du noch didalam spiel'
     let room = Object.values(conn.spiel).find(room => room.state === 'WAITING' && (text ? room.name === text : true))
-
+    // m.reply('[WIP Feature]')
     if (room) {
-        m.reply('Spielpartner gefunden!')
+        m.reply('Partner gefunden!')
         room.o = m.chat
         room.spiel.playerO = m.sender
         room.state = 'PLAYING'
@@ -28,13 +26,13 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
             }[v]
         })
         let str = `
-Raum-ID: ${room.id}
+Room id: ${room.id}
 ${arr.slice(0, 3).join('')}
 ${arr.slice(3, 6).join('')}
 ${arr.slice(6).join('')}
 
-Warte auf Zug von @${room.spiel.currentTurn.split('@')[0]}
-Gib *nyerah* ein, um aufzugeben.
+Menünggu @${room.spiel.currentTurn.split('@')[0]}
+Tippe *nyerah* für nyerah
 `.trim()
         if (room.x !== room.o) m.reply(str, room.x, {
             contextInfo: {
@@ -55,13 +53,13 @@ Gib *nyerah* ein, um aufzugeben.
             state: 'WAITING'
         }
         if (text) room.name = text
-        m.reply('Warte auf einen Mitspieler... ' + (text ? `Tippe diesen Befehl in einem anderen Chat:\n${usedPrefix}${command} ${text}` : ''))
+        m.reply('Warte auf Partner... ' + (text ? `tippe command unter diesem\n${usedPrefix}${command} ${text}` : ''))
         conn.spiel[room.id] = room
     }
 }
 
-handler.help = ['tictactoe', 'ttt'].map(v => v + ' [benutzerdefinierter Raumname]')
+handler.help = ['tictactoe', 'ttt'].map(v => v + ' [custom room name]')
 handler.tags = ['spiel']
-handler.command = /^(tictactoe|t{3})$/i
+handler.command = /^(tictactoe|t{3})$/
 
 module.exports = handler
