@@ -1,4 +1,4 @@
-const { delay } = require('@whiskeysockets/baileys');
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 let war = global.maxwarn || 3;
 
