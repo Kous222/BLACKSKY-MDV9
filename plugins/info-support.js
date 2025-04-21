@@ -1,72 +1,56 @@
-let handler = async (m, { conn, usedPrefix }) => {
-    
-    // Bestimmen des Absenders, der den Befehl ausgeführt hat
-    let who = m.quoted ? m.quoted.sender : m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender;
-    
-    // Prüfen, ob der Nutzer in der Datenbank existiert
-    let user = global.db.data.users[who];
-    if (!(who in global.db.data.users)) throw `✳️ Der Nutzer ist nicht in meiner Datenbank.`;
-    
-    // Generiere eine zufällige Support-ID
-    const supportId = Math.floor(Math.random() * 100000); // Zufällige Support-ID
-    
-    // Antwort an den Nutzer, dass der Support-Antrag registriert wurde
-    conn.reply(m.chat, `
-┌───⊷ *Support-Anfrage* ⊶
-▢ *📌Name* : _@${who.split('@')[0]}_
-▢ *🆔Support ID* : _${supportId}_
-▢ *🔧Support-Ticket* : Deine Anfrage wurde registriert und wir werden uns so schnell wie möglich darum kümmern.
+let handler = async (m, { conn, text, usedPrefix, command }) => {
+  // Wer hat den Befehl ausgeführt?
+  let who = m.quoted 
+    ? m.quoted.sender 
+    : m.mentionedJid && m.mentionedJid.length 
+    ? m.mentionedJid[0] 
+    : m.fromMe 
+    ? conn.user.jid 
+    : m.sender;
 
-*HINWEIS:*
-Deine Antwort findest du hier:
-❏ *INFO FAQ* : https://chat.whatsapp.com/LiESc5gBSCTG79iHL3uAUA
-❏ *FUN FAQ* : https://chat.whatsapp.com/FCH7wgEzDj7KRPdSK4ehQ3
-└──────────────
-`, m, { mentions: [who] });
+  // Nutzer in Datenbank prüfen
+  if (!(who in global.db.data.users)) {
+    throw '✳️ Der Nutzer ist nicht in meiner Datenbank.';
+  }
 
-    // Array von Gruppen-IDs, an die die Anfrage gesendet werden soll
-    const supportGroupIds = [
-        'FxyDG0AkovbBXc47OBSk9Q@g.us', // Beispiel 1
-        'LiESc5gBSCTG79iHL3uAUA@g.us', // Beispiel 2
-        'https://chat.whatsapp.com/AnotherGroupID2', // Beispiel 3
-    ];
+  // Text prüfen
+  if (!text) {
+    throw `Bitte gib ein Anliegen an. Beispiel:\n${usedPrefix + command} Ich brauche Hilfe beim Spielstart.`;
+  }
 
-    // Stelle sicher, dass der Bot verbunden ist und die Verbindung stabil ist
-    if (!conn.user || !conn.user.jid) {
-        console.error('❌ Fehler: Die Verbindung des Bots ist nicht richtig initialisiert.');
-        return;
-    }
+  // Zufällige Support-ID generieren
+  const supportId = Math.floor(Math.random() * 100000);
 
-    // Überprüfen, ob alle Gruppen-IDs korrekt sind
-    for (let groupId of supportGroupIds) {
-        if (!groupId || !groupId.includes('@g.us')) {
-            console.error('❌ Fehler: Ungültige Gruppen-ID für den Support.');
-            return;
-        }
-    }
+  // Nachricht an den Nutzer
+  await conn.reply(m.chat,  
+`┌───⊷ Support-Anfrage ⊶
+▢ 📌 Name: @${who.split('@')[0]}
+▢ 🆔 Support-ID: ${supportId}
+▢ 📝 Anfrage: ${text}
+▢ 🔧 Status: Deine Anfrage wurde registriert. Wir melden uns bald!
 
-    // Wenn der Befehl aus einer Gruppe kam, benachrichtige alle Gruppen über die Anfrage
-    try {
-        // Benutzeranfrage extrahieren
-        let supportMessage = m.text.replace(`${usedPrefix}support`, '').trim();
-        
-        if (supportMessage) {
-            // Sende die Support-Nachricht an jede Gruppe in der Liste
-            for (let groupId of supportGroupIds) {
-                await conn.sendMessage(groupId, {
-                    text: `🔧 Neue Support-Anfrage von ${who.split('@')[0]} (${who})\n🆔 Support-ID: ${supportId}\n📌 Anfrage: ${supportMessage}`
-                });
-            }
-        } else {
-            console.error('❌ Fehler: Keine Nachricht nach .support-Befehl.');
-        }
-    } catch (err) {
-        console.error('❌ Fehler beim Senden der Nachricht an die Support-Gruppen:', err);
-    }
-}
+Antworten findest du in:
+❏ INFO FAQ: https://chat.whatsapp.com/LiESc5gBSCTG79iHL3uAUA
+❏ FUN FAQ: https://chat.whatsapp.com/FCH7wgEzDj7KRPdSK4ehQ3
+└──────────────`,
+    m, { mentions: [who] });
+
+  // Nachricht an die Support-Gruppe
+  const supportGroupId = '120363399996195320@g.us'; // <- Hier echte Gruppen-JID eintragen
+
+  await conn.sendMessage(supportGroupId, {
+    text: `📥 *Neue Support-Anfrage*
+
+👤 *Von:* @${who.split('@')[0]}
+🆔 *Support-ID:* ${supportId}
+📝 *Anliegen:* ${text}`,
+    mentions: [who]
+  });
+};
 
 handler.help = ['support'];
 handler.tags = ['support'];
-handler.command = ['support']; // Der Befehl, der das Skript aktiviert
-handler.rpg = false;
+handler.command = ['support'];
+handler.rpg = true;
+
 module.exports = handler;
