@@ -1,13 +1,21 @@
-let handler = async (m, {conn, usedPrefix}) => {
-        
-    let who = m.quoted ? m.quoted.sender : m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender
-    let user = global.db.data.users[who]
-    if (!(who in global.db.data.users)) throw `✳️ Der Nutzer ist nicht in meiner database`
-    conn.reply(m.chat, `
-┌───⊷ *BILANZ* ⊶
-▢ *📌name* : _@${who.split('@')[0]}_
-▢ *💎Diamanten* : _${user.Diamant}_
-▢ *⬆️XP* : _Gesamt ${user.exp}_
+let handler = async (m, { conn }) => {
+  const userId = m.sender;
+  const userName = m.pushName || 'Unbekannt';
+  
+  if (!global.db.data.users[userId]) {
+    return m.reply('❌ Du hast noch kein Bankkonto. Erstelle zuerst ein Konto mit .createaccount');
+  }
+
+  const balance = global.db.data.users[userId].balance;
+  m.reply(`💰 *Kontostand von ${userName}:* ${balance}€`);
+};
+
+handler.command = ['balance'];
+handler.help = ['balance'];
+handler.tags = ['bank'];
+
+module.exports = handler;
+ser.exp}_
 ▢ *GELD* : _Gesamt ${user.Münzen}_
 └──────────────
 
