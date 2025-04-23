@@ -1,17 +1,43 @@
-let handler = async (m, { conn, text }) => {
-  if (!text) throw '❗ Bitte gib die Nutzer-ID an.';
+const fs = require('fs');
+const path = './lib/ideas.json';
 
-  await conn.sendMessage(text.trim(), {
-    text: `✅ *Gute Neuigkeiten!*  
-Deine Idee wurde *angenommen*. Danke für deinen Beitrag zur Community!`,
-  });
+const command = async (m, { conn, args }) => {
+  if (m.sender !== global.owner[0]) return m.reply('❌ Nur der Bot-Owner darf Ideen annehmen.');
+  const id = (args[0] || '').trim().toLowerCase();
+  if (!id) return m.reply('❗ Beispiel: .acceptidea ID-XYZ');
 
-  await m.reply('✅ Die Idee wurde als *angenommen* markiert.');
+  let ideas = [];
+  try {
+    ideas = JSON.parse(fs.readFileSync(path));
+  } catch (e) {
+    return m.reply('❌ Fehler beim Laden der Ideen.');
+  }
+
+  const idea = ideas.find(i => (i.id || '').toLowerCase() === id);
+  if (!idea) return m.reply(`❌ Keine Idee mit der ID *${id}* gefunden.`);
+
+  idea.status = 'angenommen';
+  fs.writeFileSync(path, JSON.stringify(ideas, null, 2));
+
+  await conn.sendMessage(idea.user, {
+    text: `✅ *Deine Idee wurde angenommen!*\n\nDanke für deinen Beitrag: ${idea.text}`
+  }).catch(() => {});
+
+  m.reply(`✅ Idee *${idea.id}* wurde erfolgreich angenommen.`);
 };
 
-handler.command = ['acceptidea'];
-handler.help = ['acceptidea <jid>'];
-handler.tags = ['community'];
-handler.rowner = true;
+module.exports = [
+  {
+    command: ['acceptidea'],
+    tags: ['community'],
+    help: ['acceptidea <id>'],
+    group: true,
+    admin: false,
+    owner: true,
+    run: command
+  }
+];
+.tags = ['community'];
+handler.admin = true;
 
 module.exports = handler;
