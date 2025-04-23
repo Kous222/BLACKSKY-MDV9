@@ -1,85 +1,77 @@
 const fs = require('fs');
-const path = require('path');
+const path = './lib/info-listgroup.json';
 
-let handler = async (m, { conn, participants }) => {
-    let now = new Date() * 1;
-    let groups = [];
+const msToDate = (ms) => {
+  const d = Math.floor(ms / 86400000);
+  const h = Math.floor(ms % 86400000 / 3600000);
+  const m = Math.floor(ms % 3600000 / 60000);
+  return `${d} Tag(e), ${h} Stunde(n), ${m} Minute(n)`;
+};
 
+let handler = async (m, { conn }) => {
+  if (!fs.existsSync(path)) fs.writeFileSync(path, JSON.stringify({}, null, 2));
+
+  let groupData = {};
+  try {
+    const fileContent = fs.readFileSync(path, 'utf-8');
+    groupData = fileContent.trim() ? JSON.parse(fileContent) : {};
+  } catch (e) {
+    console.error('Fehler beim Einlesen der JSON-Datei:', e);
+    groupData = {};
+  }
+
+  const now = Date.now();
+  let text = '';
+
+  let allGroups;
+  try {
+    allGroups = await conn.groupFetchAllParticipating();
+  } catch (e) {
+    console.error('Fehler beim Abrufen der Gruppen:', e);
+    return m.reply('❌ Fehler beim Laden der Gruppen.');
+  }
+
+  const groupIDs = Object.keys(allGroups);
+
+  for (const jid of groupIDs) {
+    const metadata = allGroups[jid];
+    const name = metadata?.subject || 'Unbenannte Gruppe';
+
+    if (!groupData[jid]) {
+      groupData[jid] = {
+        isBanned: false,
+        welcome: false,
+        antiLink: false,
+        delete: true,
+        expired: null
+      };
+    }
+
+    const g = groupData[jid];
+    const ablauf = g.expired ? msToDate(g.expired - now) : '*Keine abgelaufene Gruppe festgelegt*';
+
+    let inviteLink = '';
     try {
-        // Fetch all groups the bot is participating in
-        const allGroups = await conn.groupFetchAllParticipating();
-        groups = Object.keys(allGroups); // Get the group IDs from the response
-    } catch (e) {
-        console.error('Error fetching groups:', e);
-        m.reply('Es gab ein Problem beim Abrufen der Gruppen!');
-        return;
+      const code = await conn.groupInviteCode(jid);
+      inviteLink = `https://chat.whatsapp.com/${code}`;
+    } catch (err) {
+      inviteLink = '*Kein Link verfügbar (Bot ist kein Admin)*';
     }
 
-    // Debugging: Log all groups fetched
-    console.log('All Groups the Bot is in:', groups);
+    text += `📛 *${name}*\n🆔 ${jid}\n🔗 ${inviteLink}\n${ablauf}
+${g.isBanned ? '✅' : '❌'} _Gesperrt_
+${g.welcome ? '✅' : '❌'} _Willkommen_
+${g.antiLink ? '✅' : '❌'} _Anti-Link_\n\n`;
+  }
 
-    let txt = '';
+  fs.writeFileSync(path, JSON.stringify(groupData, null, 2));
 
-    let groupDataFile = path.join(__dirname, 'info-listgroup.json');
-    let groupData;
+  m.reply(`📋 *Gruppenübersicht*\n\nGesamt: ${groupIDs.length}\n\n${text}`.trim());
+};
 
-    if (fs.existsSync(groupDataFile)) {
-        groupData = JSON.parse(fs.readFileSync(groupDataFile, 'utf-8'));
-    } else {
-        groupData = {};
-    }
-
-    // Check if group data has been added for each group
-    for (let jid in groupData) {
-        if (!groups.includes(jid)) {
-            groups.push(jid); // Ensure groups from the data file are added to the list
-        }
-    }
-
-    // Fetch group info for each group the bot is part of
-    for (let jid of groups) {
-        let chat = conn.chats[jid] || {};
-        let groupInfo = groupData[jid] || {
-            isBanned: false,
-            welcome: false,
-            antiLink: false,
-            delete: true,
-        };
-        groupData[jid] = groupInfo;
-
-        // Build the output string
-        txt += `${await conn.getName(jid)}\n${jid} [${chat?.metadata?.read_only ? 'Verlassen' : 'Beigetreten'}]\n${groupInfo.expired ? msToDate(groupInfo.expired - now) : '*Keine abgelaufene Gruppe festgelegt*'}
-${groupInfo.isBanned ? '✅' : '❌'} _Gruppe gesperrt_
-${groupInfo.welcome ? '✅' : '❌'} _Auto Willkommen_
-${groupInfo.antiLink ? '✅' : '❌'} _Anti Link_\n\n`;
-    }
-
-    // Send the group list to the user
-    m.reply(`Gruppenliste:
-Gesamtanzahl Gruppen: ${groups.length}
-
-${txt}
-
-`.trim());
-
-    // Update the group data file
-    fs.writeFileSync(groupDataFile, JSON.stringify(groupData, null, 2));
-}
-
+handler.command = ['grouplist', 'groups', 'listgroup'];
 handler.help = ['grouplist'];
 handler.tags = ['group'];
-handler.command = /^(group(s|list)|(s|list)group)$/i;
+handler.rowner = true;
 
 module.exports = handler;
-
-// Convert milliseconds to date format (days, hours, minutes)
-function msToDate(ms) {
-    let days = Math.floor(ms / (24 * 60 * 60 * 1000));
-    let daysms = ms % (24 * 60 * 60 * 1000);
-    let hours = Math.floor((daysms) / (60 * 60 * 1000));
-    let hoursms = ms % (60 * 60 * 1000);
-    let minutes = Math.floor((hoursms) / (60 * 1000));
-    let minutesms = ms % (60 * 1000);
-    let sec = Math.floor((minutesms) / (1000));
-    return `${days} Tag ${hours} Stunde ${minutes} Minute`;
-}

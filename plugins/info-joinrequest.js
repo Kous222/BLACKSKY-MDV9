@@ -1,52 +1,53 @@
-// joinrequests.js
-
 let joinRequests = global.joinRequests = global.joinRequests || [];
 
-let handler = async (m, { conn, text, usedPrefix, command }) => {
-  if (command === 'joinrequest') {
-    if (!text || !text.includes('whatsapp.com')) {
-      throw `Bitte sende einen gültigen Gruppenlink.\nBeispiel:\n${usedPrefix}joinrequest https://chat.whatsapp.com/ABCDEFG123456`;
-    }
+let handler = async (m, { conn, args, usedPrefix, command }) => {
+  const action = (args[0] || '').toLowerCase();
+  const index = parseInt(args[1]) - 1;
 
-    joinRequests.push({ link: text.trim(), sender: m.sender });
-    await m.reply('✅ Deine Beitrittsanfrage wurde gespeichert. Ein Admin kann den Bot mit `.acceptjoinrequest [Zahl]` hinzufügen.');
+  if (!action) {
+    if (!joinRequests.length) throw '📭 Keine offenen Beitrittsanfragen.';
 
-    // Sende Bestätigung an Supportgruppe
-    const supportGroupId = '120363399996195320@g.us';
-    await conn.sendMessage(supportGroupId, {
-      text: `📩 Neue Join-Anfrage:
+    let list = joinRequests.map((req, i) =>
+      `*${i + 1}.* 👤 @${req.sender.split('@')[0]}\n🔗 ${req.link}`
+    ).join('\n\n');
 
-🔗 Gruppenlink: ${text}
-👤 Von: @${m.sender.split('@')[0]}
-
-Antworte mit: *.acceptjoinrequest ${joinRequests.length}* um beizutreten.`,
-      mentions: [m.sender],
-    });
-
-  } else if (command === 'acceptjoinrequest') {
-    let index = parseInt(text) - 1;
-    if (isNaN(index) || index < 0 || index >= joinRequests.length) {
-      throw `❌ Ungültiger Index. Benutze: ${usedPrefix}acceptjoinrequest [Nummer]`;
-    }
-
-    let { link, sender } = joinRequests[index];
-    joinRequests.splice(index, 1); // Entferne nach dem Beitritt
-
-    let code = link.trim().split('/').pop();
-    await conn.groupAcceptInvite(code);
-
-    await m.reply('✅ Bot ist der Gruppe beigetreten.');
-
-    // Optional: Nachricht an den Anfragenden
-    await conn.sendMessage(sender, {
-      text: `✅ Der Bot ist deiner Gruppe beigetreten!\nDanke für deine Anfrage.`,
+    return conn.sendMessage(m.chat, {
+      text: `📬 *Offene Beitrittsanfragen:*\n\n${list}`,
+      mentions: joinRequests.map(req => req.sender)
     });
   }
+
+  if (action === 'clear') {
+    joinRequests.length = 0;
+    return m.reply('✅ Alle Beitrittsanfragen wurden gelöscht.');
+  }
+
+  if (isNaN(index) || index < 0 || index >= joinRequests.length)
+    throw `❗ Ungültiger Index. Benutze z. B. \`${usedPrefix + command} accept 1\``;
+
+  const { link, sender } = joinRequests[index];
+
+  if (action === 'accept') {
+    joinRequests.splice(index, 1);
+    await conn.groupAcceptInvite(link.split('/').pop());
+    return m.reply(`✅ Anfrage von @${sender.split('@')[0]} wurde **akzeptiert** und der Bot ist der Gruppe beigetreten.`, null, {
+      mentions: [sender]
+    });
+  }
+
+  if (action === 'decline') {
+    joinRequests.splice(index, 1);
+    return m.reply(`❌ Anfrage von @${sender.split('@')[0]} wurde **abgelehnt** und gelöscht.`, null, {
+      mentions: [sender]
+    });
+  }
+
+  throw `❗ Unbekannter Befehl. Verwende:\n- \`${usedPrefix + command} accept <Nummer>\`\n- \`${usedPrefix + command} decline <Nummer>\`\n- \`${usedPrefix + command} clear\``;
 };
 
-handler.help = ['joinrequest <link>', 'acceptjoinrequest <nummer>'];
+handler.help = ['joinrequests', 'joinrequests accept <Nummer>', 'joinrequests decline <Nummer>', 'joinrequests clear'];
 handler.tags = ['owner'];
-handler.command = ['joinrequest', 'acceptjoinrequest'];
+handler.command = ['joinrequests'];
 handler.rowner = true;
 
 module.exports = handler;
