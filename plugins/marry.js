@@ -12,7 +12,7 @@ let handler = async (m, { conn, text, participants }) => {
 
   // Crafting the marriage proposal message
   let message = `💍💖 *Heiratsantrag für @${name}* 💖💍\n\n` +
-    'Liebe/r @' + name + ',\n\n' +
+    `Liebe/r @${name},\n\n` +
     'Mit all meiner Liebe und meinem Herzen frage ich dich, möchtest du den Rest deines Lebens mit mir verbringen? 😍💍\n\n' +
     'Bist du bereit, meine Hand zu nehmen und mit mir die Reise der Liebe zu beginnen? 💑\n\n' +
     'Ich freue mich auf deine Antwort und hoffe, dass du "Ja" sagst! 🤞💖\n\n' +
@@ -52,3 +52,5 @@ handler.tags = ['fun'];
 handler.command = /^marry$/i;
 
 module.exports = handler;
+
+er;
