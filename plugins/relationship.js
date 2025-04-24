@@ -1,6 +1,16 @@
 let handler = async (m, { conn, text, participants }) => {
+  // Ensure there are participants in the group
+  if (!participants || participants.length === 0) {
+    return m.reply('Es gibt keine Teilnehmer im Chat!');
+  }
+
   // Select a random participant from the group
   let randomParticipant = participants[Math.floor(Math.random() * participants.length)].jid;
+
+  // Ensure the random participant has a valid jid
+  if (!randomParticipant) {
+    return m.reply('Es gab ein Problem beim Auswählen eines Teilnehmers!');
+  }
 
   // Get the name of the selected random participant
   let name = await conn.getName(randomParticipant);
