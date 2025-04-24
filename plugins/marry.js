@@ -52,5 +52,3 @@ handler.tags = ['fun'];
 handler.command = /^marry$/i;
 
 module.exports = handler;
-
-er;
