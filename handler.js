@@ -74,7 +74,6 @@ setInterval(() => {
 }, 30000); // Alle 30 Sekunden ausführen
 
 module.exports = {
-    // Hauptnachrichtenverarbeitungshandler (Main message processing handler)
     async handler(chatUpdate) {
         if (global.db.data == null) await loadDatabase()
         this.msgqueque = this.msgqueque || []
@@ -92,26 +91,26 @@ module.exports = {
             m.exp = 0
             m.limit = false
             
-            // Frühe Bann-Prüfung - Prüfe nur Befehlsnachrichten von gebannten Benutzern (Early ban check - only check command messages from banned users)
+            // Frühe Bann-Prüfung - Prüfe nur Befehlsnachrichten von gebannten Benutzern
             try {
                 if (m.sender) {
-                    // Prüfe zuerst, ob es sich um einen Befehl handelt (First check if it's a command)
+                    // Prüfe zuerst, ob es sich um einen Befehl handelt
                     const isCommand = m.text && (m.text.startsWith('.') || m.text.startsWith('/') || m.text.startsWith('!'))
                     
-                    // Nur Befehle prüfen - normale Nachrichten von gebannten Benutzern ignorieren (Only check commands - ignore normal messages from banned users)
+                    // Nur Befehle prüfen - normale Nachrichten von gebannten Benutzern ignorieren
                     if (isCommand) {
                         let userBan = global.db.data.users[m.sender]
                         if (userBan) {
-                            // Befehlsname extrahieren (Extract command name)
+                            // Befehlsname extrahieren
                             let messageCommand = m.text.trim().split(' ')[0].slice(1).toLowerCase();
                             
-                            // Prüfe, ob es der Besitzer ist (Check if it's the owner)
+                            // Prüfe, ob es der Besitzer ist
                             const isOwnerUser = global.owner.some(owner => m.sender.includes(owner.replace(/[^0-9]/g, '')))
                             const isUnbanCommand = messageCommand === 'unban'
                             
-                            // Globale Bann-Prüfung (Global ban check)
+                            // Globale Bann-Prüfung
                             if (userBan.banned === true) {
-                                // Erlaube nur dem Besitzer, den Entbann-Befehl zu verwenden (Only allow the owner to use the unban command)
+                                // Erlaube nur dem Besitzer, den Entbann-Befehl zu verwenden
                                 if (!(isOwnerUser && isUnbanCommand)) {
                                     console.log(`Blockierter Befehl von gebanntem Benutzer: ${m.sender} - Befehl: ${m.text}`)
                                     m.reply(`❌ Du bist gebannt und kannst keine Bot-Befehle verwenden.\nNur ein Bot-Admin kann dich entbannen.`)
@@ -119,11 +118,11 @@ module.exports = {
                                 }
                             }
                             
-                            // Prüfe auf temporären Bann (Check for temporary ban)
+                            // Prüfe auf temporären Bann
                             if (userBan.bannedTime && userBan.bannedTime > Date.now()) {
-                                // Erlaube nur dem Besitzer, den Entbann-Befehl zu verwenden (Only allow the owner to use the unban command)
+                                // Erlaube nur dem Besitzer, den Entbann-Befehl zu verwenden
                                 if (!(isOwnerUser && isUnbanCommand)) {
-                                    const remainingTime = Math.ceil((userBan.bannedTime - Date.now()) / 1000 / 60) // Minuten (Minutes)
+                                    const remainingTime = Math.ceil((userBan.bannedTime - Date.now()) / 1000 / 60) // Minuten
                                     console.log(`Blockierter Befehl von temporär gebanntem Benutzer: ${m.sender} für weitere ${remainingTime} Minuten - Befehl: ${m.text}`)
                                     m.reply(`❌ Du bist temporär gebannt für weitere ${remainingTime} Minuten und kannst keine Bot-Befehle verwenden.`)
                                     return
@@ -133,47 +132,47 @@ module.exports = {
                     }
                 }
             } catch (banErr) {
-                console.error("Fehler bei der frühen Bann-Prüfung (Error in early ban check):", banErr)
+                console.error("Fehler bei der frühen Bann-Prüfung:", banErr)
             }
             
             try {
                 let user = global.db.data.users[m.sender]
                 if (typeof user !== 'object') global.db.data.users[m.sender] = {}
                 if (user) {
-                    if (!isNumber(user.guthaben)) user.guthaben = 0 // vorher: saldo
-                    if (!isNumber(user.ausgaben)) user.ausgaben = 0 // vorher: pengeluaran
-                    if (!isNumber(user.gesundheit)) user.gesundheit = 100 // vorher: healt
+                    if (!isNumber(user.saldo)) user.saldo = 0
+                    if (!isNumber(user.pengeluaran)) user.pengeluaran = 0
+                    if (!isNumber(user.healt)) user.healt = 100
                     if (!isNumber(user.health)) user.health = 100
-                    if (!isNumber(user.energie)) user.energie = 100 // vorher: energi
+                    if (!isNumber(user.energi)) user.energi = 100
                     if (!isNumber(user.power)) user.power = 100
                     if (!isNumber(user.title)) user.title = 0
                     if (!isNumber(user.stamina)) user.stamina = 100
-                    if (!isNumber(user.durst)) user.durst = 100 // vorher: haus
-                    if (!isNumber(user.hunger)) user.hunger = 100 // vorher: laper
+                    if (!isNumber(user.haus)) user.haus = 100
+                    if (!isNumber(user.laper)) user.laper = 100
                     if (!isNumber(user.level)) user.level = 0
-                    if (!('titlein' in user)) user.titlein = 'Noch nicht vorhanden' // vorher: Belum Ada
-                    if (!("ultah" in user)) user.ultah = '' // Geburtstag
-                    if (!('partner' in user)) user.partner = '' // vorher: pasangan
-                    if (!('freund' in user)) user.freund = '' // vorher: sahabat
-                    if (!('standort' in user)) user.standort = 'Hütte' // vorher: location, Gubuk
-                    if (!('ehemann' in user)) user.ehemann = 'Noch nicht festgelegt' // vorher: husbu, Belum Di Set
-                    if (!('ehefrau' in user)) user.ehefrau = 'Noch nicht festgelegt' // vorher: waifu, Belum Di Set
+                    if (!('titlein' in user)) user.titlein = 'Belum Ada'
+                    if (!("ultah" in user)) user.ultah = ''
+                    if (!('pasangan' in user)) user.pasangan = ''
+                    if (!('sahabat' in user)) user.sahabat = ''
+                    if (!('location' in user)) user.location = 'Gubuk'
+                    if (!('husbu' in user)) user.husbu = 'Belum Di Set'
+                    if (!('waifu' in user)) user.waifu = 'Belum Di Set'
                     if (!isNumber(user.follow)) user.follow = 0
                     if (!isNumber(user.lastfollow)) user.lastfollow = 0
                     if (!isNumber(user.followers)) user.followers = 0
                     if (!isNumber(user.exp)) user.exp = 0
                     if (!isNumber(user.pc)) user.pc = 0
-                    if (!isNumber(user.opfer)) user.opfer = 0 // vorher: korbanngocok
-                    if (!isNumber(user.motorradfahrerK)) user.motorradfahrerK = 0 // vorher: ojekk
-                    if (!isNumber(user.polizei)) user.polizei = 0 // vorher: polisi
-                    if (!isNumber(user.motorradfahrer)) user.motorradfahrer = 0 // vorher: ojek
-                    if (!isNumber(user.händler)) user.händler = 0 // vorher: pedagang
-                    if (!isNumber(user.arzt)) user.arzt = 0 // vorher: dokter
-                    if (!isNumber(user.bauer)) user.bauer = 0 // vorher: petani
-                    if (!isNumber(user.mechaniker)) user.mechaniker = 0 // vorher: montir
-                    if (!isNumber(user.arbeiter)) user.arbeiter = 0 // vorher: kuli
-                    if (!isNumber(user.trophäe)) user.trophäe = 0 // vorher: trofi
-                    if (!user.rtrofi) user.rtrofi = 'Bronze' // vorher: Perunggu
+                    if (!isNumber(user.korbanngocok)) user.korbanngocok = 0
+                    if (!isNumber(user.ojekk)) user.ojekk = 0
+                    if (!isNumber(user.polisi)) user.polisi = 0
+                    if (!isNumber(user.ojek)) user.ojek = 0
+                    if (!isNumber(user.pedagang)) user.pedagang = 0
+                    if (!isNumber(user.dokter)) user.dokter = 0
+                    if (!isNumber(user.petani)) user.petani = 0
+                    if (!isNumber(user.montir)) user.montir = 0
+                    if (!isNumber(user.kuli)) user.kuli = 0
+                    if (!isNumber(user.trofi)) user.trofi= 0
+                    if (!user.rtrofi) user.rtrofi = 'Perunggu'
                     if (!isNumber(user.troopcamp)) user.troopcamp = 0
                     if (!isNumber(user.coin)) user.coin = 0
                     if (!isNumber(user.atm)) user.atm = 0
@@ -182,28 +181,28 @@ module.exports = {
                     if (!isNumber(user.tprem)) user.tprem = 0
                     if (!isNumber(user.tigame)) user.tigame = 5
                     if (!isNumber(user.lastclaim)) user.lastclaim = 0
-                    if (isNumber(user.letztMüllsammeln)) user.letztMüllsammeln = 0 // vorher: lastmulung
+                    if (isNumber(user.lastmulung)) user.lastmulung = 0
                     if (!isNumber(user.judilast)) user.judilast = 0
-                    if (!isNumber(user.letztBergbau)) user.letztBergbau = 0 // vorher: lastnambang
-                    if (!isNumber(user.letztHolzfällen)) user.letztHolzfällen = 0 // vorher: lastnebang
-                    if (!isNumber(user.letztArbeit)) user.letztArbeit = 0 // vorher: lastkerja
-                    if (!isNumber(user.letztStehlen)) user.letztStehlen = 0 // vorher: lastmaling
-                    if (!isNumber(user.letztTöten)) user.letztTöten = 0 // vorher: lastbunuhi
-                    if (!isNumber(user.letztGeschäft)) user.letztGeschäft = 0 // vorher: lastbisnis
-                    if (!isNumber(user.letztGeschäftlich)) user.letztGeschäftlich = 0 // vorher: lastberbisnis
-                    if (!isNumber(user.geschäftlich)) user.geschäftlich = 0 // vorher: berbisnis
-                    if (!isNumber(user.geschäft)) user.geschäft = 0 // vorher: bisnis
-                    if (!isNumber(user.letztAngeln)) user.letztAngeln = 0 // vorher: lastmancing
-                    if (!isNumber(user.geld)) user.geld = 0 // vorher: money
-                    if (!isNumber(user.krankenhaus)) user.krankenhaus = 0 // vorher: rumahsakit
-                    if (!isNumber(user.festung)) user.festung = 0 // vorher: fortress
-                    if (!isNumber(user.schild)) user.schild = false // vorher: shield
-                    if (!isNumber(user.landwirtschaft)) user.landwirtschaft = 0 // vorher: pertanian
-                    if (!isNumber(user.bergwerk)) user.bergwerk = 0 // vorher: pertambangan
-                    if (!isNumber(user.truppenlager)) user.truppenlager = 0 // vorher: camptroops
-                    if (!isNumber(user.mine)) user.mine = 0 // vorher: tambang
+                    if (!isNumber(user.lastnambang)) user.lastnambang = 0
+                    if (!isNumber(user.lastnebang)) user.lastnebang = 0
+                    if (!isNumber(user.lastkerja)) user.lastkerja = 0
+                    if (!isNumber(user.lastmaling)) user.lastmaling = 0
+                    if (!isNumber(user.lastbunuhi)) user.lastbunuhi = 0
+                    if (!isNumber(user.lastbisnis)) user.lastbisnis = 0
+                    if (!isNumber(user.lastberbisnis)) user.lastberbisnis = 0
+                    if (!isNumber(user.berbisnis)) user.berbisnis = 0
+                    if (!isNumber(user.bisnis)) user.bisnis = 0
+                    if (!isNumber(user.lastmancing)) user.lastmancing = 0
+                    if (!isNumber(user.money)) user.money = 0
+                    if (!isNumber(user.rumahsakit)) user.rumahsakit= 0
+                    if (!isNumber(user.fortress)) user.fortress = 0
+                    if (!isNumber(user.shield)) user.shield = false
+                    if (!isNumber(user.pertanian)) user.pertanian = 0
+                    if (!isNumber(user.pertambangan)) user.pertambangan = 0
+                    if (!isNumber(user.camptroops)) user.camptroops = 0
+                    if (!isNumber(user.tambang)) user.tambang = 0
                     
-                    //Tambahan rpg (RPG additions)
+                    //Tambahan rpg
                     if (!isNumber(user.litecoin)) user.litecoin = 0
                     if (!isNumber(user.chip)) user.chip = 0
                     if (!isNumber(user.tiketcoin)) user.tiketcoin = 0
@@ -212,17 +211,17 @@ module.exports = {
                     if (!isNumber (user.bank)) user.bank = 0
                     if (!isNumber (user.balance)) user.balance = 0
                     
-                    if (!isNumber(user.flasche)) user.flasche = 0 // vorher: botol
-                    if (!isNumber(user.karton)) user.karton = 0 // vorher: kardus
-                    if (!isNumber(user.dose)) user.dose = 0 // vorher: kaleng
-                    if (!isNumber(user.wasser)) user.wasser = 0 // vorher: aqua
-                    if (!isNumber(user.diamant)) user.diamant = 0 // vorher: diamond
-                    if (!isNumber(user.smaragd)) user.smaragd = 0 // vorher: emerald
-                    if (!isNumber(user.holz)) user.holz = 0 // vorher: wood
-                    if (!isNumber(user.stein)) user.stein = 0 // vorher: rock
-                    if (!isNumber(user.diamant2)) user.diamant2 = 0 // vorher: berlian
-                    if (!isNumber(user.eisen)) user.eisen = 0 // vorher: iron
-                    if (!isNumber(user.gold)) user.gold = 0 // vorher: emas
+                    if (!isNumber(user.botol)) user.botol = 0
+                    if (!isNumber(user.kardus)) user.kardus = 0
+                    if (!isNumber(user.kaleng)) user.kaleng = 0
+                    if (!isNumber(user.aqua)) user.aqua = 0
+                    if (!isNumber(user.diamond)) user.diamond = 0
+                    if (!isNumber(user.emerald)) user.emerald = 0
+                    if (!isNumber(user.wood)) user.wood = 0
+                    if (!isNumber(user.rock)) user.rock = 0
+                    if (!isNumber(user.berlian)) user.berlian = 0
+                    if (!isNumber(user.iron)) user.iron = 0
+                    if (!isNumber(user.emas)) user.emas = 0
                     if (!isNumber(user.arlok)) user.arlok = 0
         
                     if (!isNumber(user.common)) user.common = 0
@@ -235,7 +234,7 @@ module.exports = {
                     if (!isNumber(user.pet)) user.pet = 0
                     if (!isNumber(user.psepick)) user.psepick = 0
                     if (!isNumber(user.psenjata)) user.psenjata = 0
-                    //rpg meracik (RPG crafting)
+                    //rpg meracik
                     if (!isNumber(user.lastramuanclaim)) user.lastramuanclaim = 0
                     if (!isNumber(user.gems)) user.gems = 0
                     if (!isNumber(user.cupon)) user.cupon = 0
@@ -249,48 +248,48 @@ module.exports = {
                     if (!isNumber(user.lastswordclaim)) user.lastswordclaim = 0
                     if (!isNumber(user.lastweaponclaim)) user.lastweaponclaim = 0
                     if (!isNumber(user.lastironclaim)) user.lastironclaim = 0
-                    if (!isNumber(user.letztAngelnAnspruch)) user.letztAngelnAnspruch = 0 // vorher: lastmancingclaim
-                    if (!isNumber(user.angelkinder)) user.angelkinder = 0 // vorher: anakpancingan
+                    if (!isNumber(user.lastmancingclaim)) user.lastmancingclaim = 0
+                    if (!isNumber(user.anakpancingan)) user.anakpancingan = 0
                 
-                    if (!isNumber(user.trank)) user.trank = 0 // vorher: potion
-                    if (!isNumber(user.müll)) user.müll = 0 // vorher: sampah
-                    if (!isNumber(user.angel)) user.angel = 0 // vorher: pancing
-                    if (!isNumber(user.angeln)) user.angeln = 0 // vorher: pancingan
-                    if (!isNumber(user.gesamtAngeln)) user.gesamtAngeln = 0 // vorher: totalPancingan
-                    //stamina-booster (Ausdauer-Verstärker)
-                    if (!isNumber(user.apfel)) user.apfel = 0 // vorher: apel
-                    if (!isNumber(user.brathähnchen)) user.brathähnchen = 0 // vorher: ayamb
-                    if (!isNumber(user.grillhähnchen)) user.grillhähnchen = 0 // vorher: ayamg
-                    if (!isNumber(user.rindfleisch)) user.rindfleisch = 0 // vorher: sapir
-                    if (!isNumber(user.rindfleisch2)) user.rindfleisch2 = 0 // vorher: ssapi
-                    if (!isNumber(user.eistee)) user.eistee = 0 // vorher: esteh
-                    if (!isNumber(user.grillwels)) user.grillwels = 0 // vorher: leleg
-                    if (!isNumber(user.bratwels)) user.bratwels = 0 // vorher: leleb
+                    if (!isNumber(user.potion)) user.potion = 0
+                    if (!isNumber(user.sampah)) user.sampah = 0
+                    if (!isNumber(user.pancing)) user.pancing = 0
+                    if (!isNumber(user.pancingan)) user.pancingan = 0
+                    if (!isNumber(user.totalPancingan)) user.totalPancingan = 0
+                    //penambah stamina
+                    if (!isNumber(user.apel)) user.apel = 0
+                    if (!isNumber(user.ayamb)) user.ayamb = 0
+                    if (!isNumber(user.ayamg)) user.ayamg = 0
+                    if (!isNumber(user.sapir)) user.sapir = 0
+                    if (!isNumber(user.ssapi)) user.ssapi = 0
+                    if (!isNumber(user.esteh)) user.esteh = 0
+                    if (!isNumber(user.leleg)) user.leleg = 0
+                    if (!isNumber(user.leleb)) user.leleb = 0
                     
-                    if (!isNumber(user.grillhähnchen2)) user.grillhähnchen2 = 0 // vorher: ayambakar
-                    if (!isNumber(user.curry)) user.curry = 0 // vorher: gulai
-                    if (!isNumber(user.rindfleischGericht)) user.rindfleischGericht = 0 // vorher: rendang
-                    if (!isNumber(user.brathähnchen2)) user.brathähnchen2 = 0 // vorher: ayamgoreng
-                    if (!isNumber(user.hühnersuppe)) user.hühnersuppe = 0 // vorher: oporayam
+                    if (!isNumber(user.ayambakar)) user.ayambakar = 0
+                    if (!isNumber(user.gulai)) user.gulai = 0
+                    if (!isNumber(user.rendang)) user.rendang = 0
+                    if (!isNumber(user.ayamgoreng)) user.ayamgoreng = 0
+                    if (!isNumber(user.oporayam)) user.oporayam = 0
                     if (!isNumber(user.steak)) user.steak = 0
-                    if (!isNumber(user.schweinebraten)) user.schweinebraten = 0 // vorher: babipanggang
-                    if (!isNumber(user.grillfisch)) user.grillfisch = 0 // vorher: ikanbakar
-                    if (!isNumber(user.grilltilapi)) user.grilltilapi = 0 // vorher: nilabakar
-                    if (!isNumber(user.grillwels2)) user.grillwels2 = 0 // vorher: lelebakar
-                    if (!isNumber(user.grillpomfret)) user.grillpomfret = 0 // vorher: bawalbakar
-                    if (!isNumber(user.grillgarnelen)) user.grillgarnelen = 0 // vorher: udangbakar
-                    if (!isNumber(user.grillwal)) user.grillwal = 0 // vorher: pausbakar
-                    if (!isNumber(user.grillkrabbe)) user.grillkrabbe = 0 // vorher: kepitingbakar
+                    if (!isNumber(user.babipanggang)) user.babipanggang = 0
+                    if (!isNumber(user.ikanbakar)) user.ikanbakar = 0
+                    if (!isNumber(user.nilabakar)) user.nilabakar = 0
+                    if (!isNumber(user.lelebakar)) user.lelebakar = 0
+                    if (!isNumber(user.bawalbakar)) user.bawalbakar = 0
+                    if (!isNumber(user.udangbakar)) user.udangbakar = 0
+                    if (!isNumber(user.pausbakar)) user.pausbakar = 0
+                    if (!isNumber(user.kepitingbakar)) user.kepitingbakar = 0
                     if (!isNumber(user.soda)) user.soda = 0
                     if (!isNumber(user.vodka)) user.vodka = 0
                     if (!isNumber(user.ganja)) user.ganja = 0
                     if (!isNumber(user.bandage)) user.bandage = 0
                     if (!isNumber(user.sushi)) user.sushi = 0
                     if (!isNumber(user.roti)) user.roti = 0
-                    //untuk masak (Zum Kochen)
+                    //untuk masak
                     if (!isNumber(user.coal)) user.coal = 0
                     if (!isNumber(user.korekapi)) user.korekapi = 0
-                    //tools (Werkzeuge)
+                    //tools
                     if (!isNumber(user.umpan)) user.umpan = 0
                    
                     if (!isNumber(user.armor)) user.armor = 0
@@ -380,7 +379,7 @@ module.exports = {
                     if (!isNumber(user.afk)) user.afk = -1
                     if (!'afkReason' in user) user.afkReason = ''
                 
-                //PET (Haustiere)
+                //PET
                     if (!isNumber(user.healthmonster)) user.healthmonster = 0
                     if (!isNumber(user.anakkucing)) user.anakkucing = 0
                     if (!isNumber(user.anakkuda)) user.anakkuda = 0
@@ -411,35 +410,35 @@ module.exports = {
                     if (!isNumber(user.ramuan)) user.ramuan = 0
                     if (!isNumber(user.string)) user.string = 0
         
-                    //angeln (Fischen)
-                    if (!isNumber(user.wal)) user.wal = 0 // vorher: paus
-             if (!isNumber(user.krabbe)) user.krabbe = 0 // vorher: kepiting
-             if (!isNumber(user.oktopus)) user.oktopus = 0 // vorher: gurita
-             if (!isNumber(user.tintenfisch)) user.tintenfisch = 0 // vorher: cumi
-             if (!isNumber(user.kugelfisch)) user.kugelfisch = 0 // vorher: buntal
-             if (!isNumber(user.palettendoktorfisch)) user.palettendoktorfisch = 0 // vorher: dory
-             if (!isNumber(user.delfin)) user.delfin = 0 // vorher: lumba
-             if (!isNumber(user.hummer)) user.hummer = 0 // vorher: lobster
-             if (!isNumber(user.hai)) user.hai = 0 // vorher: hiu
-             if (!isNumber(user.garnele)) user.garnele = 0 // vorher: udang
-             if (!isNumber(user.fisch)) user.fisch = 0 // vorher: ikan
-             if (!isNumber(user.tilapia)) user.tilapia = 0 // vorher: nila
-             if (!isNumber(user.pomfret)) user.pomfret = 0 // vorher: bawal
-             if (!isNumber(user.wels)) user.wels = 0 // vorher: lele
-             if (!isNumber(user.schwertwal)) user.schwertwal = 0 // vorher: orca
+                    //mancing
+                    if (!isNumber(user.paus)) user.paus = 0
+             if (!isNumber(user.kepiting)) user.kepiting = 0
+             if (!isNumber(user.gurita)) user.gurita = 0
+             if (!isNumber(user.cumi)) user.cumi= 0
+             if (!isNumber(user.buntal)) user.buntal = 0
+             if (!isNumber(user.dory)) user.dory = 0
+             if (!isNumber(user.lumba)) user.lumba = 0
+             if (!isNumber(user.lobster)) user.lobster = 0
+             if (!isNumber(user.hiu)) user.hiu = 0
+             if (!isNumber(user.udang)) user.udang = 0
+             if (!isNumber(user.ikan)) user.ikan = 0
+             if (!isNumber(user.nila)) user.nila = 0
+             if (!isNumber(user.bawal)) user.bawal = 0
+             if (!isNumber(user.lele)) user.lele = 0
+             if (!isNumber(user.orca)) user.orca = 0
                 
-             if (!isNumber(user.banteng)) user.banteng = 0 // Banteng (keine Übersetzung nötig)
-             if (!isNumber(user.tiger)) user.tiger = 0 // vorher: harimau
-             if (!isNumber(user.elefant)) user.elefant = 0 // vorher: gajah
-             if (!isNumber(user.ziege)) user.ziege = 0 // vorher: kambing
+             if (!isNumber(user.banteng)) user.banteng = 0
+             if (!isNumber(user.harimau)) user.harimau = 0
+             if (!isNumber(user.gajah)) user.gajah = 0
+             if (!isNumber(user.kambing)) user.kambing = 0
              if (!isNumber(user.panda)) user.panda = 0
-             if (!isNumber(user.krokodil)) user.krokodil = 0 // vorher: buaya
-             if (!isNumber(user.büffel)) user.büffel = 0 // vorher: kerbau
-             if (!isNumber(user.kuh)) user.kuh = 0 // vorher: sapi
-             if (!isNumber(user.affe)) user.affe = 0 // vorher: monyet
-             if (!isNumber(user.wildschwein)) user.wildschwein = 0 // vorher: babihutan
-             if (!isNumber(user.schwein)) user.schwein = 0 // vorher: babi
-             if (!isNumber(user.huhn)) user.huhn = 0 // vorher: ayam
+             if (!isNumber(user.buaya)) user.buaya = 0
+             if (!isNumber(user.kerbau)) user.kerbau = 0
+             if (!isNumber(user.sapi)) user.sapi = 0
+             if (!isNumber(user.monyet)) user.monyet = 0
+             if (!isNumber(user.babihutan)) user.babihutan = 0
+             if (!isNumber(user.babi)) user.babi = 0
+             if (!isNumber(user.ayam)) user.ayam = 0
          
                     if (!isNumber(user.lastadventure)) user.lastadventure = 0
                     if (!isNumber(user.lastberburu)) user.lastberburu = 0
@@ -483,22 +482,22 @@ module.exports = {
                     if (!user.registered) {
                     if (!('name' in user)) user.name = this.getName(m.sender)
         
-                    if (!isNumber(user.apfel)) user.apfel = 0 // vorher: apel
-                    if (!isNumber(user.traube)) user.traube = 0 // vorher: anggur
-                    if (!isNumber(user.orange)) user.orange = 0 // vorher: jeruk
-                    if (!isNumber(user.wassermelone)) user.wassermelone = 0 // vorher: semangka
-                    if (!isNumber(user.mango)) user.mango = 0 // vorher: mangga
-                    if (!isNumber(user.erdbeere)) user.erdbeere = 0 // vorher: stroberi
-                    if (!isNumber(user.banane)) user.banane = 0 // vorher: pisang
-                    if (!isNumber(user.holz)) user.holz = 0 // vorher: kayu
-                    if (!isNumber(user.nahrung)) user.nahrung = 0 // vorher: makanan
-                    if (!isNumber(user.traubensamen)) user.traubensamen = 0 // vorher: bibitanggur
-                    if (!isNumber(user.bananensamen)) user.bananensamen = 0 // vorher: bibitpisang
-                    if (!isNumber(user.apfelsamen)) user.apfelsamen = 0 // vorher: bibitapel
-                    if (!isNumber(user.mangosamen)) user.mangosamen = 0 // vorher: bibitmangga
-                    if (!isNumber(user.orangensamen)) user.orangensamen = 0 // vorher: bibitjeruk
+                    if (!isNumber(user.apel)) user.apel = 0
+                    if (!isNumber(user.anggur)) user.anggur = 0
+                    if (!isNumber(user.jeruk)) user.jeruk = 0
+                    if (!isNumber(user.semangka)) user.semangka = 0
+                    if (!isNumber(user.mangga)) user.mangga = 0
+                    if (!isNumber(user.stroberi)) user.stroberi = 0
+                    if (!isNumber(user.pisang)) user.pisang = 0
+                    if (!isNumber(user.kayu)) user.kayu = 0
+                    if (!isNumber(user.makanan)) user.makanan = 0
+                    if (!isNumber(user.bibitanggur)) user.bibitanggur = 0
+                    if (!isNumber(user.bibitpisang)) user.bibitpisang = 0
+                    if (!isNumber(user.bibitapel)) user.bibitapel = 0
+                    if (!isNumber(user.bibitmangga)) user.bibitmangga = 0
+                    if (!isNumber(user.bibitjeruk)) user.bibitjeruk = 0
                    
-                    //sambung kata (Wort-Verbindung)
+                    //sambung kata
                     if (!isNumber(user.skata)) user.skata = 0
         
                       
@@ -508,22 +507,22 @@ module.exports = {
                         
         }
                     if (!isNumber(user.level)) user.level = 0
-                    if (!user.job) user.job = 'Arbeitslos' // vorher: Pengangguran
+                    if (!user.job) user.job = 'Pengangguran'
                     if (!isNumber(user.jobexp)) user.jobexp = 0
                     if (!('jail' in user)) user.jail = false
-                    if (!('gefängnis' in user)) user.gefängnis = false // vorher: penjara
-                    if (!('behandelt' in user)) user.behandelt = false // vorher: dirawat
+                    if (!('penjara' in user)) user.penjara = false
+                    if (!('dirawat' in user)) user.dirawat = false
                     if (!isNumber(user.antarpaket)) user.antarpaket = 0
                     if (!user.lbars) user.lbars = '[▒▒▒▒▒▒▒▒▒]'
                     if (!user.premium) user.premium = false
                     if (!user.premiumTime) user.premiumTime= 0
-                    if (!user.vip) user.vip = 'nein' // vorher: tidak
+                    if (!user.vip) user.vip = 'tidak'
                     if (!isNumber(user.vipPoin)) user.vipPoin = 0
-                    if (!user.role) user.role = 'Neuling ㋡' // vorher: Newbie
-                    if (!('autolevelup' in user)) user.autolevelup = false
+                    if (!user.role) user.role = 'Newbie ㋡'
+                    if (!('autolevelup' in user)) user.autolevelup = true
                     if (!('lastIstigfar' in user)) user.lastIstigfar = true
                   
-                    //demon slayer dan rpg baru (Dämonenjäger und neues RPG)
+                    //demon slayer dan rpg baru
                     if (!("skill" in user)) user.skill = ""
                     if (!("korps" in user)) user.korps = ""
                     if (!("korpsgrade" in user)) user.korpsgrade = ""
@@ -587,11 +586,11 @@ module.exports = {
                     followers: 0,
                     pasangan: '',
                     sahabat: '', 
-                    location: 'Hütte', // vorher: Gubuk
-                    titlein: 'Noch nicht vorhanden', // vorher: Belum Ada
+                    location: 'Gubuk', 
+                    titlein: 'Belum Ada',
                     ultah: '', 
-                    waifu: 'Noch nicht festgelegt', // vorher: Belum Di Set
-                    husbu: 'Noch nicht festgelegt', // vorher: Belum Di Set
+                    waifu: 'Belum Di Set', 
+                    husbu: 'Belum Di Set',
                     pc : 0,
                     exp: 0,
                     coin: 0,
@@ -658,7 +657,7 @@ module.exports = {
                     montir: 0,
                     kuli: 0,
                     korbanngocok: 0,
-                    //+ stamina (Ausdauer-Verstärker)
+                    //+ stamina
                     coal: 0,
                     korekapi: 0,
                     ayambakar: 0,
@@ -681,7 +680,7 @@ module.exports = {
                     bandage: 0,
                     sushi: 0,
                     roti: 0,
-                    //meracik (Herstellen)
+                    //meracik
                     ramuan: 0,
                     lastramuanclaim: 0,
                     gems: 0,
@@ -698,7 +697,7 @@ module.exports = {
                     lastironclaim: 0,
                     lastmancingclaim: 0,
                     anakpancingan: 0,
-                    //mancing (Angeln)
+                    //mancing
              as: 0,
             paus: 0,
             kepiting: 0,
@@ -876,21 +875,21 @@ module.exports = {
                     premiumDate: -1, 
                     premium: false,
                     premiumTime: 0,
-                    vip: 'nein', // vorher: tidak
+                    vip: 'tidak', 
                     vipPoin: 0,
-                    job: 'Arbeitslos', // vorher: Pengangguran
+                    job: 'Pengangguran', 
                     jobexp: 0,
                     jail: false, 
-                    gefängnis: false, // vorher: penjara
+                    penjara: false, 
                     antarpaket: 0,
-                    behandelt: false, // vorher: dirawat
+                    dirawat: false, 
                     lbars: '[▒▒▒▒▒▒▒▒▒]', 
-                    role: 'Neuling ㋡', // vorher: Newbie 
+                    role: 'Newbie ㋡', 
                     registered: false,
                     name: this.getName(m.sender),
                     age: -1,
                     regTime: -1,
-                    autolevelup: false,
+                    autolevelup: true,
                     lastIstigfar: 0,
                     
                     skill: "",
@@ -930,7 +929,7 @@ module.exports = {
                 if (!('isBannedTime' in chat)) chat.isBannedTime = false
                 if (!('mute' in chat)) chat.mute = false
                 if (!('listStr' in chat)) chat.listStr = {}
-                if (!('sWelcome' in chat)) chat.sWelcome = '*Herzlich Willkommen @user!*\n\n     Die Gruppe @subject\n\n╭─────「 *Intro* 」\n│\n│─⪼ Name : \n│─⪼ Alter :\n│─⪼ Wohnort :\n│─⪼ Geschlecht :\n╰─────────────\n\n> Wir wünschen dir eine gute Zeit'
+                if (!('sWelcome' in chat)) chat.sWelcome = '*Willkommen @user!*\n\n     Die Gruppe @subject\n\n╭─────「 *intro* 」\n│\n│─⪼ Nama : \n│─⪼ Umur :\n│─⪼ Askot :\n│─⪼ Gender :\n╰─────────────\n\n> semoga betah'
                 if (!('sBye' in chat)) chat.sBye = 'Auf Wiedersehen @user'
                 if (!('sPromote' in chat)) chat.sPromote = ''
                 if (!('sDemote' in chat)) chat.sDemote = ''
@@ -961,15 +960,15 @@ module.exports = {
                 if (!('antilinktt' in chat)) chat.antilinktt = false
                 if (!('antilinkttnokick' in chat)) chat.antilinkttnokick = false
                 if (!('antibot' in chat)) chat.antibot = false
-                if (!('autohd' in chat)) chat.autohd = false // Automatische HD-Umwandlung (automatic HD conversion)
-                if (!('autobio' in chat)) chat.autobio = false // Automatische Bio-Aktualisierung (automatic bio update)
+                if (!('autohd' in chat)) chat.autohd = false
+                if (!('autobio' in chat)) chat.autobio = false
                 if (!('rpg' in chat)) chat.rpg = false
-                if (!('autobackup' in chat)) chat.autobackup = false // Automatische Sicherung (automatic backup)
-                if (!('autodl' in chat)) chat.autodl = true // Automatischer Download (automatic download)
-                if (!('notifgempa' in chat)) chat.notifgempa = false // Erdbebenbenachrichtigungen (earthquake notifications)
-                if (!('notifcuaca' in chat)) chat.notifcuaca = false // Wetterbenachrichtigungen (weather notifications)
-                if (!('notifsholat' in chat)) chat.notifsholat = false // Gebetsbenachrichtigungen (prayer notifications)
-                if (!('autotranslate' in chat)) chat.autotranslate = false // Automatische Übersetzung (automatic translation)
+                if (!('autobackup' in chat)) chat.autobackup = false
+                if (!('autodl' in chat)) chat.autodl = true 
+                if (!('notifgempa' in chat)) chat.notifgempa = false
+                if (!('notifcuaca' in chat)) chat.notifcuaca = false
+                if (!('notifsholat' in chat)) chat.notifsholat = false
+                if (!('autotranslate' in chat)) chat.autotranslate = false
             } else global.db.data.chats[m.chat] = {
                 autotranslate: false,
                 notifsholat: false,
@@ -987,8 +986,8 @@ module.exports = {
                 isBannedTime: false,
                 mute: false,
                 listStr: {},
-                sWelcome: '*Herzlich Willkommen @user!*\n\n     Die Gruppe @subject\n\n╭─────「 *Intro* 」\n│\n│─⪼ Name : \n│─⪼ Alter :\n│─⪼ Wohnort :\n│─⪼ Geschlecht :\n╰─────────────\n\n> Wir wünschen dir eine gute Zeit',
-                sBye: 'Auf Wiedersehen @user',
+                sWelcome: '*Selamat datang @user!*\n\n     Di group @subject\n\n╭─────「 *intro* 」\n│\n│─⪼ Nama : \n│─⪼ Umur :\n│─⪼ Askot :\n│─⪼ Gender :\n╰─────────────\n\n> semoga betah',
+                sBye: 'Al-fatihah untuk @user',
                 sPromote: '',
                 sDemote: '',
                 delete: false, 
@@ -1184,11 +1183,11 @@ module.exports = {
             if (m.isGroup) {
                 try {
                     groupMetadata = (conn.chats[m.chat] || {}).metadata || await conn.groupMetadata(m.chat).catch(_ => {
-                        console.log("Fehler beim Abrufen von Gruppenmetadaten (Error retrieving group metadata):", _)
+                        console.log("Fehler beim Abrufen von Gruppenmetadaten:", _)
                         return {}
                     })
                 } catch (err) {
-                    console.log("Fehler bei der Verarbeitung von Gruppenmetadaten (Error processing group metadata):", err)
+                    console.log("Fehler bei der Verarbeitung von Gruppenmetadaten:", err)
                     groupMetadata = {}
                 }
             }
@@ -1217,7 +1216,7 @@ module.exports = {
                         console.log(`Comparing: ${participantPhone} with ${senderPhone}, Match: ${matches}`)
                         return matches
                     } catch (err) {
-                        console.log("Fehler beim Vergleichen von Benutzer-IDs (Error comparing user IDs):", err)
+                        console.log("Fehler beim Vergleichen von Benutzer-IDs:", err)
                         return false
                     }
                 }) || {}
@@ -1238,7 +1237,7 @@ module.exports = {
                         console.log(`Bot comparison: ${participantPhone} with ${botPhone}, Match: ${matches}`)
                         return matches
                     } catch (err) {
-                        console.log("Fehler beim Vergleichen von Bot-IDs (Error comparing bot IDs):", err)
+                        console.log("Fehler beim Vergleichen von Bot-IDs:", err)
                         return false
                     }
                 }) || {}
@@ -1321,7 +1320,7 @@ module.exports = {
                     
                     console.log("Final user admin status:", isAdmin)
                 } catch (err) {
-                    console.log("Fehler bei der umfassenden Admin-Prüfung (Error during comprehensive admin check):", err)
+                    console.log("Fehler bei der umfassenden Admin-Prüfung:", err)
                     console.error(err)
                 }
             }
@@ -1402,7 +1401,7 @@ module.exports = {
                     
                     console.log("Final bot admin status:", isBotAdmin)
                 } catch (err) {
-                    console.log("Fehler bei der umfassenden Bot-Admin-Prüfung (Error during comprehensive bot admin check):", err)
+                    console.log("Fehler bei der umfassenden Bot-Admin-Prüfung:", err)
                     console.error(err)
                 }
             }
@@ -1557,7 +1556,7 @@ module.exports = {
                             if (user.banned === true) {
                                 console.log(`Command blocked - User ${m.sender} is banned`)
                                 // Optionally notify user they are banned
-                                m.reply(`Du bist gebannt und kannst keine Befehle verwenden. Wende dich an einen Administrator, um entbannt zu werden.`) // Translated ban message
+                                m.reply(`Du bist gebannt und kannst keine Befehle verwenden. Wende dich an einen Administrator, um entbannt zu werden.`)
                                 return
                             }
                             
@@ -1565,7 +1564,7 @@ module.exports = {
                             if (user.bannedTime && user.bannedTime > Date.now()) {
                                 const remainingTime = Math.ceil((user.bannedTime - Date.now()) / 1000 / 60) // minutes
                                 console.log(`Command blocked - User ${m.sender} is temporarily banned for ${remainingTime} more minutes`)
-                                m.reply(`Du bist temporär gebannt für weitere ${remainingTime} Minuten.`) // Translated temporary ban message
+                                m.reply(`Du bist temporär gebannt für weitere ${remainingTime} Minuten.`)
                                 return
                             }
                             
@@ -1573,7 +1572,7 @@ module.exports = {
                             let maxWarnings = parseInt(global.maxwarn || 3);
                             if (user.warn && user.warn >= maxWarnings) {
                                 console.log(`Command blocked - User ${m.sender} has too many warnings: ${user.warn}/${maxWarnings}`)
-                                m.reply(`Du hast zu viele Verwarnungen (${user.warn}/${maxWarnings}). Einige Befehle sind eingeschränkt.`) // Translated warning message
+                                m.reply(`Du hast zu viele Verwarnungen (${user.warn}/${maxWarnings}). Einige Befehle sind eingeschränkt.`)
                                 // Could return here or continue based on your warning policy
                             }
                         }
@@ -1597,7 +1596,7 @@ module.exports = {
                             // Check for permanent group ban
                             if (chat.memgc[m.sender].banned === true) {
                                 console.log(`Command blocked - User ${m.sender} is banned in group ${m.chat}`)
-                                m.reply(`Du bist in dieser Gruppe gebannt und kannst keine Befehle verwenden.`) // Translated group ban message
+                                m.reply(`Du bist in dieser Gruppe gebannt und kannst keine Befehle verwenden.`)
                                 return
                             }
                             
@@ -1605,7 +1604,7 @@ module.exports = {
                             if (chat.memgc[m.sender].bannedTime && chat.memgc[m.sender].bannedTime > Date.now()) {
                                 const remainingTime = Math.ceil((chat.memgc[m.sender].bannedTime - Date.now()) / 1000 / 60) // minutes
                                 console.log(`Command blocked - User ${m.sender} is temporarily banned in group ${m.chat} for ${remainingTime} more minutes`)
-                                m.reply(`Du bist in dieser Gruppe temporär gebannt für weitere ${remainingTime} Minuten.`) // Translated temporary group ban message
+                                m.reply(`Du bist in dieser Gruppe temporär gebannt für weitere ${remainingTime} Minuten.`)
                                 return
                             }
                             
@@ -1613,7 +1612,7 @@ module.exports = {
                             let maxGroupWarnings = parseInt(global.maxwarn || 3);
                             if (chat.memgc[m.sender].warn && chat.memgc[m.sender].warn >= maxGroupWarnings) {
                                 console.log(`Warning restriction - User ${m.sender} has ${chat.memgc[m.sender].warn}/${maxGroupWarnings} warnings in group ${m.chat}`)
-                                m.reply(`Du hast zu viele Verwarnungen (${chat.memgc[m.sender].warn}/${maxGroupWarnings}). Einige Befehle sind eingeschränkt.`) // Translated group warning message
+                                m.reply(`Du hast zu viele Verwarnungen (${chat.memgc[m.sender].warn}/${maxGroupWarnings}). Einige Befehle sind eingeschränkt.`)
                                 // Could return here to prevent command execution
                             }
                             
@@ -1673,12 +1672,12 @@ module.exports = {
                     if (xp > 200) m.reply('Schummler -_-') // Hehehe
                     else m.exp += xp
                     if (!isPrems && plugin.limit && global.db.data.users[m.sender].limit < plugin.limit * 1) {
-                        this.reply(m.chat, `Dein Limit ist aufgebraucht, bitte kaufe mehr über *${usedPrefix}buy* oder im *${usedPrefix}shop*`, m) // Translated limit message
-                        continue // Limit erschöpft
+                        this.reply(m.chat, `Dein Limit ist aufgebraucht, bitte kaufe mehr über *${usedPrefix}buy* oder im *${usedPrefix}shop*`, m)
+                        continue // Limit habis
                     }
                     if (plugin.level > _user.level) {
-                        this.reply(m.chat, `Level ${plugin.level} wird benötigt, um diesen Befehl zu verwenden. Dein Level ist ${_user.level}\nVerwende .levelup, um dein Level zu erhöhen!`, m) // Translated level requirement message
-                        continue // Wenn das erforderliche Level nicht erreicht wurde (When the required level is not reached)
+                        this.reply(m.chat, `Level ${plugin.level} wird benötigt, um diesen Befehl zu verwenden. Dein Level ist ${_user.level}\nVerwende .levelup, um dein Level zu erhöhen!`, m)
+                        continue // Wenn das erforderliche Level nicht erreicht wurde
                     }
                     let extra = {
                         match,
@@ -1830,7 +1829,6 @@ module.exports = {
         }
         }
     },
-   // Verarbeitung von Teilnehmeraktualisierungen (Processing participant updates - join/leave events)
    async participantsUpdate({ id, participants, action }) {
         if (opts['self']) return
         // if (id in conn.chats) return // First login will spam
@@ -1838,7 +1836,6 @@ module.exports = {
         let chat = db.data.chats[id] || {}
         let text = ''
         switch (action) {
-        // Handling welcome (add) and goodbye (remove/leave) actions (Willkommens- und Abschiedsaktionen verarbeiten)
         case 'add':
         case 'remove':
                 case 'leave':
@@ -1855,26 +1852,26 @@ module.exports = {
                         } catch (e) {
                              console.log('Error getting profile picture:', e)
                         } finally {
-                            // Get text template (Hole Textvorlage)
+                            // Get text template
                             text = (action === 'add' ? 
-                                (chat.sWelcome || this.welcome || conn.welcome || 'Willkommen, @user!').replace('@subject', await this.getName(id)).replace('@desc', groupMetadata.desc ? groupMetadata.desc.toString() : '') : // Welcome message template (Willkommensnachrichtenvorlage)
-                                (chat.sBye || this.bye || conn.bye || 'Auf Wiedersehen, @user!')).replace('@user', '@' + user.split('@')[0]) // Goodbye message template (Abschiedsnachrichtenvorlage)
+                                (chat.sWelcome || this.welcome || conn.welcome || 'Willkommen, @user!').replace('@subject', await this.getName(id)).replace('@desc', groupMetadata.desc ? groupMetadata.desc.toString() : '') :
+                                (chat.sBye || this.bye || conn.bye || 'Auf Wiedersehen, @user!')).replace('@user', '@' + user.split('@')[0])
                             
                             // Format the message as a card with the user's profile picture
                             const userName = '@' + user.split('@')[0]
                             const groupName = await this.getName(id)
                             const memberCount = groupMetadata.participants.length
                             
-                            // Create a formatted message with the profile picture (Erstelle eine formatierte Nachricht mit dem Profilbild)
+                            // Create a formatted message with the profile picture
                             if (action === 'add') {
-                                // Welcome message (Willkommensnachricht)
+                                // Welcome message
                                 await this.sendMessage(id, {
                                     text: text,
                                     contextInfo: {
                                         mentionedJid: [user],
                                         externalAdReply: {
-                                            title: '👋 WILLKOMMEN', // Welcome
-                                            body: `In der Gruppe: ${groupName}`, // In the group
+                                            title: '👋 WILLKOMMEN',
+                                            body: `In der Gruppe: ${groupName}`,
                                             mediaType: 1,
                                             thumbnailUrl: pp,
                                             sourceUrl: '',
@@ -1883,14 +1880,14 @@ module.exports = {
                                     }
                                 })
                             } else {
-                                // Goodbye message (Abschiedsnachricht)
+                                // Goodbye message
                                 await this.sendMessage(id, {
                                     text: text,
                                     contextInfo: {
                                         mentionedJid: [user],
                                         externalAdReply: {
-                                            title: '👋 AUF WIEDERSEHEN', // Goodbye
-                                            body: `Aus der Gruppe: ${groupName}`, // From the group
+                                            title: '👋 AUF WIEDERSEHEN',
+                                            body: `Aus der Gruppe: ${groupName}`,
                                             mediaType: 1,
                                             thumbnailUrl: pp,
                                             sourceUrl: '',
@@ -1904,56 +1901,55 @@ module.exports = {
                 }
                 break                        
             case 'promote':
-                // When someone is promoted to admin (Wenn jemand zum Administrator befördert wird)
+                // When someone is promoted to admin
                 try {
-                    text = (chat.sPromote || this.spromote || conn.spromote || '@user ```ist jetzt Administrator```') // Admin promotion message template
-                    console.log(`Benutzer ${participants[0]} wurde zum Administrator in Gruppe ${id} befördert`) // User was promoted to admin in group
+                    text = (chat.sPromote || this.spromote || conn.spromote || '@user ```ist jetzt Administrator```')
+                    console.log(`Benutzer ${participants[0]} wurde zum Administrator in Gruppe ${id} befördert`)
                 } catch (err) {
-                    console.log("Fehler im Beförderungs-Handler (Error in promotion handler):", err)
+                    console.log("Fehler im Beförderungs-Handler:", err)
                 }
                 break
             case 'demote':
-                // When someone is demoted from admin (Wenn jemand vom Administrator herabgestuft wird)
+                // When someone is demoted from admin
                 try {
-                    text = (chat.sDemote || this.sdemote || conn.sdemote || '@user ```ist nicht mehr Administrator```') // Admin demotion message template
-                    console.log(`Benutzer ${participants[0]} wurde vom Administrator in Gruppe ${id} herabgestuft`) // User was demoted from admin in group
+                    text = (chat.sDemote || this.sdemote || conn.sdemote || '@user ```ist nicht mehr Administrator```')
+                    console.log(`Benutzer ${participants[0]} wurde vom Administrator in Gruppe ${id} herabgestuft`)
                 } catch (err) {
-                    console.log("Fehler im Herabstufungs-Handler (Error in demotion handler):", err)
+                    console.log("Fehler im Herabstufungs-Handler:", err)
                 }
                 break
             default:
                 break
         }
         
-        // Process admin status change notifications if text is set (Verarbeite Benachrichtigungen zur Änderung des Administrator-Status, wenn Text gesetzt ist)
+        // Process admin status change notifications if text is set
         if (text && participants.length > 0) {
             try {
-                // Log all participant details for debugging (Protokolliere alle Teilnehmerdetails für die Fehlerbehebung)
-                console.log("Action:", action) // Aktion (Action)
-                console.log("Participants in action:", participants) // Teilnehmer in Aktion (Participants in action)
+                // Log all participant details for debugging
+                console.log("Action:", action)
+                console.log("Participants in action:", participants)
                 
-                // Normalize participant ID for better compatibility (Normalisiere Teilnehmer-ID für bessere Kompatibilität)
+                // Normalize participant ID for better compatibility
                 const normalizedParticipantId = participants[0].replace(/^(\d+)/, (match, num) => `${num}@s.whatsapp.net`)
-                console.log("Normalized participant ID:", normalizedParticipantId) // Normalisierte Teilnehmer-ID (Normalized participant ID)
+                console.log("Normalized participant ID:", normalizedParticipantId)
                 
                 text = text.replace('@user', '@' + normalizedParticipantId.split('@')[0])
                 
                 if (chat.detect) {
-                    // Send message with improved mention handling (Sende Nachricht mit verbesserter Erwähnungsbehandlung)
+                    // Send message with improved mention handling
                     this.sendMessage(id, {
                         text: text,
                         mentions: [normalizedParticipantId]
                     })
                     
-                    console.log("Admin status notification sent successfully") // Benachrichtigung über Administratorstatus erfolgreich gesendet (Admin status notification sent successfully)
+                    console.log("Admin status notification sent successfully")
                 }
             } catch (err) {
-                console.log("Fehler beim Senden der Benachrichtigung zur Statusänderung des Administrators (Error sending admin status change notification):", err)
+                console.log("Fehler beim Senden der Benachrichtigung zur Statusänderung des Administrators:", err)
                 console.error(err)
             }
         }
     },
-    // Handler für gelöschte Nachrichten (Handler for deleted messages)
     async delete({ remoteJid, fromMe, id, participant }) {
         if (fromMe) return
         let chats = Object.entries(conn.chats).find(([user, data]) => data.messages && data.messages[id])
@@ -1962,44 +1958,44 @@ module.exports = {
         let chat = global.db.data.chats[msg.key.remoteJid] || {}
         if (chat.delete) return
         await this.reply(msg.key.remoteJid, `
-Erkannt: @${participant.split`@`[0]} hat eine Nachricht gelöscht (Detected: user deleted a message)
-Um diese Funktion zu deaktivieren, tippe (To disable this function, type)
+Erkannt: @${participant.split`@`[0]} hat eine Nachricht gelöscht
+Um diese Funktion zu deaktivieren, tippe
 *.enable delete*
-`.trim(), msg, { // Detection message for deleted messages
+`.trim(), msg, {
             mentions: [participant]
         })
         this.copyNForward(msg.key.remoteJid, msg).catch(e => console.log(e, msg))
     },
     
-    // Handle connection updates - including successful connection (Verarbeitung von Verbindungsaktualisierungen - einschließlich erfolgreicher Verbindung)
+    // Handle connection updates - including successful connection
     async connectionUpdate(update) {
         const { connection, lastDisconnect, qr } = update
         
-        // Protokolliere Verbindungsstatusänderungen (Log connection status changes)
+        // Protokolliere Verbindungsstatusänderungen
         if (connection) {
-            console.log('Verbindungsstatus:', connection) // Connection status
+            console.log('Verbindungsstatus:', connection)
         }
         
-        // Wenn erfolgreich verbunden, sende eine Startnachricht (When successfully connected, send a startup message)
+        // Wenn erfolgreich verbunden, sende eine Startnachricht
         if (connection === 'open') {
-            console.log('\x1b[32m%s\x1b[0m', '✅ VERBUNDEN! Bot ist jetzt online und bereit.') // CONNECTED! Bot is now online and ready
+            console.log('\x1b[32m%s\x1b[0m', '✅ VERBUNDEN! Bot ist jetzt online und bereit.')
             
-            // Sende Startnachricht nach kurzer Verzögerung, um sicherzustellen, dass die Verbindung stabil ist (Send startup message after a short delay to ensure the connection is stable)
+            // Sende Startnachricht nach kurzer Verzögerung, um sicherzustellen, dass die Verbindung stabil ist
             setTimeout(async () => {
                 try {
                     if (!this.user) {
-                        console.log('\x1b[33m%s\x1b[0m', '⚠️ Kann Startnachricht nicht senden: Bot-Benutzerinformationen noch nicht verfügbar (Cannot send startup message: Bot user information not yet available)')
+                        console.log('\x1b[33m%s\x1b[0m', '⚠️ Kann Startnachricht nicht senden: Bot-Benutzerinformationen noch nicht verfügbar')
                         return
                     }
                     
-                    // Bot's eigene JID (Bot's own JID - WhatsApp identifier)
+                    // Bot's eigene JID
                     const botNumber = this.user.jid
-                    console.log('\x1b[36m%s\x1b[0m', `📱 Bot-Nummer: ${botNumber}`) // Bot number
+                    console.log('\x1b[36m%s\x1b[0m', `📱 Bot-Nummer: ${botNumber}`)
                     
-                    // Aktuelles Datum und Uhrzeit (Current date and time)
+                    // Aktuelles Datum und Uhrzeit
                     const now = new Date().toLocaleString()
                     
-                    // Systeminformationen abrufen (Retrieve system information)
+                    // Systeminformationen abrufen
                     const os = require('os')
                     const systemInfo = {
                         platform: os.type(),
@@ -2011,7 +2007,7 @@ Um diese Funktion zu deaktivieren, tippe (To disable this function, type)
                         nodeVersion: process.version
                     }
                     
-                    // Formatiere die Startnachricht (Format the startup message)
+                    // Formatiere die Startnachricht
                     const startupMessage = `
 ┌─⊷ *BOT-STARTBENACHRICHTIGUNG* ⊶
 │
@@ -2034,31 +2030,31 @@ Um diese Funktion zu deaktivieren, tippe (To disable this function, type)
 └───────────────────────
 `.trim()
                     
-                    // Sende die Nachricht an die Bot-eigene Nummer (Send the message to the bot's own number)
-                    console.log('\x1b[33m%s\x1b[0m', '🟡 Sende Startnachricht an Bot...') // Sending startup message to bot
+                    // Sende die Nachricht an die Bot-eigene Nummer
+                    console.log('\x1b[33m%s\x1b[0m', '🟡 Sende Startnachricht an Bot...')
                     await this.sendMessage(botNumber, { text: startupMessage })
-                    console.log('\x1b[32m%s\x1b[0m', '✅ Startnachricht erfolgreich gesendet!') // Startup message successfully sent
+                    console.log('\x1b[32m%s\x1b[0m', '✅ Startnachricht erfolgreich gesendet!')
                 } catch (err) {
-                    console.error('\x1b[31m%s\x1b[0m', `❌ Fehler beim Senden der Startnachricht (Error sending startup message): ${err}`)
+                    console.error('\x1b[31m%s\x1b[0m', `❌ Fehler beim Senden der Startnachricht: ${err}`)
                 }
-            }, 5000) // Warte 5 Sekunden vor dem Senden (Wait 5 seconds before sending)
+            }, 5000) // Warte 5 Sekunden vor dem Senden
         }
         
-        // Verarbeite Verbindungsabbrüche (Handle connection disconnects)
+        // Verarbeite Verbindungsabbrüche
         if (connection === 'close') {
             let reason = lastDisconnect?.error?.output?.statusCode
             if (reason === 401) {
-                console.log('\x1b[31m%s\x1b[0m', '❌ Sitzung abgemeldet, bitte lösche die Sitzungen und scanne erneut. (Session logged out, please delete sessions and scan again)')
+                console.log('\x1b[31m%s\x1b[0m', '❌ Sitzung abgemeldet, bitte lösche die Sitzungen und scanne erneut.')
             } else if (reason === 408) {
-                console.log('\x1b[33m%s\x1b[0m', '⚠️ Zeitüberschreitung der Verbindung, verbinde neu... (Connection timeout, reconnecting)')
+                console.log('\x1b[33m%s\x1b[0m', '⚠️ Zeitüberschreitung der Verbindung, verbinde neu...')
             } else {
-                console.log('\x1b[33m%s\x1b[0m', '⚠️ Verbindung geschlossen, versuche neu zu verbinden... (Connection closed, trying to reconnect)')
+                console.log('\x1b[33m%s\x1b[0m', '⚠️ Verbindung geschlossen, versuche neu zu verbinden...')
             }
         }
     }
 }
 
-// Hilfsfunktion zur Formatierung der Laufzeit (Helper function for formatting uptime)
+// Hilfsfunktion zur Formatierung der Laufzeit
 function formatUptime(seconds) {
     const days = Math.floor(seconds / (3600 * 24))
     const hours = Math.floor((seconds % (3600 * 24)) / 3600)
@@ -2068,32 +2064,30 @@ function formatUptime(seconds) {
     return `${days}d ${hours}h ${minutes}m ${secs}s`
 }
 
-// Global command failure handler with translated messages
 global.dfail = (type, m, conn) => {
     let msg = {
-        rowner: 'Dieser Befehl kann nur vom _*HAUPTBESITZER!1!1!*_ verwendet werden', // This command can only be used by the MAIN OWNER!
-        owner: 'Dieser Befehl kann nur vom _*Bot-Besitzer*_ verwendet werden!', // This command can only be used by the bot owner!
-        mods: 'Dieser Befehl kann nur von _*Moderatoren*_ verwendet werden!', // This command can only be used by moderators!
-        premium: 'Dieser Befehl ist nur für _*Premium-Mitglieder*_ verfügbar!', // This command is only available for premium members!
-        rpg: 'Die RPG-Funktion wurde vom Administrator deaktiviert\n\n> Gib *.enable rpg* ein, um auf RPG-Funktionen zuzugreifen', // RPG function has been disabled by admin. Type *.enable rpg* to access RPG functions
-        group: 'Dieser Befehl kann nur in Gruppen verwendet werden!', // This command can only be used in groups!
-        private: 'Dieser Befehl kann nur im privaten Chat verwendet werden!', // This command can only be used in private chat!
-        admin: 'Dieser Befehl ist nur für *Gruppen-Administratoren* verfügbar!', // This command is only available for group administrators!
-        botAdmin: 'Der Bot muss *Administrator* sein, um diesen Befehl zu verwenden!', // The bot must be an administrator to use this command!
-        unreg: 'Bitte registriere dich, um diese Funktion zu nutzen, indem du folgendes eingibst:\n\n*.register Name.Alter*\n\nBeispiel: *#register max.16*', // Please register to use this function by entering: *.register Name.Age*
-        restrict: 'Diese Funktion ist *deaktiviert*!' // This function is disabled!
+        rowner: 'Dieser Befehl kann nur vom _*HAUPTBESITZER!1!1!*_ verwendet werden',
+        owner: 'Dieser Befehl kann nur vom _*Bot-Besitzer*_ verwendet werden!',
+        mods: 'Dieser Befehl kann nur von _*Moderatoren*_ verwendet werden!',
+        premium: 'Dieser Befehl ist nur für _*Premium-Mitglieder*_ verfügbar!',
+        rpg: 'Die RPG-Funktion wurde vom Administrator deaktiviert\n\n> Gib *.enable rpg* ein, um auf RPG-Funktionen zuzugreifen',
+        group: 'Dieser Befehl kann nur in Gruppen verwendet werden!',
+        private: 'Dieser Befehl kann nur im privaten Chat verwendet werden!',
+        admin: 'Dieser Befehl ist nur für *Gruppen-Administratoren* verfügbar!',
+        botAdmin: 'Der Bot muss *Administrator* sein, um diesen Befehl zu verwenden!',
+        unreg: 'Bitte registriere dich, um diese Funktion zu nutzen, indem du folgendes eingibst:\n\n*.register Name.Alter*\n\nBeispiel: *#register max.16*',
+        restrict: 'Diese Funktion ist *deaktiviert*!'
     }[type]
     if (msg) return m.reply(msg)
 }
 
-// File system modules and hot reload handling
 let fs = require('fs')
 let chalk = require('chalk')
 let file = require.resolve(__filename)
 fs.watchFile(file, () => {
     fs.unwatchFile(file)
-    console.log(chalk.redBright("Aktualisierung von 'handler.js'")) // Update of handler.js
+    console.log(chalk.redBright("Aktualisierung von 'handler.js'"))
     delete require.cache[file]
     if (global.reloadHandler) console.log(global.reloadHandler())
 })
-
+})
