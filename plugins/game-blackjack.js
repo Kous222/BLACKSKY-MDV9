@@ -1,4 +1,3 @@
-// Plugin: blackjack.js - Professionelles Blackjack-Spiel
 const { randomInt } = require('crypto');
 
 function createDeck() {
@@ -39,15 +38,15 @@ function formatHand(hand) {
   return hand.map(c => `[${c.value}${c.suit}]`).join(' ');
 }
 
-const games = {};
+global.blackjackGames = global.blackjackGames || {};
 
-let handler = async (m, { conn, command, text }) => {
+let handler = async (m, { conn }) => {
   const id = m.chat;
-  if (!games[id]) {
+  if (!global.blackjackGames[id]) {
     const deck = createDeck();
     const playerHand = [deck.pop(), deck.pop()];
     const dealerHand = [deck.pop(), deck.pop()];
-    games[id] = {
+    global.blackjackGames[id] = {
       deck,
       playerHand,
       dealerHand,
@@ -70,6 +69,7 @@ handler.help = ['blackjack'];
 handler.group = false;
 
 module.exports = handler;
+dler;
 
 // Hit command
 module.exports.hit = async (m, { conn }) => {
