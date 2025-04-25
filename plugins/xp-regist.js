@@ -9,7 +9,7 @@ let handler = async function (m, { text, usedPrefix }) {
   }
 
   if (!Reg.test(text)) {
-    throw `❌ Falsches Format!\nVerwende: *${usedPrefix}liste Name.Alter*\nBeispiel: *${usedPrefix}liste Martin.20*`
+    throw `❌ Falsches Format!\nVerwende: *${usedPrefix}register Name.Alter*\nBeispiel: *${usedPrefix}register Martin.20*`
   }
 
   let [_, name, splitter, age] = text.match(Reg)
