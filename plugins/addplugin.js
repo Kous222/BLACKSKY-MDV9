@@ -1,47 +1,34 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('fs')
+const path = require('path')
 
-// Path where plugins are stored
-const pluginFolder = './plugins';
-const metadataFile = './plugins.json'; // File to store plugin metadata
-
-// Adding a new plugin
 let handler = async (m, { conn, text }) => {
-  if (!text) {
-    return m.reply('Bitte gib den Code des Plugins an!');
-  }
+    if (!text) return m.reply('Bitte gib den JavaScript-Code an, der als Plugin hinzugefügt werden soll.')
+    
+    const filename = path.join(__dirname, `./${text.split(' ')[0]}.js`)
+    
+    // Sicherstellen, dass der Code nicht leer ist
+    const code = text.slice(text.indexOf(' ') + 1)
+    if (!code) return m.reply('Bitte gib einen gültigen JavaScript-Code für das Plugin an.')
 
-  // Define the plugin file path and metadata file path
-  const pluginId = Date.now(); // Unique ID for plugin (timestamp)
-  const pluginFilePath = path.join(pluginFolder, `${pluginId}.js`);
+    // Überprüfen, ob die Datei bereits existiert
+    if (fs.existsSync(filename)) {
+        return m.reply(`Das Plugin '${text.split(' ')[0]}' existiert bereits.`)
+    }
 
-  // Write the plugin code to the new file
-  fs.writeFileSync(pluginFilePath, text);
+    // Erstellen und den neuen Plugin-Code speichern
+    try {
+        fs.writeFileSync(filename, code, 'utf8')
+        m.reply(`Das Plugin '${text.split(' ')[0]}' wurde erfolgreich hinzugefügt!`)
+    } catch (err) {
+        console.error(err)
+        m.reply('Es ist ein Fehler beim Speichern des Plugins aufgetreten.')
+    }
+}
 
-  // Check if plugins.json exists, if not, create it
-  let metadata = {};
-  if (fs.existsSync(metadataFile)) {
-    metadata = JSON.parse(fs.readFileSync(metadataFile));
-  } else {
-    // Create an empty metadata object if the file doesn't exist
-    fs.writeFileSync(metadataFile, JSON.stringify({}, null, 2));
-  }
+handler.help = ['addplugin [pluginName] [JavaScript code]']
+handler.tags = ['owner']
+handler.command = /^addplugin$/i
 
-  // Add new plugin metadata
-  metadata[pluginId] = {
-    fileName: `${pluginId}.js`,
-    code: text
-  };
+handler.rowner = true
 
-  // Save updated metadata to plugins.json
-  fs.writeFileSync(metadataFile, JSON.stringify(metadata, null, 2));
-
-  // Send confirmation message with the plugin ID
-  m.reply(`Das Plugin wurde erfolgreich hinzugefügt! Es wurde unter der ID '${pluginId}' gespeichert.`);
-};
-
-handler.help = ['addplugin <plugin_code>'];
-handler.tags = ['admin'];
-handler.command = /^addplugin$/i;
-
-module.exports = handler;
+module.exports = handler

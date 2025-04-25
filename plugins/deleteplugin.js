@@ -1,53 +1,31 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('fs')
+const path = require('path')
 
-// Path where plugins are stored
-const pluginFolder = './plugins';
-const metadataFile = './plugins.json'; // File to store plugin metadata
+let handler = async (m, { text }) => {
+    if (!text) return m.reply('Bitte gib den Namen des Plugins an, das du löschen möchtest.')
 
-// Delete a plugin by its ID
-let handler = async (m, { conn, text }) => {
-  // Check if the plugin ID is provided
-  if (!text) {
-    return m.reply('Bitte gib die ID des Plugins an, das du löschen möchtest!');
-  }
+    // Entfernen der .js-Erweiterung, falls sie vorhanden ist
+    const filename = path.join(__dirname, `./${text.replace(/\.js$/, '')}.js`)
+    
+    // Überprüfen, ob die Datei existiert
+    if (!fs.existsSync(filename)) {
+        return m.reply(`Das Plugin '${text}' wurde nicht gefunden!`)
+    }
 
-  // Parse the plugin ID from the text
-  const pluginId = text.trim();
+    // Löschen der Plugin-Datei
+    try {
+        fs.unlinkSync(filename)
+        m.reply(`Das Plugin '${text}' wurde erfolgreich gelöscht!`)
+    } catch (err) {
+        console.error(err)
+        m.reply('Es ist ein Fehler beim Löschen des Plugins aufgetreten.')
+    }
+}
 
-  // Check if the plugin exists in plugins.json
-  if (!fs.existsSync(metadataFile)) {
-    return m.reply('Es gibt keine gespeicherten Plugins!');
-  }
+handler.help = ['deleteplugin [pluginName]']
+handler.tags = ['owner']
+handler.command = /^deleteplugin$/i
 
-  // Read the metadata file
-  let metadata = JSON.parse(fs.readFileSync(metadataFile));
+handler.rowner = true
 
-  // Check if the plugin ID exists in metadata
-  if (!metadata[pluginId]) {
-    return m.reply(`Plugin mit der ID ${pluginId} wurde nicht gefunden!`);
-  }
-
-  // Get the file path of the plugin to delete
-  const pluginFilePath = path.join(pluginFolder, metadata[pluginId].fileName);
-
-  // Delete the plugin file from the folder
-  if (fs.existsSync(pluginFilePath)) {
-    fs.unlinkSync(pluginFilePath); // Delete the plugin file
-  }
-
-  // Remove the plugin metadata from the metadata file
-  delete metadata[pluginId];
-
-  // Save the updated metadata to plugins.json
-  fs.writeFileSync(metadataFile, JSON.stringify(metadata, null, 2));
-
-  // Send a confirmation message
-  m.reply(`Das Plugin mit der ID ${pluginId} wurde erfolgreich gelöscht.`);
-};
-
-handler.help = ['deleteplugin <plugin_id>'];
-handler.tags = ['admin'];
-handler.command = /^deleteplugin$/i;
-
-module.exports = handler;
+module.exports = handler
