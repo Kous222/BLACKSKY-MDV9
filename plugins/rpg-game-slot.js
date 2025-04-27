@@ -33,9 +33,7 @@ ${usedPrefix + command} 100
     let x = [], y = [], z = [];
 
     const slotImagePath = path.join(__dirname, '../gifs/slot.png');
-    let slotImage = fs.existsSync(slotImagePath) ? fs.readFileSync(slotImagePath) : null;
-
-    if (!slotImage) {
+    if (!fs.existsSync(slotImagePath)) {
         throw '❌ Slot-Bild nicht gefunden. Bitte stelle sicher, dass eine Datei namens *slot.png* im Ordner */gifs/* existiert.';
     }
 
@@ -49,18 +47,18 @@ ${usedPrefix + command} 100
     let resultMessage;
     if (x[1] === y[1] && y[1] === z[1]) {
         user.Münzen += bet * 2;
-        resultMessage = `🎉 Du hast einen großen Gewinn erzielt! \nGewinn --> *${bet * 2}* MONEY\nWallet --> *${user.Münzen}* MONEY`;
+        resultMessage = `🎉 Du hast einen großen Gewinn erzielt!\nGewinn --> *${bet * 2}* MONEY\nWallet --> *${user.Münzen}* MONEY`;
     } else if (x[1] === y[1] || x[1] === z[1] || y[1] === z[1] || x[0] === y[1] || y[1] === z[2]) {
-        user.Münzen += reg; // Kleine Gewinnchance
-        resultMessage = `✨ Du hast einen kleinen Gewinn erzielt! \nGewinn --> *${reg}* MONEY\nWallet --> *${user.Münzen}* MONEY`;
+        user.Münzen += reg;
+        resultMessage = `✨ Du hast einen kleinen Gewinn erzielt!\nGewinn --> *${reg}* MONEY\nWallet --> *${user.Münzen}* MONEY`;
     } else {
         user.Münzen -= bet;
         resultMessage = `💔 Leider verloren! Du verlierst *${bet}* MONEY\nWallet --> *${user.Münzen}* MONEY`;
     }
 
-    // Send the result with the local slot image
+    // Send the result with the slot image
     await conn.sendMessage(m.chat, {
-        image: slotImage,
+        image: { url: slotImagePath }, // <-- Richtig: Bild wird über Pfad geladen
         caption: `🎰 *BLACKSKY-MD SLOT Result*\n\n${resultMessage}\n\n${formatSlot(x, y, z)}`
     });
 
@@ -96,12 +94,4 @@ function formatSlot(x, y, z) {
 ╰───────────────
         🎰┃🎰┃🎰
 `.trim();
-}
- 24)
-
-    hours = (hours < 10) ? "0" + hours : hours
-    minutes = (minutes < 10) ? "0" + minutes : minutes
-    seconds = (seconds < 10) ? "0" + seconds : seconds
-
-    return seconds + " Sekunden"
 }
