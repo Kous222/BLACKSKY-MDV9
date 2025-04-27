@@ -1,44 +1,68 @@
+const fs = require('fs');
+
 let handler = async (m, { conn, text }) => {
   let mentioned = m.mentionedJid && m.mentionedJid.length > 0 ? m.mentionedJid[0] : '';
 
   if (!mentioned) {
-    return m.reply('Bitte erwähne die Person, der du einen Heiratsantrag machen möchtest!');
+    return m.reply('❗ *Bitte erwähne die Person, der du einen Heiratsantrag machen möchtest!*');
   }
 
   let name = await conn.getName(mentioned);
-
+  
+  // Proposal message with styled formatting
   let message = `💍💖 *Heiratsantrag für @${mentioned.split('@')[0]}* 💖💍\n\n` +
-    `Liebe/r @${mentioned.split('@')[0]},\n\n` +
-    'Mit all meiner Liebe und meinem Herzen frage ich dich, möchtest du den Rest deines Lebens mit mir verbringen? 😍💍\n\n' +
-    'Bist du bereit, meine Hand zu nehmen und mit mir die Reise der Liebe zu beginnen? 💑\n\n' +
-    'Ich freue mich auf deine Antwort und hoffe, dass du "Ja, ich will" oder "Nein" sagst! 🤞💖\n\n' +
-    '*Antworten Sie nur mit "Ja, ich will" oder "Nein"*.';
+    `*Liebe/r @${mentioned.split('@')[0]},*\n\n` +
+    'Mit all meiner Liebe frage ich dich: *Möchtest du den Rest deines Lebens mit mir verbringen?* 😍💍\n\n' +
+    'Bist du bereit, meine Hand zu nehmen und gemeinsam die Reise der Liebe zu beginnen? 💑\n\n' +
+    'Ich freue mich sehr auf deine Antwort und hoffe, dass du mit "Ja, ich will" oder "Nein" antwortest! 🤞💖\n\n' +
+    'Antworten nur mit: "Ja, ich will" oder "Nein".';
 
-  // Send the proposal message and wait for response
+  // Send the proposal message with an image from the local folder
   await conn.sendMessage(m.chat, {
     text: message,
-    mentions: [mentioned], // Proper mention using the user's JID
+    mentions: [mentioned],
+    image: fs.readFileSync('./gifs/marry.png'), // Path to the local image file
   }, { quoted: m });
 
-  // Listen for the response to the proposal using the correct event handler
+  let timeoutReached = false;
+
+  // Listen for the response
   const listener = async (update) => {
     const reply = update.messages[0];
+
+    if (timeoutReached) return; // Ignore messages after timeout
 
     if (reply.sender === mentioned) {
       let replyMessage = '';
 
       if (/ja,? ich will/i.test(reply.text)) {
         let successMessages = [
-          `🎉 *Glückwunsch, @${mentioned.split('@')[0]}! Du hast den Heiratsantrag angenommen!* 🎉\n\n` +
+          `🎉 *Herzlichen Glückwunsch, @${mentioned.split('@')[0]}! Du hast den Heiratsantrag angenommen!* 🎉\n\n` +
           'Wir sind nun offiziell verlobt! 🥳💍 Ich freue mich auf unser gemeinsames Leben! 💖',
 
-          `✨ *Wooooow, @${mentioned.split('@')[0]}! Du hast zugestimmt!* ✨\n\n` +
+          `✨ *Wow, @${mentioned.split('@')[0]}! Du hast zugestimmt!* ✨\n\n` +
           'Ich kann mein Glück kaum fassen! Auf ein Leben voller Liebe und Abenteuer! 💑💍',
 
           `💍 *@${mentioned.split('@')[0]}, du hast Ja gesagt!* 💍\n\n` +
           'Ich kann es kaum erwarten, den Rest meines Lebens mit dir zu verbringen! 😘💖'
         ];
         replyMessage = successMessages[Math.floor(Math.random() * successMessages.length)];
+
+        // Create a marriage certificate message after "Yes"
+        let certificateMessage = `🎓 *Hochzeitsurkunde* 🎓\n\n` +
+          `*Verliebt in die Ehe:*\n\n` +
+          `💑 *Ehepaar:* @${mentioned.split('@')[0]} & @${m.sender.split('@')[0]}\n` +
+          `📅 *Datum der Eheschließung:* ${new Date().toLocaleDateString('de-DE')}\n` +
+          `✍️ *Zeugen:* Alle, die Zeuge dieses wundervollen Moments sind! 💖\n\n` +
+          '*Herzlichen Glückwunsch zur Hochzeit!* 🎉💍';
+
+        // Send the marriage certificate with the local image
+        await conn.sendMessage(m.chat, {
+          text: certificateMessage,
+          mentions: [mentioned, m.sender],
+          image: fs.readFileSync('./gifs/marry.png'), // Path to the local image file
+        }, { quoted: m });
+        
       } else if (/nein/i.test(reply.text)) {
         let rejectionMessages = [
           `😢 *Oh nein, @${mentioned.split('@')[0]}, du hast den Heiratsantrag abgelehnt.* 😢\n\n` +
@@ -55,10 +79,10 @@ let handler = async (m, { conn, text }) => {
         return; // Ignore other responses
       }
 
-      // Send the reply message based on the response
+      // Send the reply message
       await conn.sendMessage(m.chat, {
         text: replyMessage,
-        mentions: [mentioned], // Proper mention in the response message
+        mentions: [mentioned], // Mention in the response
       }, { quoted: reply });
 
       // Remove the listener after receiving the response
@@ -69,10 +93,13 @@ let handler = async (m, { conn, text }) => {
   // Subscribe to the response listener
   conn.ev.on('messages.upsert', listener);
 
-  // Timeout: After 1 minute, automatically send the "Zeit abgelaufen" message
+  // Timeout: After 1 minute, automatically send the "Zeit abgelaufen" message if no response is received
   setTimeout(() => {
-    conn.ev.off('messages.upsert', listener); // Remove listener after timeout
-    conn.sendMessage(m.chat, { text: '⌛ *Zeit abgelaufen! Keine Antwort erhalten.*' });
+    if (!timeoutReached) {
+      timeoutReached = true;
+      conn.ev.off('messages.upsert', listener); // Remove listener after timeout
+      conn.sendMessage(m.chat, { text: '⌛ *Zeit abgelaufen! Keine Antwort erhalten.*' });
+    }
   }, 60000);
 };
 
