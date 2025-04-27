@@ -80,14 +80,4 @@ handler.help = ['marry [@user]'];
 handler.tags = ['fun', 'interaction', 'romance'];
 handler.command = /^marry$/i;
 
-module.exports = handler;ntions: [mentioned]  // Proper mention in the response message
-      }, { quoted: reply });
-    }
-  });
-};
-
-handler.help = ['marry [@user]'];
-handler.tags = ['fun', 'interaction', 'romance'];
-handler.command = /^marry$/i;
-
 module.exports = handler;
