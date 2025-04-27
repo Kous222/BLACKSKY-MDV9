@@ -2,26 +2,33 @@ const fs = require('fs')
 const path = require('path')
 
 let handler = async (m, { conn, text }) => {
-    if (!text) return m.reply('Bitte gib den JavaScript-Code an, der als Plugin hinzugefügt werden soll.')
-    
-    const filename = path.join(__dirname, `./${text.split(' ')[0]}.js`)
-    
-    // Sicherstellen, dass der Code nicht leer ist
-    const code = text.slice(text.indexOf(' ') + 1)
-    if (!code) return m.reply('Bitte gib einen gültigen JavaScript-Code für das Plugin an.')
+    if (!text) return m.reply('Bitte gib zuerst den Plugin-Namen und dann den JavaScript-Code an.\nBeispiel: *.addplugin test module.exports = {...}*')
 
-    // Überprüfen, ob die Datei bereits existiert
-    if (fs.existsSync(filename)) {
-        return m.reply(`Das Plugin '${text.split(' ')[0]}' existiert bereits.`)
+    let [name, ...codeParts] = text.split(' ')
+    let code = codeParts.join(' ').trim()
+
+    if (!name || !code) {
+        return m.reply('Bitte gib einen Plugin-Namen und gültigen JavaScript-Code an.')
     }
 
-    // Erstellen und den neuen Plugin-Code speichern
+    const pluginFolder = path.join(__dirname, '../plugins') // <-- Speicher im richtigen plugins-Ordner
+    if (!fs.existsSync(pluginFolder)) {
+        fs.mkdirSync(pluginFolder, { recursive: true })
+    }
+
+    const filename = path.join(pluginFolder, `${name}.js`)
+
+    // Verhindern, dass bestehende Plugins überschrieben werden
+    if (fs.existsSync(filename)) {
+        return m.reply(`Das Plugin '${name}' existiert bereits.`)
+    }
+
     try {
         fs.writeFileSync(filename, code, 'utf8')
-        m.reply(`Das Plugin '${text.split(' ')[0]}' wurde erfolgreich hinzugefügt!`)
+        m.reply(`✅ Das Plugin '${name}' wurde erfolgreich gespeichert und ist nach dem Neustart verfügbar.`)
     } catch (err) {
         console.error(err)
-        m.reply('Es ist ein Fehler beim Speichern des Plugins aufgetreten.')
+        m.reply('❌ Fehler beim Speichern des Plugins.')
     }
 }
 
