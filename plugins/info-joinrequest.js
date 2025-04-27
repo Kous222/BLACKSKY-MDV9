@@ -30,6 +30,14 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   if (action === 'accept') {
     joinRequests.splice(index, 1);
     await conn.groupAcceptInvite(link.split('/').pop());
+    
+    // Send the greeting message after joining the group
+    const owner = await conn.getProfilePicture(m.chat);
+    await conn.sendMessage(m.chat, {
+      text: `❤️ Der Owner (@${m.sender.split('@')[0]}) hat mich in eure Gruppe geschickt und wird in Kürze nachkommen. Ich hoffe, ihr werdet viel Spaß mit mir haben ❤️`,
+      mentions: [m.sender]
+    });
+
     return m.reply(`✅ Anfrage von @${sender.split('@')[0]} wurde **akzeptiert** und der Bot ist der Gruppe beigetreten.`, null, {
       mentions: [sender]
     });
