@@ -1,16 +1,12 @@
-let handler = async (m, { conn, text, participants }) => {
-  // Check if the user is mentioned, if not, fall back to quoted sender or message sender
+let handler = async (m, { conn, text }) => {
   let mentioned = m.mentionedJid && m.mentionedJid.length > 0 ? m.mentionedJid[0] : '';
 
-  // If no user is mentioned, send an error message
   if (!mentioned) {
     return m.reply('Bitte erwähne die Person, der du einen Heiratsantrag machen möchtest!');
   }
 
-  // Get the name of the mentioned user
   let name = await conn.getName(mentioned);
 
-  // Crafting the marriage proposal message
   let message = `💍💖 *Heiratsantrag für @${mentioned.split('@')[0]}* 💖💍\n\n` +
     `Liebe/r @${mentioned.split('@')[0]},\n\n` +
     'Mit all meiner Liebe und meinem Herzen frage ich dich, möchtest du den Rest deines Lebens mit mir verbringen? 😍💍\n\n' +
@@ -25,17 +21,13 @@ let handler = async (m, { conn, text, participants }) => {
   }, { quoted: m });
 
   // Listen for the response to the proposal using the correct event handler
-  conn.ev.on('messages.upsert', async (update) => {
-    // Get the latest message
-    const reply = update.messages[0];  
-    
-    // Ensure the response is from the mentioned user
+  const listener = async (update) => {
+    const reply = update.messages[0];
+
     if (reply.sender === mentioned) {
       let replyMessage = '';
 
-      // If the response is exactly "Ja, ich will"
       if (/ja,? ich will/i.test(reply.text)) {
-        // More celebratory messages for acceptance
         let successMessages = [
           `🎉 *Glückwunsch, @${mentioned.split('@')[0]}! Du hast den Heiratsantrag angenommen!* 🎉\n\n` +
           'Wir sind nun offiziell verlobt! 🥳💍 Ich freue mich auf unser gemeinsames Leben! 💖',
@@ -46,12 +38,8 @@ let handler = async (m, { conn, text, participants }) => {
           `💍 *@${mentioned.split('@')[0]}, du hast Ja gesagt!* 💍\n\n` +
           'Ich kann es kaum erwarten, den Rest meines Lebens mit dir zu verbringen! 😘💖'
         ];
-        // Randomly select one of the success messages
         replyMessage = successMessages[Math.floor(Math.random() * successMessages.length)];
-      }
-      // If the response is exactly "Nein"
-      else if (/nein/i.test(reply.text)) {
-        // Humorous or friendly rejection messages
+      } else if (/nein/i.test(reply.text)) {
         let rejectionMessages = [
           `😢 *Oh nein, @${mentioned.split('@')[0]}, du hast den Heiratsantrag abgelehnt.* 😢\n\n` +
           'Es tut mir leid, aber ich werde nie aufhören, dich zu lieben! ❤️',
@@ -62,18 +50,37 @@ let handler = async (m, { conn, text, participants }) => {
           `🙁 *Oh schade, @${mentioned.split('@')[0]}, du hast abgelehnt.* 🙁\n\n` +
           'Ich werde trotzdem weiterhin ein treuer Bewunderer bleiben! 🥺💖'
         ];
-        // Randomly select one of the rejection messages
         replyMessage = rejectionMessages[Math.floor(Math.random() * rejectionMessages.length)];
-      }
-      // If the response is neither "Ja" nor "Nein"
-      else {
-        return; // Ignore any other response
+      } else {
+        return; // Ignore other responses
       }
 
       // Send the reply message based on the response
-      await conn.sendMessage(m.chat, { 
-        text: replyMessage, 
-        mentions: [mentioned]  // Proper mention in the response message
+      await conn.sendMessage(m.chat, {
+        text: replyMessage,
+        mentions: [mentioned], // Proper mention in the response message
+      }, { quoted: reply });
+
+      // Remove the listener after receiving the response
+      conn.ev.off('messages.upsert', listener);
+    }
+  };
+
+  // Subscribe to the response listener
+  conn.ev.on('messages.upsert', listener);
+
+  // Timeout: After 1 minute, automatically send the "Zeit abgelaufen" message
+  setTimeout(() => {
+    conn.ev.off('messages.upsert', listener); // Remove listener after timeout
+    conn.sendMessage(m.chat, { text: '⌛ *Zeit abgelaufen! Keine Antwort erhalten.*' });
+  }, 60000);
+};
+
+handler.help = ['marry [@user]'];
+handler.tags = ['fun', 'interaction', 'romance'];
+handler.command = /^marry$/i;
+
+module.exports = handler;ntions: [mentioned]  // Proper mention in the response message
       }, { quoted: reply });
     }
   });

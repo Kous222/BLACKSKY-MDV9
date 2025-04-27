@@ -1,87 +1,89 @@
-let reg = 100
+const fs = require('fs');
+const path = require('path');
+
+let reg = 100; // Regulärer Gewinnbetrag
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
     let infoText = `
-🎰 *Slot Game – Gacha Money*
+🎰 *BLACKSKY-MD SLOT*
 
 Wie viel möchtest du setzen?
 
 📌 *Beispiel:* 
 ${usedPrefix + command} 100
-    `.trim()
+    `.trim();
 
-    if (!args[0]) throw infoText
-    if (isNaN(args[0])) throw '❌ Bitte gib eine gültige Zahl als Einsatz an.'
+    if (!args[0]) throw infoText;
+    if (isNaN(args[0])) throw '❌ Bitte gib eine gültige Zahl als Einsatz an.';
     
-    let bet = parseInt(args[0])
-    let user = global.db.data.users[m.sender]
-    let cooldown = 20000 // 20 Sekunden
-    let now = new Date * 1
+    let bet = parseInt(args[0]);
+    let user = global.db.data.users[m.sender];
+    let cooldown = 20000; // 20 Sekunden
+    let now = new Date * 1;
 
     if (now - user.lastslot < cooldown)
-        throw `⏳ Bitte warte *${msToTime(user.lastslot + cooldown - now)}*, bevor du erneut spielst.`
+        throw `⏳ Bitte warte *${msToTime(user.lastslot + cooldown - now)}*, bevor du erneut spielst.`;
 
-    if (bet < 100) throw '⚠️ Der Mindesteinsatz beträgt *100 MONEY*.'
-    if (user.Münzen < bet) throw `❌ Du hast nicht genug *MONEY*.\nPrüfe deinen Kontostand mit *.balance*`
+    if (bet < 100) throw '⚠️ Der Mindesteinsatz beträgt *100 MONEY*.';
+    if (user.Münzen < bet) throw `❌ Du hast nicht genug *MONEY*.\nPrüfe deinen Kontostand mit *.balance*`;
 
-    user.lastslot = now
+    user.lastslot = now;
 
-    const emojis = ["🍒", "🍋", "🍇", "⭐", "💎"]
-    let x = [], y = [], z = []
+    const emojis = ["🍒", "🍋", "🍇", "⭐", "💎"];
+    let x = [], y = [], z = [];
 
-    let msg = await m.reply('🎰 Slot wird gestartet...')
+    const slotImagePath = path.join(__dirname, '../gifs/slot.png');
+    let slotImage = fs.existsSync(slotImagePath) ? fs.readFileSync(slotImagePath) : null;
 
+    if (!slotImage) {
+        throw '❌ Slot-Bild nicht gefunden. Bitte stelle sicher, dass eine Datei namens *slot.png* im Ordner */gifs/* existiert.';
+    }
+
+    // Generate the slot result
     for (let i = 0; i < 3; i++) {
-        x[i] = rand(emojis)
-        y[i] = rand(emojis)
-        z[i] = rand(emojis)
+        x[i] = rand(emojis);
+        y[i] = rand(emojis);
+        z[i] = rand(emojis);
     }
 
-    for (let spin = 0; spin < 5; spin++) {
-        x = [rand(emojis), rand(emojis), rand(emojis)]
-        y = [rand(emojis), rand(emojis), rand(emojis)]
-        z = [rand(emojis), rand(emojis), rand(emojis)]
-
-        await delay(800)
-        await conn.sendMessage(m.chat, {
-            text: formatSlot(x, y, z),
-            edit: msg.key
-        })
-    }
-
-    let resultMessage
+    let resultMessage;
     if (x[1] === y[1] && y[1] === z[1]) {
-        user.Münzen += bet * 2
-        resultMessage = `🎉 *JACKPOT!* Du hast *${bet * 2} MONEY* gewonnen!`
-    } else if (x[1] === y[1] || x[1] === z[1] || y[1] === z[1]) {
-        user.Münzen += reg
-        resultMessage = `✨ Guter Versuch! Du erhältst *${reg} MONEY* als Trostpreis.`
+        user.Münzen += bet * 2;
+        resultMessage = `🎉 Du hast einen großen Gewinn erzielt! \nGewinn --> *${bet * 2}* MONEY\nWallet --> *${user.Münzen}* MONEY`;
+    } else if (x[1] === y[1] || x[1] === z[1] || y[1] === z[1] || x[0] === y[1] || y[1] === z[2]) {
+        user.Münzen += reg; // Kleine Gewinnchance
+        resultMessage = `✨ Du hast einen kleinen Gewinn erzielt! \nGewinn --> *${reg}* MONEY\nWallet --> *${user.Münzen}* MONEY`;
     } else {
-        user.Münzen -= bet
-        resultMessage = `💔 Leider verloren! Du verlierst *${bet} MONEY*.`
+        user.Münzen -= bet;
+        resultMessage = `💔 Leider verloren! Du verlierst *${bet}* MONEY\nWallet --> *${user.Münzen}* MONEY`;
     }
 
+    // Send the result with the local slot image
     await conn.sendMessage(m.chat, {
-        text: formatSlot(x, y, z),
-        edit: msg.key
-    })
-    await m.reply(resultMessage)
+        image: slotImage,
+        caption: `🎰 *BLACKSKY-MD SLOT Result*\n\n${resultMessage}\n\n${formatSlot(x, y, z)}`
+    });
+
+    // Bestätigung
+    await m.reply(resultMessage);
 }
 
-handler.help = ['slot <betrag>']
-handler.tags = ['spiel']
-handler.command = ['slot']
-handler.group = true
-handler.rpg = true
+handler.help = ['slot <betrag>'];
+handler.tags = ['spiel'];
+handler.command = ['slot'];
+handler.group = true;
+handler.rpg = true;
 
-module.exports = handler
+module.exports = handler;
 
+// Hilfsfunktionen
 function rand(arr) {
-    return arr[Math.floor(Math.random() * arr.length)]
+    return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function delay(ms) {
-    return new Promise(res => setTimeout(res, ms))
+function msToTime(ms) {
+    let sec = Math.floor(ms / 1000);
+    return `${sec} Sekunde${sec !== 1 ? 'n' : ''}`;
 }
 
 function formatSlot(x, y, z) {
@@ -93,23 +95,9 @@ function formatSlot(x, y, z) {
 │ ${x[2]} : ${y[2]} : ${z[2]}
 ╰───────────────
         🎰┃🎰┃🎰
-`.trim()
+`.trim();
 }
-
-function msToTime(ms) {
-    let sec = Math.floor(ms / 1000)
-    return `${sec} Sekunde${sec !== 1 ? 'n' : ''}`
-}
-up = true
-handler.rpg = true
-
-module.exports = handler
-
-function msToTime(duration) {
-    var milliseconds = parseInt((duration % 1000) / 100),
-        seconds = Math.floor((duration / 1000) % 60),
-        minutes = Math.floor((duration / (1000 * 60)) % 60),
-        hours = Math.floor((duration / (1000 * 60 * 60)) % 24)
+ 24)
 
     hours = (hours < 10) ? "0" + hours : hours
     minutes = (minutes < 10) ? "0" + minutes : minutes
