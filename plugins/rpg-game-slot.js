@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { getBalance, addBalance, subtractBalance } = require('../lib/bank'); // <--- Bankfunktionen importieren
+const { getBalance, addBalance, subtractBalance } = require('../lib/bank'); // Bankfunktionen importieren
 
 let reg = 100; // Kleiner Gewinnbetrag
 
@@ -27,7 +27,7 @@ ${usedPrefix + command} 100
     if (now - m.user.lastslot < cooldown)
         throw `⏳ Bitte warte *${msToTime(m.user.lastslot + cooldown - now)}*, bevor du erneut spielst.`;
 
-    let balance = getBalance(m.sender);
+    let balance = await getBalance(m.sender); // <-- WICHTIG: await!
 
     if (bet < 100) throw '⚠️ Der Mindesteinsatz beträgt *100 MONEY*.';
     if (balance < bet) throw `❌ Du hast nicht genug *MONEY*.\nPrüfe deinen Kontostand mit *.balance*`;
@@ -51,14 +51,14 @@ ${usedPrefix + command} 100
 
     let resultMessage;
     if (x[1] === y[1] && y[1] === z[1]) {
-        addBalance(m.sender, bet * 2);
-        resultMessage = `🎉 Du hast einen großen Gewinn erzielt!\nGewinn --> *${bet * 2}* MONEY\nNeuer Kontostand --> *${getBalance(m.sender)}* MONEY`;
+        await addBalance(m.sender, bet * 2); // <-- await!
+        resultMessage = `🎉 Du hast einen großen Gewinn erzielt!\nGewinn --> *${bet * 2}* MONEY\nNeuer Kontostand --> *${await getBalance(m.sender)}* MONEY`;
     } else if (x[1] === y[1] || x[1] === z[1] || y[1] === z[1] || x[0] === y[1] || y[1] === z[2]) {
-        addBalance(m.sender, reg);
-        resultMessage = `✨ Du hast einen kleinen Gewinn erzielt!\nGewinn --> *${reg}* MONEY\nNeuer Kontostand --> *${getBalance(m.sender)}* MONEY`;
+        await addBalance(m.sender, reg); // <-- await!
+        resultMessage = `✨ Du hast einen kleinen Gewinn erzielt!\nGewinn --> *${reg}* MONEY\nNeuer Kontostand --> *${await getBalance(m.sender)}* MONEY`;
     } else {
-        subtractBalance(m.sender, bet);
-        resultMessage = `💔 Leider verloren! Du verlierst *${bet}* MONEY\nNeuer Kontostand --> *${getBalance(m.sender)}* MONEY`;
+        await subtractBalance(m.sender, bet); // <-- await!
+        resultMessage = `💔 Leider verloren! Du verlierst *${bet}* MONEY\nNeuer Kontostand --> *${await getBalance(m.sender)}* MONEY`;
     }
 
     await conn.sendMessage(m.chat, {
