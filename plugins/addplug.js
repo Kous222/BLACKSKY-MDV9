@@ -1,0 +1,51 @@
+const fs = require('fs')
+const path = require('path')
+
+const pluginFolder = path.join(__dirname, '../plugins')
+const pluginsDB = path.join(__dirname, '../lib/plugins.json')
+
+let handler = async (m, { conn, text }) => {
+    if (!global.owner.includes(m.sender.split('@')[0])) return m.reply('❌ Nur der Owner kann Plugins hinzufügen.')
+
+    if (!text) return m.reply('❗ Format: *.addplug [pluginName] [JavaScript Code]*')
+
+    let [name, ...codeParts] = text.trim().split(' ')
+    let code = codeParts.join(' ').trim()
+
+    if (!name || !code) return m.reply('❗ Bitte gib einen Plugin-Namen und JavaScript-Code an.')
+
+    // Plugins Ordner erstellen, falls nicht vorhanden
+    if (!fs.existsSync(pluginFolder)) fs.mkdirSync(pluginFolder, { recursive: true })
+
+    // plugins.json erstellen, falls nicht vorhanden
+    if (!fs.existsSync(pluginsDB)) {
+        fs.writeFileSync(pluginsDB, JSON.stringify({}, null, 2))
+    }
+
+    const filename = path.join(pluginFolder, `${name}.js`)
+
+    if (fs.existsSync(filename)) {
+        return m.reply(`❗ Ein Plugin namens *${name}* existiert bereits.`)
+    }
+
+    try {
+        fs.writeFileSync(filename, code, 'utf8')
+
+        // Backup in plugins.json
+        let plugins = JSON.parse(fs.readFileSync(pluginsDB))
+        plugins[name] = code
+        fs.writeFileSync(pluginsDB, JSON.stringify(plugins, null, 2))
+
+        m.reply(`✅ Plugin *${name}* wurde erfolgreich gespeichert!\n\nBackup wurde ebenfalls aktualisiert.`)
+    } catch (err) {
+        console.error(err)
+        m.reply('❌ Fehler beim Speichern des Plugins.')
+    }
+}
+
+handler.help = ['addplug [pluginName] [JavaScript Code]']
+handler.tags = ['owner']
+handler.command = /^addplug$/i
+handler.rowner = true
+
+module.exports = handler
