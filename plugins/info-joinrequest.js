@@ -26,12 +26,19 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     throw `❗ Ungültiger Index. Benutze z. B. \`${usedPrefix + command} accept 1\``;
 
   const { link, sender } = joinRequests[index];
+  const groupCode = link.split('/').pop();
 
   if (action === 'accept') {
     joinRequests.splice(index, 1);
-    await conn.groupAcceptInvite(link.split('/').pop());
+    
+    // Bot tritt der Gruppe bei
+    const groupId = await conn.groupAcceptInvite(groupCode);
 
-    const ownerProfilePic = await conn.profilePictureUrl(m.chat, 'image').catch(_ => null);
+    // Warten kurz, um sicherzustellen, dass der Bot vollständig beigetreten ist
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
+    // Holen wir das Profilbild der neuen Gruppe
+    const groupProfilePic = await conn.profilePictureUrl(groupId, 'image').catch(_ => null);
 
     const welcomeMessage = `🌟🎉 *Hurra!* 🎉🌟\n\n` +
       `❤️ Der Owner (@${m.sender.split('@')[0]}) hat mich in eure Gruppe geschickt!\n` +
@@ -40,14 +47,15 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
       `💬 Nutzt mich gerne für Spiele, Infos und vieles mehr!\n\n` +
       `✨ Viel Spaß zusammen! ✨`;
 
-    if (ownerProfilePic) {
-      await conn.sendMessage(m.chat, {
-        image: { url: ownerProfilePic },
+    // Nachricht an die neue Gruppe schicken
+    if (groupProfilePic) {
+      await conn.sendMessage(groupId, {
+        image: { url: groupProfilePic },
         caption: welcomeMessage,
         mentions: [m.sender]
       });
     } else {
-      await conn.sendMessage(m.chat, {
+      await conn.sendMessage(groupId, {
         text: welcomeMessage,
         mentions: [m.sender]
       });
