@@ -30,13 +30,28 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   if (action === 'accept') {
     joinRequests.splice(index, 1);
     await conn.groupAcceptInvite(link.split('/').pop());
-    
-    // Send the greeting message after joining the group
-    const owner = await conn.getProfilePicture(m.chat);
-    await conn.sendMessage(m.chat, {
-      text: `❤️ Der Owner (@${m.sender.split('@')[0]}) hat mich in eure Gruppe geschickt und wird in Kürze nachkommen. Ich hoffe, ihr werdet viel Spaß mit mir haben ❤️`,
-      mentions: [m.sender]
-    });
+
+    const ownerProfilePic = await conn.profilePictureUrl(m.chat, 'image').catch(_ => null);
+
+    const welcomeMessage = `🌟🎉 *Hurra!* 🎉🌟\n\n` +
+      `❤️ Der Owner (@${m.sender.split('@')[0]}) hat mich in eure Gruppe geschickt!\n` +
+      `🤖 Ich bin hier, um Spaß und Ordnung zu bringen!\n\n` +
+      `🔔 *Owner wird bald nachkommen.*\n` +
+      `💬 Nutzt mich gerne für Spiele, Infos und vieles mehr!\n\n` +
+      `✨ Viel Spaß zusammen! ✨`;
+
+    if (ownerProfilePic) {
+      await conn.sendMessage(m.chat, {
+        image: { url: ownerProfilePic },
+        caption: welcomeMessage,
+        mentions: [m.sender]
+      });
+    } else {
+      await conn.sendMessage(m.chat, {
+        text: welcomeMessage,
+        mentions: [m.sender]
+      });
+    }
 
     return m.reply(`✅ Anfrage von @${sender.split('@')[0]} wurde **akzeptiert** und der Bot ist der Gruppe beigetreten.`, null, {
       mentions: [sender]
