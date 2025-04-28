@@ -20,19 +20,25 @@ ${usedPrefix + command} 100
     let bet = parseInt(args[0]);
     let cooldown = 20000; // 20 Sekunden
     let now = Date.now();
-    
-    m.user = m.user || {}; // Falls nicht vorhanden
-    if (!m.user.lastslot) m.user.lastslot = 0;
 
-    if (now - m.user.lastslot < cooldown)
-        throw `⏳ Bitte warte *${msToTime(m.user.lastslot + cooldown - now)}*, bevor du erneut spielst.`;
+    // Userdaten initialisieren
+    global.db.data.users = global.db.data.users || {};
+    global.db.data.users[m.sender] = global.db.data.users[m.sender] || {};
 
-    let balance = await getBalance(m.sender); // <-- WICHTIG: await!
+    if (!global.db.data.users[m.sender].lastslot) global.db.data.users[m.sender].lastslot = 0;
+
+    let lastslot = global.db.data.users[m.sender].lastslot;
+
+    if (now - lastslot < cooldown) {
+        throw `⏳ Bitte warte *${msToTime(lastslot + cooldown - now)}*, bevor du erneut spielst.`;
+    }
+
+    let balance = await getBalance(m.sender);
 
     if (bet < 100) throw '⚠️ Der Mindesteinsatz beträgt *100 MONEY*.';
     if (balance < bet) throw `❌ Du hast nicht genug *MONEY*.\nPrüfe deinen Kontostand mit *.balance*`;
 
-    m.user.lastslot = now;
+    global.db.data.users[m.sender].lastslot = now;
 
     const emojis = ["🍒", "🍋", "🍇", "⭐", "💎"];
     let x = [], y = [], z = [];
@@ -51,22 +57,20 @@ ${usedPrefix + command} 100
 
     let resultMessage;
     if (x[1] === y[1] && y[1] === z[1]) {
-        await addBalance(m.sender, bet * 2); // <-- await!
-        resultMessage = `🎉 Du hast einen großen Gewinn erzielt!\nGewinn --> *${bet * 2}* MONEY\nNeuer Kontostand --> *${await getBalance(m.sender)}* MONEY`;
+        await addBalance(m.sender, bet * 2);
+        resultMessage = `🎉 *Großer Gewinn!*\n\nGewinn: ➡️ *${bet * 2}* MONEY\nNeuer Kontostand: ➡️ *${await getBalance(m.sender)}* MONEY`;
     } else if (x[1] === y[1] || x[1] === z[1] || y[1] === z[1] || x[0] === y[1] || y[1] === z[2]) {
-        await addBalance(m.sender, reg); // <-- await!
-        resultMessage = `✨ Du hast einen kleinen Gewinn erzielt!\nGewinn --> *${reg}* MONEY\nNeuer Kontostand --> *${await getBalance(m.sender)}* MONEY`;
+        await addBalance(m.sender, reg);
+        resultMessage = `✨ *Kleiner Gewinn!*\n\nGewinn: ➡️ *${reg}* MONEY\nNeuer Kontostand: ➡️ *${await getBalance(m.sender)}* MONEY`;
     } else {
-        await subtractBalance(m.sender, bet); // <-- await!
-        resultMessage = `💔 Leider verloren! Du verlierst *${bet}* MONEY\nNeuer Kontostand --> *${await getBalance(m.sender)}* MONEY`;
+        await subtractBalance(m.sender, bet);
+        resultMessage = `💔 *Verloren!*\n\nVerlust: ➡️ *${bet}* MONEY\nNeuer Kontostand: ➡️ *${await getBalance(m.sender)}* MONEY`;
     }
 
     await conn.sendMessage(m.chat, {
         image: { url: slotImagePath },
-        caption: `🎰 *BLACKSKY-MD SLOT Result*\n\n${resultMessage}\n\n${formatSlot(x, y, z)}`
+        caption: `🎰 *BLACKSKY-MD SLOT Result*\n\n${formatSlot(x, y, z)}\n\n${resultMessage}`
     });
-
-    await m.reply(resultMessage);
 }
 
 handler.help = ['slot <betrag>'];

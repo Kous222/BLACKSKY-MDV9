@@ -1,13 +1,21 @@
-const { getBalance, subtractBalance } = require('../lib/bank');
+const { getBalance, addBalance } = require('../lib/bank'); // use addBalance instead of subtractBalance
 
 let handler = async (m, { conn, args }) => {
+  // Parse amount from args
   let amount = parseInt(args[0]);
-  if (!amount || isNaN(amount) || amount <= 0) return m.reply('❗ Bitte gib einen gültigen Betrag an.');
+  
+  // Validate the amount input
+  if (!amount || isNaN(amount) || amount <= 0) {
+    return m.reply('❗ Bitte gib einen gültigen Betrag an.');
+  }
 
+  // Get current balance
   let current = getBalance(m.sender);
-  if (current < amount) return m.reply('❗ Du hast nicht genug Münzen!');
+  
+  // Add the deposit amount to the current balance
+  addBalance(m.sender, amount);
 
-  subtractBalance(m.sender, amount);
+  // Send confirmation message
   await conn.sendMessage(m.chat, {
     text: `✅ *Einzahlung Erfolgreich!*\n\n💸 Betrag: *${amount} Münzen*\n🪪 Konto aktualisiert!`,
   }, { quoted: m });
