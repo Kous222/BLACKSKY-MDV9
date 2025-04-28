@@ -1,7 +1,8 @@
 const fs = require('fs');
 const path = require('path');
+const { getBalance, addBalance, subtractBalance } = require('../lib/bank'); // <--- Bankfunktionen importieren
 
-let reg = 100; // Regulärer Gewinnbetrag
+let reg = 100; // Kleiner Gewinnbetrag
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
     let infoText = `
@@ -17,17 +18,21 @@ ${usedPrefix + command} 100
     if (isNaN(args[0])) throw '❌ Bitte gib eine gültige Zahl als Einsatz an.';
     
     let bet = parseInt(args[0]);
-    let user = global.db.data.users[m.sender];
     let cooldown = 20000; // 20 Sekunden
-    let now = new Date * 1;
+    let now = Date.now();
+    
+    m.user = m.user || {}; // Falls nicht vorhanden
+    if (!m.user.lastslot) m.user.lastslot = 0;
 
-    if (now - user.lastslot < cooldown)
-        throw `⏳ Bitte warte *${msToTime(user.lastslot + cooldown - now)}*, bevor du erneut spielst.`;
+    if (now - m.user.lastslot < cooldown)
+        throw `⏳ Bitte warte *${msToTime(m.user.lastslot + cooldown - now)}*, bevor du erneut spielst.`;
+
+    let balance = getBalance(m.sender);
 
     if (bet < 100) throw '⚠️ Der Mindesteinsatz beträgt *100 MONEY*.';
-    if (user.Münzen < bet) throw `❌ Du hast nicht genug *MONEY*.\nPrüfe deinen Kontostand mit *.balance*`;
+    if (balance < bet) throw `❌ Du hast nicht genug *MONEY*.\nPrüfe deinen Kontostand mit *.balance*`;
 
-    user.lastslot = now;
+    m.user.lastslot = now;
 
     const emojis = ["🍒", "🍋", "🍇", "⭐", "💎"];
     let x = [], y = [], z = [];
@@ -37,7 +42,7 @@ ${usedPrefix + command} 100
         throw '❌ Slot-Bild nicht gefunden. Bitte stelle sicher, dass eine Datei namens *slot.png* im Ordner */gifs/* existiert.';
     }
 
-    // Generate the slot result
+    // Slot-Ergebnis erzeugen
     for (let i = 0; i < 3; i++) {
         x[i] = rand(emojis);
         y[i] = rand(emojis);
@@ -46,23 +51,21 @@ ${usedPrefix + command} 100
 
     let resultMessage;
     if (x[1] === y[1] && y[1] === z[1]) {
-        user.Münzen += bet * 2;
-        resultMessage = `🎉 Du hast einen großen Gewinn erzielt!\nGewinn --> *${bet * 2}* MONEY\nWallet --> *${user.Münzen}* MONEY`;
+        addBalance(m.sender, bet * 2);
+        resultMessage = `🎉 Du hast einen großen Gewinn erzielt!\nGewinn --> *${bet * 2}* MONEY\nNeuer Kontostand --> *${getBalance(m.sender)}* MONEY`;
     } else if (x[1] === y[1] || x[1] === z[1] || y[1] === z[1] || x[0] === y[1] || y[1] === z[2]) {
-        user.Münzen += reg;
-        resultMessage = `✨ Du hast einen kleinen Gewinn erzielt!\nGewinn --> *${reg}* MONEY\nWallet --> *${user.Münzen}* MONEY`;
+        addBalance(m.sender, reg);
+        resultMessage = `✨ Du hast einen kleinen Gewinn erzielt!\nGewinn --> *${reg}* MONEY\nNeuer Kontostand --> *${getBalance(m.sender)}* MONEY`;
     } else {
-        user.Münzen -= bet;
-        resultMessage = `💔 Leider verloren! Du verlierst *${bet}* MONEY\nWallet --> *${user.Münzen}* MONEY`;
+        subtractBalance(m.sender, bet);
+        resultMessage = `💔 Leider verloren! Du verlierst *${bet}* MONEY\nNeuer Kontostand --> *${getBalance(m.sender)}* MONEY`;
     }
 
-    // Send the result with the slot image
     await conn.sendMessage(m.chat, {
-        image: { url: slotImagePath }, // <-- Richtig: Bild wird über Pfad geladen
+        image: { url: slotImagePath },
         caption: `🎰 *BLACKSKY-MD SLOT Result*\n\n${resultMessage}\n\n${formatSlot(x, y, z)}`
     });
 
-    // Bestätigung
     await m.reply(resultMessage);
 }
 
