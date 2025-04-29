@@ -1,6 +1,6 @@
 let handler = async (m, { conn, command, usedPrefix }) => {
   // Define the website URL
-  const websiteURL = "https://madariss5.github.io/BLACKSKY-MD-WEBSITE";  // Replace with your actual website URL
+  const websiteURL = "https://blacksky-md-website.vercel.app/contact"  // Replace with your actual website URL
 
   // Create the message to send to the user
   const message = `🌐 Besuche unsere Website für weitere Informationen und Unterstützung:\n\n${websiteURL}`;
