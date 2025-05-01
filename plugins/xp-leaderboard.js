@@ -45,13 +45,3 @@ handler.tags = ['xp']
 handler.command = /^(toplevel|leaderboard|rangliste|topxp)$/i
 
 module.exports = handler
-ufzusteigen!_`.trim()
-
-  m.reply(text)
-}
-
-handler.help = ['toplevel', 'topxp', 'leaderboard', 'rangliste - Zeigt die Top-10-Rangliste der Benutzer basierend auf ihren XP und Leveln. Deine eigene Position wird ebenfalls angezeigt, falls du nicht unter den Top 10 bist.']
-handler.tags = ['xp']
-handler.command = /^(toplevel|leaderboard|rangliste|topxp)$/i
-
-module.exports = handler
