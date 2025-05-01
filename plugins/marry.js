@@ -100,7 +100,7 @@ let handler = async (m, { conn, text }) => {
       conn.ev.off('messages.upsert', listener); // Remove listener after timeout
       conn.sendMessage(m.chat, { text: '⌛ *Zeit abgelaufen! Keine Antwort erhalten.*' });
     }
-  }, 60000);
+  }, 60000); // Timeout after 60 seconds
 };
 
 handler.help = ['marry [@user]'];
