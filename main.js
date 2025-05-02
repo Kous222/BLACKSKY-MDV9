@@ -42,8 +42,6 @@
   
   const { Low, JSONFile } = lowdb;
   const mongoDB = require('./lib/mongoDB');
-  const PostgresDBAdapter = require('./lib/postgresDBAdapter');
-  const cloudDBAdapter = require('./lib/cloudDBAdapter');
   const readline = require('readline');
   
   // Check command line flags
@@ -80,16 +78,12 @@
   global.prefix = /^\./;
   
   // Initialize database
-  // Use PostgreSQL when DATABASE_URL is available (Heroku)
-  // Otherwise fall back to previous options
   global.db = new Low(
-    process.env.DATABASE_URL ?
-      new PostgresDBAdapter() :
-      /https?:\/\//.test(opts.db || '') ? 
-        new cloudDBAdapter(opts.db) : 
-        /mongodb/.test(opts.db) ? 
-          new mongoDB(opts.db) : 
-          new JSONFile(path.join(__dirname, 'lib', (opts._[0] ? opts._[0] + '_' : '') + 'database.json'))
+    /https?:\/\//.test(opts.db || '') ? 
+      new cloudDBAdapter(opts.db) : 
+      /mongodb/.test(opts.db) ? 
+        new mongoDB(opts.db) : 
+        new JSONFile(path.join(__dirname, 'lib', (opts._[0] ? opts._[0] + '_' : '') + 'database.json'))
   );
   
   global.DATABASE = global.db;
@@ -130,32 +124,10 @@
   
   // Set up sessions directory
   const sessionsDir = '' + (opts._[0] || 'sessions');
+  global.isInit = !fs.existsSync(sessionsDir);
   
-  // Create sessions directory if it doesn't exist
-  if (!fs.existsSync(sessionsDir)) {
-    fs.mkdirSync(sessionsDir, { recursive: true });
-  }
-  
-  global.isInit = !fs.existsSync(path.join(sessionsDir, 'creds.json'));
-  
-  // Initialize WhatsApp auth state - Use PostgreSQL when DATABASE_URL is available (Heroku)
-  let state, saveCreds;
-  
-  if (process.env.DATABASE_URL) {
-    // Use PostgreSQL auth state on Heroku
-    console.log(chalk.green('Using PostgreSQL for WhatsApp session persistence'));
-    const { usePostgreSQLAuthState } = require('./lib/pgAuthState');
-    const pgAuth = await usePostgreSQLAuthState();
-    state = pgAuth.state;
-    saveCreds = pgAuth.saveCreds;
-  } else {
-    // Use file system auth state in local development
-    console.log(chalk.blue('Using local filesystem for WhatsApp session persistence'));
-    const { state: fileState, saveCreds: fileSaveCreds } = await useMultiFileAuthState(sessionsDir);
-    state = fileState;
-    saveCreds = fileSaveCreds;
-  }
-  
+  // Initialize WhatsApp auth state
+  const { state, saveState, saveCreds } = await useMultiFileAuthState(sessionsDir);
   const { version, isLatest } = await fetchLatestBaileysVersion();
   
   console.log(chalk.magenta(`-- using WA v${version.join('.')}, isLatest: ${isLatest} --`));
@@ -335,80 +307,13 @@
   
   global.plugins = {};
   
-  // Function to load a plugin from file
-  const loadPlugin = (filename, filepath) => {
-    try {
-      global.plugins[filename] = require(filepath);
-      return true;
-    } catch (e) {
-      conn.logger.error(`Error loading plugin ${filename}:`, e);
-      delete global.plugins[filename];
-      return false;
-    }
-  };
-  
-  // First load plugins from filesystem
   for (let filename of fs.readdirSync(pluginsDir).filter(pluginFilter)) {
-    loadPlugin(filename, path.join(pluginsDir, filename));
-  }
-  
-  // Then, if PostgreSQL is available (on Heroku), load plugins from the database
-  if (process.env.DATABASE_URL) {
-    (async () => {
-      try {
-        const { Pool } = require('pg');
-        const pool = new Pool({
-          connectionString: process.env.DATABASE_URL,
-          ssl: {
-            rejectUnauthorized: false // Required for Heroku PostgreSQL
-          }
-        });
-        
-        const client = await pool.connect();
-        try {
-          // Check if plugins table exists
-          const tableCheck = await client.query(`
-            SELECT EXISTS (
-              SELECT FROM information_schema.tables 
-              WHERE table_schema = 'public' 
-              AND table_name = 'plugins'
-            );
-          `);
-          
-          if (tableCheck.rows[0].exists) {
-            // Get all plugins from database
-            const result = await client.query('SELECT name, code FROM plugins');
-            
-            if (result.rows.length > 0) {
-              conn.logger.info(`Loading ${result.rows.length} plugins from PostgreSQL database...`);
-              
-              for (const plugin of result.rows) {
-                const { name, code } = plugin;
-                
-                // Skip if the plugin is already loaded from filesystem
-                if (global.plugins[name]) {
-                  conn.logger.info(`Plugin ${name} already loaded from filesystem, skipping database version`);
-                  continue;
-                }
-                
-                // Save the plugin to file first (to allow require)
-                const filepath = path.join(pluginsDir, name);
-                fs.writeFileSync(filepath, code, 'utf8');
-                
-                // Load the plugin
-                if (loadPlugin(name, filepath)) {
-                  conn.logger.info(`Successfully loaded plugin ${name} from database`);
-                }
-              }
-            }
-          }
-        } finally {
-          client.release();
-        }
-      } catch (error) {
-        console.error('Error loading plugins from PostgreSQL:', error);
-      }
-    })();
+    try {
+      global.plugins[filename] = require(path.join(pluginsDir, filename));
+    } catch (e) {
+      conn.logger.error(e);
+      delete global.plugins[filename];
+    }
   }
   
   console.log(Object.keys(global.plugins));
