@@ -11,18 +11,24 @@ let handler = async (m, { conn, text }) => {
   let whipMessage = `⚡ *@${m.sender.split('@')[0]} hat @${mentioned.split('@')[0]} mit der Peitsche geschlagen!* ⚡\n` +
     `${senderName} hat die Peitsche gezückt und ${mentionedName} gepeitscht! 😱💥`;
 
-  // Send the GIF (peitsche.gif) first
   await conn.sendMessage(m.chat, {
-    video: { url: './gifs/peitsche.gif' },
-    caption: whipMessage, // This is the text message with mentions
-    mentions: [mentioned, m.sender], // Mention the sender and mentioned user
-    gifPlayback: true, // Ensure the video plays as a GIF
-  }, { quoted: m });
+    text: whipMessage,
+    mentions: [mentioned, m.sender],
+  });
+
+  // Send the whip GIF as a video (animated)
+  await conn.sendMessage(m.chat, {
+    video: { 
+      url: './gifs/peitsch.gif', // Path to your gif file
+      caption: '⚡ Peitsch GIF!',
+      mimetype: 'video/gif'
+    }
+  });
 };
 
-handler.help = ['peitsche @user'];
+handler.help = ['peitsch @user'];
 handler.tags = ['fun', 'interaction'];
-handler.command = /^peitsche$/i;
+handler.command = /^peitsch$/i;
 handler.group = true;
 
 module.exports = handler;

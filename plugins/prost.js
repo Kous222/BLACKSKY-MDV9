@@ -16,10 +16,13 @@ let handler = async (m, { conn, text, participants }) => {
 
   // Send the GIF (prost.gif) first
   await conn.sendMessage(m.chat, {
-    video: { url: './gifs/prost.gif' },
-    caption: prostMessage, // This is the text message with mentions
-    mentions: [mentioned], // Mention the user in the message
-    gifPlayback: true, // Ensure the video plays as a GIF
+    video: { 
+      url: './gifs/prost.gif', // Ensure the path is correct
+      caption: prostMessage,   // The text message with mentions
+      mentions: [mentioned],   // Mention the user
+      gifPlayback: true,       // Ensure the video plays as a GIF
+      mimetype: 'video/gif'    // Explicitly set the mimetype to GIF
+    }
   }, { quoted: m });
 };
 

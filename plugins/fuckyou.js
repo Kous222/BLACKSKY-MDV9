@@ -8,13 +8,12 @@ let handler = async (m, { text }) => {
     `Bots können keine Gefühle zeigen... außer diesen hier: 🖕🏽`,
   ];
 
-  // Send the message
   await m.reply(`${msg[Math.floor(Math.random() * msg.length)]}${target ? `\n\n${target}` : ''}`);
 
-  // Send GIF along with the message
+  // Send the animated GIF for the "Ehren-Mittelfinger"
   await m.reply({
     video: { 
-      url: './gifs/fuckyou.gif', // path to your gif file
+      url: './gifs/fuckyou.gif', // Path to your gif file
       caption: '🖕🏽 Hier ist dein GIF für den Ehren-Mittelfinger!',
       mimetype: 'video/gif'
     }

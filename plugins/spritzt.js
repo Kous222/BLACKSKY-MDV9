@@ -10,12 +10,15 @@ let handler = async (m, { conn, text, participants }) => {
   // Generate the message in the format "@sender spritzt auf @user 💦💦"
   let message = `@${m.sender.split('@')[0]} spritzt auf @${mentioned.split('@')[0]} 💦💦`;
 
-  // Send the GIF (spritzt.gif) first
+  // Ensure that the path is correct or use a URL if the GIF is hosted online
   await conn.sendMessage(m.chat, {
-    video: { url: './gifs/spritzt.gif' },
-    caption: message, // This is the text message with mentions
-    mentions: [m.sender, mentioned], // Mention both the sender and the mentioned user
-    gifPlayback: true, // Ensure the video plays as a GIF
+    video: { 
+      url: './gifs/spritzt.gif', // Ensure the path is correct or use a full URL to the hosted GIF
+      caption: message, // The text message with mentions
+      mentions: [m.sender, mentioned], // Mention both the sender and the mentioned user
+      gifPlayback: true, // Ensure the video plays as a GIF
+      mimetype: 'video/gif' // Explicitly set the mimetype to GIF
+    }
   }, { quoted: m });
 };
 

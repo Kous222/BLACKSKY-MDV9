@@ -1,4 +1,4 @@
-let handler = async (m, { conn, text }) => {
+let handler = async (m, { conn, text, participants }) => {
   // Check if a user is mentioned in the message
   let mentioned = m.mentionedJid && m.mentionedJid.length > 0 ? m.mentionedJid[0] : '';
 
@@ -13,13 +13,20 @@ let handler = async (m, { conn, text }) => {
   // Generate the message in the format "@sender reitet auf @user"
   let message = `@${m.sender.split('@')[0]} reitet auf @${mentioned.split('@')[0]}`;
 
-  // Send the GIF (reiteauf.gif) first
+  // Send the message with mentions
   await conn.sendMessage(m.chat, {
-    video: { url: './gifs/reiteauf.gif' },
-    caption: message, // This is the text message with mentions
-    mentions: [m.sender, mentioned], // Mention both the sender and the mentioned user
-    gifPlayback: true, // Ensure the video plays as a GIF
-  }, { quoted: m });
+    text: message,
+    mentions: [m.sender, mentioned] // Mention both the sender and the mentioned user
+  });
+
+  // Send the riding GIF as a video (animated)
+  await conn.sendMessage(m.chat, {
+    video: { 
+      url: './gifs/reiteauf.gif', // Path to your gif file
+      caption: '🏇 Hier ist dein Reiten GIF!',
+      mimetype: 'video/gif'
+    }
+  });
 };
 
 handler.help = ['reiteauf [@user]'];
