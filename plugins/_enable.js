@@ -5,6 +5,21 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isR
   let type = (args[0] || '').toLowerCase()
   let isAll = false
   let isUser = false
+
+  // Function to update the chat settings in Atlas
+  async function saveChatSettings() {
+    try {
+      // Assuming you have an Atlas collection or database setup for chats
+      await atlasDb.collection('chats').updateOne(
+        { chatId: m.chat }, // Query based on chat ID
+        { $set: chat }, // Update with the new settings
+        { upsert: true } // Create the entry if it doesn't exist
+      );
+    } catch (error) {
+      console.error('Error saving chat settings:', error);
+    }
+  }
+  
   switch (type) {
     case 'notifgempa':
       if (m.isGroup) {

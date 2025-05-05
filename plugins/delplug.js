@@ -1,47 +1,42 @@
-const fs = require('fs')
-const path = require('path')
+const Plugin = require('../lib/pluginModel');  // Import the plugin model
+const fs = require('fs');
+const path = require('path');
 
-const pluginFolder = path.join(__dirname, '../plugins')
-const pluginsDB = path.join(__dirname, '../lib/plugins.json')
+const pluginFolder = path.join(__dirname, '../plugins');
 
 let handler = async (m, { conn, text }) => {
-    if (!global.owner.includes(m.sender.split('@')[0])) return m.reply('❌ Nur der Owner kann Plugins löschen.')
+    if (!global.owner.includes(m.sender.split('@')[0])) return m.reply('❌ Nur der Owner kann Plugins löschen.');
 
-    if (!text) return m.reply('❗ Format: *.delplug [pluginName]*')
+    if (!text) return m.reply('❗ Format: *.delplug [pluginName]*');
 
-    let name = text.trim()
-
-    const filename = path.join(pluginFolder, `${name}.js`)
-
-    // Überprüfen, ob die Plugin-Datei existiert
-    if (!fs.existsSync(filename)) {
-        return m.reply(`❗ Das Plugin *${name}* existiert nicht im plugins-Ordner.`)
-    }
+    let name = text.trim();
+    const filename = path.join(pluginFolder, `${name}.js`);
 
     try {
-        // Plugin-Datei löschen
-        fs.unlinkSync(filename)
-
-        // Plugin aus plugins.json entfernen
-        if (fs.existsSync(pluginsDB)) {
-            let plugins = JSON.parse(fs.readFileSync(pluginsDB))
-
-            if (plugins[name]) {
-                delete plugins[name]
-                fs.writeFileSync(pluginsDB, JSON.stringify(plugins, null, 2))
-            }
+        // Überprüfen, ob das Plugin in der MongoDB-Datenbank existiert
+        const plugin = await Plugin.findOne({ name: name });
+        if (!plugin) {
+            return m.reply(`❗ Das Plugin *${name}* existiert nicht in der Datenbank.`);
         }
 
-        m.reply(`✅ Plugin *${name}* wurde erfolgreich gelöscht!`)
+        // Plugin aus der MongoDB-Datenbank löschen
+        await Plugin.deleteOne({ name: name });
+
+        // Überprüfen und löschen der Datei im lokalen Dateisystem
+        if (fs.existsSync(filename)) {
+            fs.unlinkSync(filename);
+        }
+
+        m.reply(`✅ Plugin *${name}* wurde erfolgreich gelöscht!`);
     } catch (err) {
-        console.error(err)
-        m.reply('❌ Fehler beim Löschen des Plugins.')
+        console.error(err);
+        m.reply('❌ Fehler beim Löschen des Plugins.');
     }
-}
+};
 
-handler.help = ['delplug [pluginName]']
-handler.tags = ['owner']
-handler.command = /^delplug$/i
-handler.rowner = true
+handler.help = ['delplug [pluginName]'];
+handler.tags = ['owner'];
+handler.command = /^delplug$/i;
+handler.rowner = true;
 
-module.exports = handler
+module.exports = handler;

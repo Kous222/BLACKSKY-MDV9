@@ -1,11 +1,20 @@
-const { getBalance, getLastDaily } = require('../lib/bank');
+const Bank = require('../lib/bankModel'); // Assuming you have a Bank model for MongoDB
+const { getLastDaily } = require('../lib/bank'); // keep getLastDaily or integrate with MongoDB
 
 let handler = async (m, { conn, command, usedPrefix }) => {
   try {
-    const id = m.sender.split('@')[0]; // <- Korrektur hier!
-    let balance = getBalance(id);
+    const id = m.sender.split('@')[0]; // <- User ID from the sender
+    let user = await Bank.findOne({ userId: id }); // Fetch user from MongoDB
+
+    if (!user) {
+      // If the user doesn't exist, create a new user record with a starting balance of 0
+      user = new Bank({ userId: id, balance: 0, lastDaily: 0 });
+      await user.save();
+    }
+
+    let balance = user.balance;
     let now = Date.now();
-    let lastDaily = getLastDaily(id);
+    let lastDaily = user.lastDaily;
     let cooldown = 24 * 60 * 60 * 1000;
     let remaining = cooldown - (now - lastDaily);
 

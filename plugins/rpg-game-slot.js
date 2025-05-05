@@ -1,8 +1,8 @@
 const fs = require('fs');
 const path = require('path');
-const { getBalance, addBalance, subtractBalance } = require('../lib/bank'); // Bankfunktionen importieren
+const { getBalance, addBalance, subtractBalance } = require('../lib/bank'); // Bank functions imported
 
-let reg = 100; // Kleiner Gewinnbetrag
+let reg = 100; // Small win amount
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
     let infoText = `
@@ -21,7 +21,7 @@ ${usedPrefix + command} 100
     let cooldown = 20000; // 20 Sekunden
     let now = Date.now();
 
-    // Userdaten initialisieren
+    // User data initialization and loading the bank data
     global.db.data.users = global.db.data.users || {};
     global.db.data.users[m.sender] = global.db.data.users[m.sender] || {};
 
@@ -33,6 +33,7 @@ ${usedPrefix + command} 100
         throw `⏳ Bitte warte *${msToTime(lastslot + cooldown - now)}*, bevor du erneut spielst.`;
     }
 
+    // Get user balance from the bank system
     let balance = await getBalance(m.sender);
 
     if (bet < 100) throw '⚠️ Der Mindesteinsatz beträgt *100 MONEY*.';
@@ -48,7 +49,7 @@ ${usedPrefix + command} 100
         throw '❌ Slot-Bild nicht gefunden. Bitte stelle sicher, dass eine Datei namens *slot.png* im Ordner */gifs/* existiert.';
     }
 
-    // Slot-Ergebnis erzeugen
+    // Generate slot results
     for (let i = 0; i < 3; i++) {
         x[i] = rand(emojis);
         y[i] = rand(emojis);
@@ -57,16 +58,17 @@ ${usedPrefix + command} 100
 
     let resultMessage;
     if (x[1] === y[1] && y[1] === z[1]) {
-        await addBalance(m.sender, bet * 2);
+        await addBalance(m.sender, bet * 2); // Add to the user's balance for a big win
         resultMessage = `🎉 *Großer Gewinn!*\n\nGewinn: ➡️ *${bet * 2}* MONEY\nNeuer Kontostand: ➡️ *${await getBalance(m.sender)}* MONEY`;
     } else if (x[1] === y[1] || x[1] === z[1] || y[1] === z[1] || x[0] === y[1] || y[1] === z[2]) {
-        await addBalance(m.sender, reg);
+        await addBalance(m.sender, reg); // Add a smaller win to the user's balance
         resultMessage = `✨ *Kleiner Gewinn!*\n\nGewinn: ➡️ *${reg}* MONEY\nNeuer Kontostand: ➡️ *${await getBalance(m.sender)}* MONEY`;
     } else {
-        await subtractBalance(m.sender, bet);
+        await subtractBalance(m.sender, bet); // Subtract from balance on a loss
         resultMessage = `💔 *Verloren!*\n\nVerlust: ➡️ *${bet}* MONEY\nNeuer Kontostand: ➡️ *${await getBalance(m.sender)}* MONEY`;
     }
 
+    // Send result image and message to the chat
     await conn.sendMessage(m.chat, {
         image: { url: slotImagePath },
         caption: `🎰 *BLACKSKY-MD SLOT Result*\n\n${formatSlot(x, y, z)}\n\n${resultMessage}`
@@ -81,7 +83,7 @@ handler.rpg = true;
 
 module.exports = handler;
 
-// Hilfsfunktionen
+// Helper functions
 function rand(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
 }

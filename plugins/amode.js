@@ -4,8 +4,6 @@ const path = require('path');
 const DATA_FOLDER = './lib';
 const DATA_FILE = path.join(DATA_FOLDER, 'amode.json');
 
-let amode = {};
-
 // Sicherstellen, dass lib-Ordner und amode.json existieren
 function ensureDataFile() {
     if (!fs.existsSync(DATA_FOLDER)) {
@@ -19,15 +17,13 @@ function ensureDataFile() {
 // Daten laden
 function loadData() {
     ensureDataFile();
-    amode = JSON.parse(fs.readFileSync(DATA_FILE));
+    return JSON.parse(fs.readFileSync(DATA_FILE));
 }
 
 // Daten speichern
-function saveData() {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(amode, null, 2));
+function saveData(data) {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
-
-loadData();
 
 let handler = async (m, { conn, args, usedPrefix, command, isAdmin, isOwner }) => {
     if (!m.isGroup) throw '❌ Dieser Befehl funktioniert nur in Gruppen.';
@@ -36,9 +32,12 @@ let handler = async (m, { conn, args, usedPrefix, command, isAdmin, isOwner }) =
     let groupId = m.chat;
     let option = (args[0] || '').toLowerCase();
 
+    // Lade die amode-Daten
+    let amode = loadData();
+
     if (option === 'enable') {
         amode[groupId] = true;
-        saveData();
+        saveData(amode);
         await conn.sendMessage(m.chat, {
             text: '✅ Admin-Modus wurde *aktiviert*! Nur Admins können jetzt Befehle verwenden.',
             buttons: [
@@ -49,7 +48,7 @@ let handler = async (m, { conn, args, usedPrefix, command, isAdmin, isOwner }) =
         });
     } else if (option === 'disable') {
         amode[groupId] = false;
-        saveData();
+        saveData(amode);
         await conn.sendMessage(m.chat, {
             text: '❎ Admin-Modus wurde *deaktiviert*! Jetzt können alle Mitglieder Befehle verwenden.',
             buttons: [
@@ -77,6 +76,7 @@ handler.before = async function (m, { isAdmin, isOwner }) {
     if (isAdmin || isOwner) return;
 
     let groupId = m.chat;
+    let amode = loadData();
     if (amode[groupId]) {
         throw '⛔ Nur Admins dürfen in diesem Chat Befehle benutzen!';
     }

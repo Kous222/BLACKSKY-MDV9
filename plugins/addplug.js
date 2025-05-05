@@ -1,8 +1,4 @@
-const fs = require('fs')
-const path = require('path')
-
-const pluginFolder = path.join(__dirname, '../plugins')
-const pluginsDB = path.join(__dirname, '../lib/plugins.json')
+const Plugin = require('../lib/pluginModel');  // Import the plugin model
 
 let handler = async (m, { conn, text }) => {
     if (!global.owner.includes(m.sender.split('@')[0])) return m.reply('❌ Nur der Owner kann Plugins hinzufügen.');
@@ -14,36 +10,30 @@ let handler = async (m, { conn, text }) => {
 
     if (!name || !code) return m.reply('❗ Bitte gib einen Plugin-Namen und JavaScript-Code an.')
 
-    if (!fs.existsSync(pluginFolder)) fs.mkdirSync(pluginFolder, { recursive: true })
-
-    const filename = path.join(pluginFolder, `${name}.js`)
-
-    if (fs.existsSync(filename)) {
-        return m.reply(`❗ Ein Plugin namens *${name}* existiert bereits.`)
-    }
-
     try {
-        fs.writeFileSync(filename, code, 'utf8')
-
-        // Sicherstellen, dass lib-Ordner existiert
-        if (!fs.existsSync(path.join(__dirname, '../lib'))) {
-            fs.mkdirSync(path.join(__dirname, '../lib'), { recursive: true })
+        // Check if plugin already exists in the database
+        let existingPlugin = await Plugin.findOne({ name: name });
+        if (existingPlugin) {
+            return m.reply(`❗ Ein Plugin namens *${name}* existiert bereits in der Datenbank.`)
         }
 
-        // Sicherstellen, dass plugins.json existiert
-        if (!fs.existsSync(pluginsDB)) {
-            fs.writeFileSync(pluginsDB, '{}', 'utf8')
-        }
+        // Save the plugin to the database
+        const newPlugin = new Plugin({ name, code });
+        await newPlugin.save();
 
-        // Jetzt korrekt laden und speichern
-        let plugins = JSON.parse(fs.readFileSync(pluginsDB))
-        plugins[name] = code
-        fs.writeFileSync(pluginsDB, JSON.stringify(plugins, null, 2))
+        // You can optionally save the plugin to the file system as a backup
+        const fs = require('fs');
+        const path = require('path');
+        const pluginFolder = path.join(__dirname, '../plugins');
+        if (!fs.existsSync(pluginFolder)) fs.mkdirSync(pluginFolder, { recursive: true });
 
-        m.reply(`✅ Plugin *${name}* wurde erfolgreich gespeichert!\n\nEs ist jetzt sofort aktiv.\n(Backup auch in plugins.json)`)
+        const filename = path.join(pluginFolder, `${name}.js`);
+        fs.writeFileSync(filename, code, 'utf8');
+
+        m.reply(`✅ Plugin *${name}* wurde erfolgreich gespeichert!\n\nEs ist jetzt sofort aktiv und in der Datenbank gespeichert.`);
     } catch (err) {
-        console.error(err)
-        m.reply('❌ Fehler beim Speichern des Plugins.')
+        console.error(err);
+        m.reply('❌ Fehler beim Speichern des Plugins.');
     }
 }
 
@@ -52,4 +42,4 @@ handler.tags = ['owner']
 handler.command = /^addplug$/i
 handler.rowner = true
 
-module.exports = handler
+module.exports = handler;

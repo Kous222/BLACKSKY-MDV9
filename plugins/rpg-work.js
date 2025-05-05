@@ -22,7 +22,22 @@ let handler = async (m, { conn, command, args, usedPrefix }) => {
     let rumah = pickRandom(ruma)
     let pnjh = ['Dieb', 'Verkehrssünder', 'Bankräuber', 'Taschendieb', 'Korruptionsverdächtiger']
     let pnjht = pickRandom(pnjh)
-    
+
+    // Atlas command: to view user's current job progress
+    if (/atlas/i.test(command)) {
+        let atlasMessage = `
+        _*Dein Atlas: Aktueller Beruf und Status*_
+
+        Letzte Arbeit: ${users.lastkerja ? new Date(users.lastkerja).toLocaleString() : 'Noch keine Arbeit'}
+
+        Beruf: ${type || 'Unbestimmt'}
+        Letzte Belohnung: *${users.lastkerja ? 'Münzen' : 'Keine Belohnung'}*
+
+        Aktueller Status: ${timers}
+        `
+        return m.reply(atlasMessage)
+    }
+
     if (/kerjadulu|arbeiten|work|arbeit/i.test(command)) {
         if (new Date - users.lastkerja < 300000) return m.reply(`Du arbeitest bereits\nZeit für eine Pause für 🕜 ${clockString(time - new Date())}`)
 
@@ -107,9 +122,9 @@ _*Wähle einen Beruf, den du ausüben möchtest*_
     }
 }
 
-handler.help = ['arbeiten', 'arbeit', 'work']
+handler.help = ['arbeiten', 'arbeit', 'work', 'atlas']
 handler.tags = ['rpg']
-handler.command = /^(arbeiten|arbeit|work)$/i
+handler.command = /^(arbeiten|arbeit|work|atlas)$/i
 handler.register = true
 handler.group = true
 handler.rpg = true
