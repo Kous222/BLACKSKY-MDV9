@@ -1,4 +1,4 @@
-let handler = async (m, { conn, text, participants }) => {
+let handler = async (m, { conn, text }) => {
   // Check if a user is mentioned in the message
   let mentioned = m.mentionedJid && m.mentionedJid.length > 0 ? m.mentionedJid[0] : '';
 
@@ -10,14 +10,16 @@ let handler = async (m, { conn, text, participants }) => {
   // Get the name of the mentioned user
   let name = await conn.getName(mentioned);
 
-  // Create the kotzauf message
+  // Generate the kotzauf message
   let kotzaufMessage = `🤢 *@${mentioned.split('@')[0]}*, ich kotze jetzt auf dich! 🤢\n\n` +
-                       'Du hast es wirklich verdient, viel Spaß! 😂💩';
+                       'Du hast es wirklich verdient, viel Spaß! 😂🤮';
 
-  // Send the kotzauf message to the group with the mentioned user
+  // Send the GIF (kotzauf.gif) first
   await conn.sendMessage(m.chat, {
-    text: kotzaufMessage,
-    mentions: [mentioned] // This will mention the user like WhatsApp does
+    video: { url: './gifs/kotzauf.gif' },
+    caption: kotzaufMessage, // This is the text message with mentions
+    mentions: [mentioned], // Mention the user in the message
+    gifPlayback: true, // Ensure the video plays as a GIF
   }, { quoted: m });
 };
 

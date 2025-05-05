@@ -25,7 +25,16 @@ let handler = async (m, { conn, participants }) => {
                `🔻 *Unten*: ${chosenTags.split(', ')[1]}\n\n` +
                `*Viel Spaß, Leute! Möge der Spaß beginnen!* 😄`;
 
-    await conn.sendMessage(m.chat, { text, mentions });
+    // Send GIF along with the text
+    await conn.sendMessage(m.chat, { 
+        text, 
+        mentions,
+        video: { 
+            url: './gifs/gangbang.gif', // path to your gif file
+            caption: '🔥 GangBang GIF 🔥',
+            mimetype: 'video/gif'
+        }
+    });
 };
 
 handler.help = ['bang'];

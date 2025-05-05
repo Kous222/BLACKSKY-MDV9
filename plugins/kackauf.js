@@ -14,10 +14,12 @@ let handler = async (m, { conn, text, participants }) => {
   let kackaufMessage = `💩 *@${mentioned.split('@')[0]}*, ich kacke jetzt auf dich! 💩\n\n` +
                        'Ich hoffe, du bist bereit für das unvergessliche Erlebnis! 😂';
 
-  // Send the kackauf message to the group with the mentioned user
+  // Send the GIF with caption and mention
   await conn.sendMessage(m.chat, {
-    text: kackaufMessage,
-    mentions: [mentioned] // This will mention the user like WhatsApp does
+    video: { url: './gifs/kackauf.gif' },
+    gifPlayback: true,
+    caption: kackaufMessage,
+    mentions: [mentioned]
   }, { quoted: m });
 };
 

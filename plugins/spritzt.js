@@ -10,10 +10,12 @@ let handler = async (m, { conn, text, participants }) => {
   // Generate the message in the format "@sender spritzt auf @user 💦💦"
   let message = `@${m.sender.split('@')[0]} spritzt auf @${mentioned.split('@')[0]} 💦💦`;
 
-  // Send the message with mentions
+  // Send the GIF (spritzt.gif) first
   await conn.sendMessage(m.chat, {
-    text: message,
-    mentions: [m.sender, mentioned] // Mention both the sender and the mentioned user
+    video: { url: './gifs/spritzt.gif' },
+    caption: message, // This is the text message with mentions
+    mentions: [m.sender, mentioned], // Mention both the sender and the mentioned user
+    gifPlayback: true, // Ensure the video plays as a GIF
   }, { quoted: m });
 };
 

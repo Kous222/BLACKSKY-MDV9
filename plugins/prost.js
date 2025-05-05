@@ -14,10 +14,12 @@ let handler = async (m, { conn, text, participants }) => {
   let prostMessage = `🍻 *@${mentioned.split('@')[0]}*, stoßen wir gemeinsam an! 🍻\n\n` +
                      'Möge dieser Moment voller Freude und guter Laune sein! 🥂💫';
 
-  // Send the prost message to the group with the mentioned user
+  // Send the GIF (prost.gif) first
   await conn.sendMessage(m.chat, {
-    text: prostMessage,
-    mentions: [mentioned] // This will mention the user like WhatsApp does
+    video: { url: './gifs/prost.gif' },
+    caption: prostMessage, // This is the text message with mentions
+    mentions: [mentioned], // Mention the user in the message
+    gifPlayback: true, // Ensure the video plays as a GIF
   }, { quoted: m });
 };
 

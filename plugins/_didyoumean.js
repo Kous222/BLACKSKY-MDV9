@@ -14,10 +14,10 @@ handler.before = function (m, { match, usedPrefix, text, args }) {
 		let mean = didyoumean(noPrefix, alias)
 		let sim = similarity(noPrefix, mean)
 		let som = sim * 100
-		let tio = `• hallo Kak @${m.sender.split`@`[0]}  Ob Sie suche nach ${usedPrefix + mean} ? 
+		let tio = `• Hallo @${m.sender.split`@`[0]}  Hast du nach ${usedPrefix + mean} gesucht? 
 
- ◦ Name Menü: *${usedPrefix + mean}* 
- ◦ Kempiripan: *${parseInt(som)}%*`
+ ◦ Menüname: *${usedPrefix + mean}* 
+ ◦ Ähnlichkeit: *${parseInt(som)}%*`
 	 if (mean) this.relayMessage(m.chat,  {
     requestPaymentMessage: {
       currencyCodeIso4217: 'IDR',
