@@ -1,8 +1,8 @@
 const fs = require('fs');
 const path = require('path');
-const { getBalance, addBalance, subtractBalance } = require('../lib/bank'); // Bank functions for MongoDB integration
+const { getBalance, addBalance, subtractBalance } = require('../lib/bank'); // Bankfunktionen importieren
 
-let reg = 100; // Small win amount
+let reg = 100; // Kleiner Gewinnbetrag
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
     let infoText = `
@@ -21,31 +21,24 @@ ${usedPrefix + command} 100
     let cooldown = 20000; // 20 Sekunden
     let now = Date.now();
 
-    // User data initialization and loading the bank data
-    const id = m.sender.split('@')[0]; // User ID (for MongoDB)
-    let user = await Bank.findOne({ userId: id }); // Fetch user from MongoDB
+    // Userdaten initialisieren
+    global.db.data.users = global.db.data.users || {};
+    global.db.data.users[m.sender] = global.db.data.users[m.sender] || {};
 
-    if (!user) {
-        // If the user doesn't exist, create a new user record with a starting balance of 0
-        user = new Bank({ userId: id, balance: 0, lastSlot: 0 });
-        await user.save();
-    }
+    if (!global.db.data.users[m.sender].lastslot) global.db.data.users[m.sender].lastslot = 0;
 
-    let lastslot = user.lastSlot;
+    let lastslot = global.db.data.users[m.sender].lastslot;
 
     if (now - lastslot < cooldown) {
         throw `⏳ Bitte warte *${msToTime(lastslot + cooldown - now)}*, bevor du erneut spielst.`;
     }
 
-    // Get user balance from the bank system
-    let balance = await getBalance(id);
+    let balance = await getBalance(m.sender);
 
     if (bet < 100) throw '⚠️ Der Mindesteinsatz beträgt *100 MONEY*.';
     if (balance < bet) throw `❌ Du hast nicht genug *MONEY*.\nPrüfe deinen Kontostand mit *.balance*`;
 
-    // Update the last slot time
-    user.lastSlot = now;
-    await user.save();
+    global.db.data.users[m.sender].lastslot = now;
 
     const emojis = ["🍒", "🍋", "🍇", "⭐", "💎"];
     let x = [], y = [], z = [];
@@ -55,7 +48,7 @@ ${usedPrefix + command} 100
         throw '❌ Slot-Bild nicht gefunden. Bitte stelle sicher, dass eine Datei namens *slot.png* im Ordner */gifs/* existiert.';
     }
 
-    // Generate slot results
+    // Slot-Ergebnis erzeugen
     for (let i = 0; i < 3; i++) {
         x[i] = rand(emojis);
         y[i] = rand(emojis);
@@ -64,17 +57,16 @@ ${usedPrefix + command} 100
 
     let resultMessage;
     if (x[1] === y[1] && y[1] === z[1]) {
-        await addBalance(id, bet * 2); // Add to the user's balance for a big win
-        resultMessage = `🎉 *Großer Gewinn!*\n\nGewinn: ➡️ *${bet * 2}* MONEY\nNeuer Kontostand: ➡️ *${await getBalance(id)}* MONEY`;
+        await addBalance(m.sender, bet * 2);
+        resultMessage = `🎉 *Großer Gewinn!*\n\nGewinn: ➡️ *${bet * 2}* MONEY\nNeuer Kontostand: ➡️ *${await getBalance(m.sender)}* MONEY`;
     } else if (x[1] === y[1] || x[1] === z[1] || y[1] === z[1] || x[0] === y[1] || y[1] === z[2]) {
-        await addBalance(id, reg); // Add a smaller win to the user's balance
-        resultMessage = `✨ *Kleiner Gewinn!*\n\nGewinn: ➡️ *${reg}* MONEY\nNeuer Kontostand: ➡️ *${await getBalance(id)}* MONEY`;
+        await addBalance(m.sender, reg);
+        resultMessage = `✨ *Kleiner Gewinn!*\n\nGewinn: ➡️ *${reg}* MONEY\nNeuer Kontostand: ➡️ *${await getBalance(m.sender)}* MONEY`;
     } else {
-        await subtractBalance(id, bet); // Subtract from balance on a loss
-        resultMessage = `💔 *Verloren!*\n\nVerlust: ➡️ *${bet}* MONEY\nNeuer Kontostand: ➡️ *${await getBalance(id)}* MONEY`;
+        await subtractBalance(m.sender, bet);
+        resultMessage = `💔 *Verloren!*\n\nVerlust: ➡️ *${bet}* MONEY\nNeuer Kontostand: ➡️ *${await getBalance(m.sender)}* MONEY`;
     }
 
-    // Send result image and message to the chat
     await conn.sendMessage(m.chat, {
         image: { url: slotImagePath },
         caption: `🎰 *BLACKSKY-MD SLOT Result*\n\n${formatSlot(x, y, z)}\n\n${resultMessage}`
@@ -89,7 +81,7 @@ handler.rpg = true;
 
 module.exports = handler;
 
-// Helper functions
+// Hilfsfunktionen
 function rand(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
 }
