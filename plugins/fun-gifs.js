@@ -96,7 +96,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
         'wave': 'winkt',
         'wink': 'zwinkert',
         'yeet': 'yeetet',
-        'assslap': 'haut auf den Arsch',
+        'assslap': 'haut auf den Arsch'.
      }
 
     // Extract the actual command used
@@ -305,7 +305,7 @@ const commandList = [
     'jealous', 'kill', 'kiss', 'laugh', 'nervous', 'panic', 
     'pat', 'poke', 'proud', 'punch', 'sad', 'scared', 
     'shock', 'shy', 'slap', 'sleepy', 'smile', 'surprised', 
-    'tired', 'wave', 'wink', 'yeet'
+    'tired', 'wave', 'wink', 'yeet', 'assslap'
 ]
 
 handler.help = commandList.map(cmd => `${cmd}`)
