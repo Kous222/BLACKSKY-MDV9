@@ -1,6 +1,6 @@
 (async () => {
   require('./config');
-  
+
   // Import required modules
   const {
     useMultiFileAuthState,
@@ -15,7 +15,7 @@
     fetchLatestBaileysVersion,
     proto
   } = require('@adiwajshing/baileys');
-  
+
   const pino = require('pino');
   const WebSocket = require('ws');
   const path = require('path');
@@ -28,10 +28,10 @@
   const os = require('os');
   const fetch = require('node-fetch');
   const chalk = require('chalk');
-  
+
   // Import local modules
   let simple = require('./lib/simple');
-  
+
   // Handle lowdb import with fallback
   var lowdb;
   try {
@@ -39,24 +39,18 @@
   } catch (error) {
     lowdb = require('./lib/lowdb');
   }
-  
+
   const { Low, JSONFile } = lowdb;
   const mongoDB = require('./lib/mongoDB');
   const readline = require('readline');
-  
-  // Check command line flags
-  const isPairingCode = process.argv.includes('--code') || process.argv.includes('--pairing');
-  const isMobileAPI = process.argv.includes('--mobile');
-  
-  // Setup readline interface for terminal input
+
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
   });
-  
+
   const question = (text) => new Promise(resolve => rl.question(text, resolve));
-  
-  // Setup global API function
+
   global.API = (name, path = '/', query = {}, apikey) => (
     (name in global.APIs ? global.APIs[name] : name) + path + 
     (query || apikey ? '?' + new URLSearchParams(Object.entries({
@@ -64,63 +58,60 @@
       ...(apikey ? { [apikey]: global.APIKeys[name in global.APIs ? global.APIs[name] : name] } : {})
     })) : '')
   );
-  
-  // Initialize timestamp
+
   global.timestamp = { start: new Date() };
-  
-  // Get port from environment or default to 3000
   const PORT = process.env.PORT || 3000;
-  
-  // Parse command line arguments
+
   global.opts = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse());
-  
-  // Set up command prefix regex
+
+  // Ensure opts.db comes from Heroku env var if not set via CLI
+  if (!opts.db) opts.db = process.env.DB;
+
   global.prefix = /^\./;
-  
-  // Initialize database
+
   global.db = new Low(
     /https?:\/\//.test(opts.db || '') ? 
       new cloudDBAdapter(opts.db) : 
-      /mongodb/.test(opts.db) ? 
+      /mongodb/.test(opts.db || '') ? 
         new mongoDB(opts.db) : 
         new JSONFile(path.join(__dirname, 'lib', (opts._[0] ? opts._[0] + '_' : '') + 'database.json'))
   );
-  
+
   global.DATABASE = global.db;
-  
-  // Database loading function
+
+  console.log(chalk.greenBright(`Using DB: ${opts.db?.startsWith('mongodb') ? 'MongoDB Atlas' : 'Local JSON'}`));
+
   global.loadDatabase = async function loadDatabase() {
     if (global.db.READ) {
       return new Promise((resolve) => 
-        setInterval(function() {
+        setInterval(function () {
           if (!global.db.READ) {
             clearInterval(this);
             resolve(global.db.data == null ? global.loadDatabase() : global.db.data);
           }
-        }, 1 * 1000)
+        }, 1000)
       );
     }
-    
+
     if (global.db.data !== null) return;
-    
+
     global.db.READ = true;
     await global.db.read();
     global.db.READ = false;
-    
+
     global.db.data = {
       users: {},
       chats: {},
       stats: {},
       msgs: {},
       sticker: {},
-      ...global.db.data || {}
+      ...(global.db.data || {})
     };
-    
+
     global.db.chain = lodash.chain(global.db.data);
   };
-  
-  // Load database
-  loadDatabase();
+
+  await loadDatabase();
   
   // Set up sessions directory
   const sessionsDir = '' + (opts._[0] || 'sessions');
