@@ -43,7 +43,12 @@
   const { Low, JSONFile } = lowdb;
   const mongoDB = require('./lib/mongoDB');
   const readline = require('readline');
-
+  
+  // Check command line flags
+  const isPairingCode = process.argv.includes('--code') || process.argv.includes('--pairing');
+  const isMobileAPI = process.argv.includes('--mobile');
+  
+  // Setup readline interface for terminal input
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
@@ -58,15 +63,22 @@
       ...(apikey ? { [apikey]: global.APIKeys[name in global.APIs ? global.APIs[name] : name] } : {})
     })) : '')
   );
-
+  
+  
+  // Initialize timestamp
   global.timestamp = { start: new Date() };
+  
+  
+  // Get port from environment or default to 3000
   const PORT = process.env.PORT || 3000;
-
+  
+  // Parse command line arguments
   global.opts = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse());
 
   // Ensure opts.db comes from Heroku env var if not set via CLI
   if (!opts.db) opts.db = process.env.DB;
 
+  // Set up command prefix regex
   global.prefix = /^\./;
 
   global.db = new Low(
@@ -76,11 +88,13 @@
         new mongoDB(opts.db) : 
         new JSONFile(path.join(__dirname, 'lib', (opts._[0] ? opts._[0] + '_' : '') + 'database.json'))
   );
-
+  
+  // Initialize database
   global.DATABASE = global.db;
 
   console.log(chalk.greenBright(`Using DB: ${opts.db?.startsWith('mongodb') ? 'MongoDB Atlas' : 'Local JSON'}`));
-
+  
+  // Database loading function
   global.loadDatabase = async function loadDatabase() {
     if (global.db.READ) {
       return new Promise((resolve) => 
