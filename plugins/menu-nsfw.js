@@ -39,7 +39,7 @@ const API_ENDPOINTS = {
         thighs: 'nsfw/thighs',
         yuri: 'nsfw/yuri',
         ahegao: 'nsfw/ahegao',
-        gangbang: 'nsfw/gangbang',
+        bang: 'nsfw/gangbang',
         tentacles: 'nsfw/tentacles',
         glasses: 'nsfw/glasses',
         ero: 'nsfw/ero',
@@ -76,7 +76,7 @@ const API_ENDPOINTS = {
 
 // Common NSFW categories for verification
 const NSFW_CATEGORIES = [
-  'hentai', 'ass', 'bdsm', 'blowjob', 'cum', 'femdom', 'foot', 'gangbang', 
+  'hentai', 'ass', 'bdsm', 'blowjob', 'cum', 'femdom', 'foot', 'bang', 
   'glasses', 'jahy', 'masturbation', 'neko', 'orgy', 'panties', 'pussy', 
   'tentacles', 'thighs', 'yuri', 'zettai', 'ero', 'ahegao', 'gifs', 'neko2',
   'manga', 'gay', 'cuckold'
@@ -227,7 +227,8 @@ let handler = async (m, { conn, command }) => {
     m.reply(`❌ *NSFW-Fehler*\n\nEs tut uns leid, aber wir konnten für "${command}" keine Inhalte finden. Bitte versuche es später erneut oder wähle eine andere Kategorie.`);
   }
 };
-handler.command = handler.help = ['gay','ahegao','ass','bdsm','blowjob','cuckold','cum','ero','femdom','foot','gangbang','glasses','hentai','gifs','jahy','manga','masturbation','neko','neko2','orgy','tentacles','pussy','panties','thighs','yuri','zettai']
+handler.command = handler.help = ['gay','ahegao','ass','bdsm','blowjob','cuckold','cum','ero','femdom','foot','bang','glasses','hentai','gifs','jahy','manga','masturbation','neko','neko2','orgy','tentacles','pussy','panties','thighs','yuri','zettai']
 handler.tags = ['nsfw']
 handler.limit = true;
 module.exports = handler;
+ = handler;

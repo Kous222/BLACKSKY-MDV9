@@ -1,7 +1,8 @@
-let handler = async (m, { conn, participants }) => {
-  // Check if a user is mentioned
+let handler = async (m, { conn, text, participants }) => {
+  // Check if a user is mentioned in the message
   let mentioned = m.mentionedJid && m.mentionedJid.length > 0 ? m.mentionedJid[0] : '';
 
+  // If no user is mentioned, send an error message
   if (!mentioned) {
     return m.reply('Bitte erwähne die Person, auf die du kacken möchtest!');
   }
@@ -9,27 +10,19 @@ let handler = async (m, { conn, participants }) => {
   // Get the name of the mentioned user
   let name = await conn.getName(mentioned);
 
-  // Send the kackauf message with mention
+  // Create the kackauf message
   let kackaufMessage = `💩 *@${mentioned.split('@')[0]}*, ich kacke jetzt auf dich! 💩\n\n` +
                        'Ich hoffe, du bist bereit für das unvergessliche Erlebnis! 😂';
 
+  // Send the kackauf message to the group with the mentioned user
   await conn.sendMessage(m.chat, {
     text: kackaufMessage,
     mentions: [mentioned] // This will mention the user like WhatsApp does
-  });
-
-  // Send the GIF as a video (animated)
-  await conn.sendMessage(m.chat, {
-    video: { 
-      url: './gifs/kackauf.gif', // Path to your gif file
-      caption: '💩 Hier ist dein GIF!',
-      mimetype: 'video/gif'
-    }
-  });
+  }, { quoted: m });
 };
 
-handler.help = ['kackauf [@user]'];
+handler.help = ['kack [@user]'];
 handler.tags = ['fun'];
-handler.command = /^kackauf$/i;
+handler.command = /^kack$/i;
 
 module.exports = handler;

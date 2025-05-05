@@ -17,20 +17,11 @@ let handler = async (m, { conn, text, participants }) => {
   await conn.sendMessage(m.chat, {
     text: message,
     mentions: [m.sender, mentioned] // Mention both the sender and the mentioned user
-  });
-
-  // Send the riding GIF as a video (animated)
-  await conn.sendMessage(m.chat, {
-    video: { 
-      url: './gifs/reiteauf.gif', // Path to your gif file
-      caption: '🏇 Hier ist dein Reiten GIF!',
-      mimetype: 'video/gif'
-    }
-  });
+  }, { quoted: m });
 };
 
-handler.help = ['reiteauf [@user]'];
+handler.help = ['reitetauf [@user]'];
 handler.tags = ['fun'];
-handler.command = /^reiteauf$/i;
+handler.command = /^reitetauf$/i;
 
 module.exports = handler;

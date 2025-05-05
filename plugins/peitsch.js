@@ -14,21 +14,12 @@ let handler = async (m, { conn, text }) => {
   await conn.sendMessage(m.chat, {
     text: whipMessage,
     mentions: [mentioned, m.sender],
-  });
-
-  // Send the whip GIF as a video (animated)
-  await conn.sendMessage(m.chat, {
-    video: { 
-      url: './gifs/peitsch.gif', // Path to your gif file
-      caption: '⚡ Peitsch GIF!',
-      mimetype: 'video/gif'
-    }
-  });
+  }, { quoted: m });
 };
 
-handler.help = ['peitsch @user'];
+handler.help = ['peitscht @user'];
 handler.tags = ['fun', 'interaction'];
-handler.command = /^peitsch$/i;
+handler.command = /^peitscht$/i;
 handler.group = true;
 
 module.exports = handler;

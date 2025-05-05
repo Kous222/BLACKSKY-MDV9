@@ -14,20 +14,15 @@ let handler = async (m, { conn, text, participants }) => {
   let prostMessage = `🍻 *@${mentioned.split('@')[0]}*, stoßen wir gemeinsam an! 🍻\n\n` +
                      'Möge dieser Moment voller Freude und guter Laune sein! 🥂💫';
 
-  // Send the GIF (prost.gif) first
+  // Send the prost message to the group with the mentioned user
   await conn.sendMessage(m.chat, {
-    video: { 
-      url: './gifs/prost.gif', // Ensure the path is correct
-      caption: prostMessage,   // The text message with mentions
-      mentions: [mentioned],   // Mention the user
-      gifPlayback: true,       // Ensure the video plays as a GIF
-      mimetype: 'video/gif'    // Explicitly set the mimetype to GIF
-    }
+    text: prostMessage,
+    mentions: [mentioned] // This will mention the user like WhatsApp does
   }, { quoted: m });
 };
 
-handler.help = ['prost [@user]'];
+handler.help = ['prostmit [@user]'];
 handler.tags = ['fun'];
-handler.command = /^prost$/i;
+handler.command = /^prostmit$/i;
 
 module.exports = handler;
