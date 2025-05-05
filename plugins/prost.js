@@ -21,8 +21,8 @@ let handler = async (m, { conn, text, participants }) => {
   }, { quoted: m });
 };
 
-handler.help = ['prostmit [@user]'];
+handler.help = ['prost [@user]'];
 handler.tags = ['fun'];
-handler.command = /^prostmit$/i;
+handler.command = /^prost$/i;
 
 module.exports = handler;

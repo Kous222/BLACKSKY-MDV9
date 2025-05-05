@@ -11,8 +11,8 @@ let handler = async (m, { text }) => {
   await m.reply(`${msg[Math.floor(Math.random() * msg.length)]}${target ? `\n\n${target}` : ''}`);
 };
 
-handler.command = ['fuckyo'];
-handler.help = ['fuckyo [@Nummer]'];
+handler.command = ['fuckyyou'];
+handler.help = ['fuckyou [@Nummer]'];
 handler.tags = ['fun'];
 
 module.exports = handler;

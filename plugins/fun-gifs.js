@@ -50,15 +50,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
         'wave': 'wave.gif',
         'wink': 'wink.gif',
         'yeet': 'yeet.gif',
-        'assslap': 'assslap.gif',
-        'fuckyou': 'fuckyou.gif',
-        'prost': 'prost.gif',
-        'kotzauf': 'kotzauf.gif',
-        'spritzt': 'spritzt.gif',
-        'reiteauf': 'reiteauf.gif',
-        'peitsch': 'peitsch.gif',
-        'kackauf': 'kackauf.gif',  
-     }
+    }
     
     // German translations for reaction messages
     const germanTranslations = {
@@ -103,15 +95,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
         'wave': 'winkt',
         'wink': 'zwinkert',
         'yeet': 'yeetet',
-        'assslap': 'haut auf den Arsch'.
-        'fuckyou': 'zeigt Stinkefinger auf',
-        'prost': 'prost mit',
-        'kotzauf': 'kotz auf',
-        'spritzt': 'spritzt auf',
-        'reiteauf': 'reitet auf',
-        'peitsch': 'peitscht',
-        'kackauf': 'kackt auf',   
-     }
+    }
 
     // Extract the actual command used
     const actualCommand = command.toLowerCase()
@@ -154,7 +138,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     let caption = ''
     
     // Social interaction commands
-    const socialCommands = ['bite', 'cuddle', 'hug', 'kiss', 'poke', 'punch', 'slap', 'pat', 'highfive', 'kill', 'fuck', 'assslap', 'fuckyou', 'prost', 'kotzauf', 'spritzt', 'reiteauf', 'peitsch', 'kackauf']
+    const socialCommands = ['bite', 'cuddle', 'hug', 'kiss', 'poke', 'punch', 'slap', 'pat', 'highfive', 'kill', 'fuck']
     
     if (socialCommands.includes(actualCommand)) {
         // If no target is provided but it's a social command, make it look like someone is doing the action to the user
@@ -181,15 +165,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
             'highfive': ' ✋',
             'kill': ' 🔪',
             'fuck': ' 🔞',
-            'assslap': ' 🍑',
-            'fuckyou': ' 🖕🏽',
-            'prost': ' 🍻',
-            'kotzauf': ' 🤮',
-            'spritzt': ' 💦',
-            'reiteauf': ' 👀',
-            'peitsch': ' 🫦',
-            'kackauf': ' 💩',
-         }
+        }
         
         if (emojiMap[actualCommand]) {
             caption += emojiMap[actualCommand]
@@ -326,7 +302,7 @@ const commandList = [
     'jealous', 'kill', 'kiss', 'laugh', 'nervous', 'panic', 
     'pat', 'poke', 'proud', 'punch', 'sad', 'scared', 
     'shock', 'shy', 'slap', 'sleepy', 'smile', 'surprised', 
-    'tired', 'wave', 'wink', 'yeet', 'assslap', 'fuckyou', 'prost', 'kotzauf', 'spritzt', 'reiteauf', 'peitsch', 'kackauf'
+    'tired', 'wave', 'wink', 'yeet'
 ]
 
 handler.help = commandList.map(cmd => `${cmd}`)

@@ -21,8 +21,8 @@ let handler = async (m, { conn, text, participants }) => {
   }, { quoted: m });
 };
 
-handler.help = ['kotze [@user]'];
+handler.help = ['kotzauf [@user]'];
 handler.tags = ['fun'];
-handler.command = /^kotze$/i;
+handler.command = /^kotzauf$/i;
 
 module.exports = handler;

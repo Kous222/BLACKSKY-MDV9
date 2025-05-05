@@ -17,8 +17,8 @@ let handler = async (m, { conn, text, participants }) => {
   }, { quoted: m });
 };
 
-handler.help = ['spritztauf [@user]'];
+handler.help = ['spritzt [@user]'];
 handler.tags = ['fun'];
-handler.command = /^spritztauf$/i;
+handler.command = /^spritzt$/i;
 
 module.exports = handler;
