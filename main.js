@@ -72,6 +72,9 @@
   // Get port from environment or default to 3000
   const PORT = process.env.PORT || 3000;
   
+  // Push MongoDB URI to process arguments BEFORE parsing
+  process.argv.push('--db', 'mongodb+srv://User:Hahaha33@cluster0.udprdq8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
+
   // Parse command line arguments
   global.opts = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse());
 
