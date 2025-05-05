@@ -1,27 +1,27 @@
-const { addSaldo } = require('../lib/bank') // Pfad anpassen, falls anders!
+const { addSaldo } = require('../lib/bank'); // Ensure the addSaldo function is updated to work with the new system
 
 let handler = async (m, { conn, command, args, usedPrefix }) => {
-    let type = (args[0] || '').toLowerCase()
-    let users = global.db.data.users[m.sender]
-    let time = users.lastkerja + 300000
-    let __timers = (new Date - users.lastkerja)
-    let _timers = (0 - __timers)
-    let timers = clockString(_timers)
+    let type = (args[0] || '').toLowerCase();
+    let users = global.db.data.users[m.sender];
+    let time = users.lastkerja + 300000;
+    let __timers = (new Date - users.lastkerja);
+    let _timers = (0 - __timers);
+    let timers = clockString(_timers);
 
-    let penumpan = ['Herr', 'Dame', 'Student', 'Schüler', 'ältere Dame']
-    let penumpang = pickRandom(penumpan)
-    let daganga = ['Karotten', 'Kohl', 'Salat', 'Tomaten', 'Sellerie', 'Chili', 'Fleisch', 'Fisch', 'Hühnchen']
-    let dagangan = pickRandom(daganga)
-    let pasie = ['Kopfschmerzen', 'Verletzung', 'Verbrennung', 'Knochenbruch']
-    let pasien = pickRandom(pasie)
-    let pane = ['Karotten', 'Kohl', 'Erdbeeren', 'Tee', 'Reis', 'Orangen', 'Bananen', 'Wassermelonen', 'Durian', 'Rambutan']
-    let panen = pickRandom(pane)
-    let bengke = ['Auto', 'Motorrad', 'Rikscha', 'Taxi', 'Bus', 'Kleinbus', 'Dreirad', 'Fahrrad']
-    let bengkel = pickRandom(bengke)
-    let ruma = ['Haus bauen', 'Gebäude bauen', 'Haus reparieren', 'Gebäude reparieren', 'Öffentliche Einrichtung bauen', 'Öffentliche Einrichtung reparieren']
-    let rumah = pickRandom(ruma)
-    let pnjh = ['Dieb', 'Verkehrssünder', 'Bankräuber', 'Taschendieb', 'Korruptionsverdächtiger']
-    let pnjht = pickRandom(pnjh)
+    let penumpan = ['Herr', 'Dame', 'Student', 'Schüler', 'ältere Dame'];
+    let penumpang = pickRandom(penumpan);
+    let daganga = ['Karotten', 'Kohl', 'Salat', 'Tomaten', 'Sellerie', 'Chili', 'Fleisch', 'Fisch', 'Hühnchen'];
+    let dagangan = pickRandom(daganga);
+    let pasie = ['Kopfschmerzen', 'Verletzung', 'Verbrennung', 'Knochenbruch'];
+    let pasien = pickRandom(pasie);
+    let pane = ['Karotten', 'Kohl', 'Erdbeeren', 'Tee', 'Reis', 'Orangen', 'Bananen', 'Wassermelonen', 'Durian', 'Rambutan'];
+    let panen = pickRandom(pane);
+    let bengke = ['Auto', 'Motorrad', 'Rikscha', 'Taxi', 'Bus', 'Kleinbus', 'Dreirad', 'Fahrrad'];
+    let bengkel = pickRandom(bengke);
+    let ruma = ['Haus bauen', 'Gebäude bauen', 'Haus reparieren', 'Gebäude reparieren', 'Öffentliche Einrichtung bauen', 'Öffentliche Einrichtung reparieren'];
+    let rumah = pickRandom(ruma);
+    let pnjh = ['Dieb', 'Verkehrssünder', 'Bankräuber', 'Taschendieb', 'Korruptionsverdächtiger'];
+    let pnjht = pickRandom(pnjh);
 
     // Atlas command: to view user's current job progress
     if (/atlas/i.test(command)) {
@@ -34,38 +34,38 @@ let handler = async (m, { conn, command, args, usedPrefix }) => {
         Letzte Belohnung: *${users.lastkerja ? 'Münzen' : 'Keine Belohnung'}*
 
         Aktueller Status: ${timers}
-        `
-        return m.reply(atlasMessage)
+        `;
+        return m.reply(atlasMessage);
     }
 
     if (/kerjadulu|arbeiten|work|arbeit/i.test(command)) {
-        if (new Date - users.lastkerja < 300000) return m.reply(`Du arbeitest bereits\nZeit für eine Pause für 🕜 ${clockString(time - new Date())}`)
+        if (new Date - users.lastkerja < 300000) return m.reply(`Du arbeitest bereits\nZeit für eine Pause für 🕜 ${clockString(time - new Date())}`);
 
-        let hasil = Math.floor(Math.random() * 5000000)
-        let message
+        let hasil = Math.floor(Math.random() * 5000000);
+        let message;
 
         switch (type) {
             case 'ojek':
-                message = `Du hast *${penumpang}* transportiert 🚗\nUnd erhältst dafür *${hasil} Münzen*`
-                break
+                message = `Du hast *${penumpang}* transportiert 🚗\nUnd erhältst dafür *${hasil} Münzen*`;
+                break;
             case 'pedagang':
-                message = `Du hast Kunden gewonnen, die *${dagangan}* kaufen 🛒\nUnd erhältst dafür *${hasil} Münzen*`
-                break
+                message = `Du hast Kunden gewonnen, die *${dagangan}* kaufen 🛒\nUnd erhältst dafür *${hasil} Münzen*`;
+                break;
             case 'dokter':
-                message = `Du hast einen Patienten mit *${pasien}* geheilt 💉\nUnd erhältst dafür *${hasil} Münzen*`
-                break
+                message = `Du hast einen Patienten mit *${pasien}* geheilt 💉\nUnd erhältst dafür *${hasil} Münzen*`;
+                break;
             case 'petani':
-                message = `Du hast *${panen}* geerntet! 🌽 Und verkauft 🧺\nUnd erhältst dafür *${hasil} Münzen*`
-                break
+                message = `Du hast *${panen}* geerntet! 🌽 Und verkauft 🧺\nUnd erhältst dafür *${hasil} Münzen*`;
+                break;
             case 'montir':
-                message = `Du hast ein *${bengkel} 🔧* repariert\nUnd erhältst dafür *${hasil} Münzen*`
-                break
+                message = `Du hast ein *${bengkel} 🔧* repariert\nUnd erhältst dafür *${hasil} Münzen*`;
+                break;
             case 'kuli':
-                message = `Du hast ${rumah} fertiggestellt 🔨\nUnd erhältst dafür *${hasil} Münzen*`
-                break
+                message = `Du hast ${rumah} fertiggestellt 🔨\nUnd erhältst dafür *${hasil} Münzen*`;
+                break;
             case 'polisi':
-                message = `Du hast einen ${pnjht} verhaftet 🚨\nUnd erhältst dafür *${hasil} Münzen*`
-                break
+                message = `Du hast einen ${pnjht} verhaftet 🚨\nUnd erhältst dafür *${hasil} Münzen*`;
+                break;
             default:
                 let judul = `
 _*Wähle einen Beruf, den du ausüben möchtest*_
@@ -77,7 +77,7 @@ _*Wähle einen Beruf, den du ausüben möchtest*_
 - Mechaniker [👨‍🔧]
 - Bauer [👨‍🌾]
 - Polizist [👮]
-`
+`;
                 let msg = {
                     viewOnceMessage: {
                         message: {
@@ -115,29 +115,31 @@ _*Wähle einen Beruf, den du ausüben möchtest*_
                 return conn.relayMessage(m.chat, msg, {});
         }
 
-        // Wenn gültiger Beruf gewählt wurde:
-        await m.reply(message)
-        await addSaldo(m.sender, hasil, 'Münzen')
-        users.lastkerja = new Date * 1
+        // Update the user's balance after completing the job
+        await addSaldo(m.sender, hasil, 'Münzen');
+        users.lastkerja = new Date * 1; // Update the time of the last work
+
+        // Send the message with the earnings
+        await m.reply(message);
     }
 }
 
-handler.help = ['arbeiten', 'arbeit', 'work', 'atlas']
-handler.tags = ['rpg']
-handler.command = /^(arbeiten|arbeit|work|atlas)$/i
-handler.register = true
-handler.group = true
-handler.rpg = true
+handler.help = ['arbeiten', 'arbeit', 'work', 'atlas'];
+handler.tags = ['rpg'];
+handler.command = /^(arbeiten|arbeit|work|atlas)$/i;
+handler.register = true;
+handler.group = true;
+handler.rpg = true;
 
-module.exports = handler
+module.exports = handler;
 
 function pickRandom(list) {
-    return list[Math.floor(Math.random() * list.length)]
+    return list[Math.floor(Math.random() * list.length)];
 }
 
 function clockString(ms) {
-    let h = Math.floor(ms / 3600000)
-    let m = Math.floor(ms / 60000) % 60
-    let s = Math.floor(ms / 1000) % 60
-    return [h, m, s].map(v => v.toString().padStart(2, 0)).join(':')
+    let h = Math.floor(ms / 3600000);
+    let m = Math.floor(ms / 60000) % 60;
+    let s = Math.floor(ms / 1000) % 60;
+    return [h, m, s].map(v => v.toString().padStart(2, 0)).join(':');
 }

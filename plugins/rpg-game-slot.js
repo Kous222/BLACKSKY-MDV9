@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { getBalance, addBalance, subtractBalance } = require('../lib/bank'); // Bank functions imported
+const { getBalance, addBalance, subtractBalance } = require('../lib/bank'); // Bank functions for MongoDB integration
 
 let reg = 100; // Small win amount
 
@@ -22,24 +22,30 @@ ${usedPrefix + command} 100
     let now = Date.now();
 
     // User data initialization and loading the bank data
-    global.db.data.users = global.db.data.users || {};
-    global.db.data.users[m.sender] = global.db.data.users[m.sender] || {};
+    const id = m.sender.split('@')[0]; // User ID (for MongoDB)
+    let user = await Bank.findOne({ userId: id }); // Fetch user from MongoDB
 
-    if (!global.db.data.users[m.sender].lastslot) global.db.data.users[m.sender].lastslot = 0;
+    if (!user) {
+        // If the user doesn't exist, create a new user record with a starting balance of 0
+        user = new Bank({ userId: id, balance: 0, lastSlot: 0 });
+        await user.save();
+    }
 
-    let lastslot = global.db.data.users[m.sender].lastslot;
+    let lastslot = user.lastSlot;
 
     if (now - lastslot < cooldown) {
         throw `⏳ Bitte warte *${msToTime(lastslot + cooldown - now)}*, bevor du erneut spielst.`;
     }
 
     // Get user balance from the bank system
-    let balance = await getBalance(m.sender);
+    let balance = await getBalance(id);
 
     if (bet < 100) throw '⚠️ Der Mindesteinsatz beträgt *100 MONEY*.';
     if (balance < bet) throw `❌ Du hast nicht genug *MONEY*.\nPrüfe deinen Kontostand mit *.balance*`;
 
-    global.db.data.users[m.sender].lastslot = now;
+    // Update the last slot time
+    user.lastSlot = now;
+    await user.save();
 
     const emojis = ["🍒", "🍋", "🍇", "⭐", "💎"];
     let x = [], y = [], z = [];
@@ -58,14 +64,14 @@ ${usedPrefix + command} 100
 
     let resultMessage;
     if (x[1] === y[1] && y[1] === z[1]) {
-        await addBalance(m.sender, bet * 2); // Add to the user's balance for a big win
-        resultMessage = `🎉 *Großer Gewinn!*\n\nGewinn: ➡️ *${bet * 2}* MONEY\nNeuer Kontostand: ➡️ *${await getBalance(m.sender)}* MONEY`;
+        await addBalance(id, bet * 2); // Add to the user's balance for a big win
+        resultMessage = `🎉 *Großer Gewinn!*\n\nGewinn: ➡️ *${bet * 2}* MONEY\nNeuer Kontostand: ➡️ *${await getBalance(id)}* MONEY`;
     } else if (x[1] === y[1] || x[1] === z[1] || y[1] === z[1] || x[0] === y[1] || y[1] === z[2]) {
-        await addBalance(m.sender, reg); // Add a smaller win to the user's balance
-        resultMessage = `✨ *Kleiner Gewinn!*\n\nGewinn: ➡️ *${reg}* MONEY\nNeuer Kontostand: ➡️ *${await getBalance(m.sender)}* MONEY`;
+        await addBalance(id, reg); // Add a smaller win to the user's balance
+        resultMessage = `✨ *Kleiner Gewinn!*\n\nGewinn: ➡️ *${reg}* MONEY\nNeuer Kontostand: ➡️ *${await getBalance(id)}* MONEY`;
     } else {
-        await subtractBalance(m.sender, bet); // Subtract from balance on a loss
-        resultMessage = `💔 *Verloren!*\n\nVerlust: ➡️ *${bet}* MONEY\nNeuer Kontostand: ➡️ *${await getBalance(m.sender)}* MONEY`;
+        await subtractBalance(id, bet); // Subtract from balance on a loss
+        resultMessage = `💔 *Verloren!*\n\nVerlust: ➡️ *${bet}* MONEY\nNeuer Kontostand: ➡️ *${await getBalance(id)}* MONEY`;
     }
 
     // Send result image and message to the chat
