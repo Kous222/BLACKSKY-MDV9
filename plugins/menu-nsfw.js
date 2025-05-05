@@ -231,4 +231,3 @@ handler.command = handler.help = ['gay','ahegao','ass','bdsm','blowjob','cuckold
 handler.tags = ['nsfw']
 handler.limit = true;
 module.exports = handler;
- = handler;
