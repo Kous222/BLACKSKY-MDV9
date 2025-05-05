@@ -96,7 +96,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
         'wave': 'winkt',
         'wink': 'zwinkert',
         'yeet': 'yeetet',
-        'assslap': 'haut auf den Arsch'.
+        'assslap': 'haut auf den Arsch',
      }
 
     // Extract the actual command used
