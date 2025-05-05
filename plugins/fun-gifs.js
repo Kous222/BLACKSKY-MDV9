@@ -50,7 +50,8 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
         'wave': 'wave.gif',
         'wink': 'wink.gif',
         'yeet': 'yeet.gif',
-    }
+        'assslap': 'assslap.gif',
+     }
     
     // German translations for reaction messages
     const germanTranslations = {
@@ -95,7 +96,8 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
         'wave': 'winkt',
         'wink': 'zwinkert',
         'yeet': 'yeetet',
-    }
+        'assslap': 'haut auf den Arsch'
+     }
 
     // Extract the actual command used
     const actualCommand = command.toLowerCase()
@@ -138,7 +140,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     let caption = ''
     
     // Social interaction commands
-    const socialCommands = ['bite', 'cuddle', 'hug', 'kiss', 'poke', 'punch', 'slap', 'pat', 'highfive', 'kill', 'fuck']
+    const socialCommands = ['bite', 'cuddle', 'hug', 'kiss', 'poke', 'punch', 'slap', 'pat', 'highfive', 'kill', 'fuck', 'assslap']
     
     if (socialCommands.includes(actualCommand)) {
         // If no target is provided but it's a social command, make it look like someone is doing the action to the user
@@ -165,7 +167,8 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
             'highfive': ' ✋',
             'kill': ' 🔪',
             'fuck': ' 🔞',
-        }
+            'assslap': ' 🍑',
+         }
         
         if (emojiMap[actualCommand]) {
             caption += emojiMap[actualCommand]
