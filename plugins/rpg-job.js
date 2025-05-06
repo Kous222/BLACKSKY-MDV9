@@ -81,7 +81,7 @@ let handler = async (m, { isPrems, conn, text, usedPrefix, command }) => {  
     let jobInfo = jobs[job];   
 
     if (jobInfo) {    
-        let caption = `*JOB INFO*\n\nBeruf: ${kapital}\nArbeitseinsatz: ${user.jobexp}% / 500%\n\nDer Arbeitseinsatz steigt mit jedem *.jobkerja* Befehl um 1%.\nSpezialbefehl: ${jobInfo.special}`.trim();    
+        let caption = `*JOB INFO*\n\nBeruf: ${kapital}\nArbeitseinsatz: ${user.jobexp}% / 500%\n\nDer Arbeitseinsatz steigt mit jedem *.work* Befehl um 1%.\nSpezialbefehl: ${jobInfo.special}`.trim();    
         await conn.sendFile(m.chat, jobInfo.thumb, `${job}.jpg`, caption, m);   
     } else {    
         throw `Job nicht gefunden oder ungültig!\n\nGespeicherter Wert: *${user.job}*`;   
