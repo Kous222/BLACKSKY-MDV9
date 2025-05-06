@@ -73,7 +73,7 @@ let handler = async (m, { isPrems, conn, text, usedPrefix, command }) => {
 
     // Sicherstellen, dass der Job des Benutzers in der Job-Liste vorhanden ist
     if (!jobList[user.job]) {
-        throw `Dein aktueller Job "${user.job}" ist nicht bekannt oder ungültig. Bitte bewirb dich neu mit *${usedPrefix}applyjob*!`;
+        throw `Dein aktueller Job "${user.job}" ist nicht bekannt oder ungültig. Bitte bewirb dich neu mit *${usedPrefix}arbeit*!`;
     }
 
     // Job-Daten abrufen
