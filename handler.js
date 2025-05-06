@@ -507,7 +507,7 @@ module.exports = {
                         
         }
                     if (!isNumber(user.level)) user.level = 0
-                    if (!user.job) user.job = 'Pengangguran'
+                    if (!user.job) user.job = 'Arbeit'
                     if (!isNumber(user.jobexp)) user.jobexp = 0
                     if (!('jail' in user)) user.jail = false
                     if (!('penjara' in user)) user.penjara = false
