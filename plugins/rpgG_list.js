@@ -2,12 +2,12 @@ let handler = async (m, { conn }) => {
     let guilds = Object.values(global.db.data.guilds);
 
     if (guilds.length === 0) {
-        return conn.reply(m.chat, 'Belum gibt Gilde die/der/das registriert.', m);
+        return conn.reply(m.chat, 'Es gibt noch keine Gilden, die registriert sind.', m);
     }
 
-    let guildList = guilds.map((Gilde, idx) => `${idx + 1}. ${Gilde.name} ${Gilde.members.length} Member`).join('\n');
+    let guildList = guilds.map((Gilde, idx) => `${idx + 1}. ${Gilde.name} mit ${Gilde.members.length} Mitgliedern`).join('\n');
 
-    conn.reply(m.chat, `亗 PUBLIC GILDE 亗\n${guildList}`, m);
+    conn.reply(m.chat, `亗 ÖFFENTLICHE GILDEN 亗\n${guildList}`, m);
 };
 
 handler.help = ['guildlist'];

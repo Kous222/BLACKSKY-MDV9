@@ -7,7 +7,7 @@ let handler = async (m, { conn }) => {
   // Use level for role determination
   user.role = getRoleByLevel(user.level || 0)
   
-  await conn.reply(m.chat, "du ist: " + user.role, m)
+  await conn.reply(m.chat, "du bist: " + user.role, m)
 }
 handler.help = ['role']
 handler.tags = ['info']

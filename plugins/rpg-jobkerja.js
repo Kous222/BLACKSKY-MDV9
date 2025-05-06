@@ -6,7 +6,7 @@ let handler = async (m, { isPrems, conn, text, usedPrefix, command }) => {
 
     // Überprüfen, ob der Benutzer einen Job hat
     if (user.job === 'Arbeitslos') {
-        throw `Du hast noch keinen Job. Tippe *${usedPrefix}applyjob*, um dich zu bewerben.`;
+        throw `Du hast noch keinen Job. Tippe *${usedPrefix}arbeit (Beruf)*, um dich zu bewerben.`;
     }
 
     // Überprüfen, ob der Benutzer im Gefängnis oder entführt ist

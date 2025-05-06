@@ -2,7 +2,7 @@ let handler = async (m, { conn }) => {
     let userId = m.sender;
     let user = global.db.data.users[userId];
     
-    if (!user.Gilde) return conn.reply(m.chat, 'du noch nicht tergabung in Gilde.', m);
+    if (!user.Gilde) return conn.reply(m.chat, 'Du bist noch nicht einer Gilde beigetreten.', m);
 
     let guildId = user.Gilde;
     let Gilde = global.db.data.guilds[guildId];
@@ -11,7 +11,7 @@ let handler = async (m, { conn }) => {
     Gilde.members = Gilde.members.filter(Mitglied => Mitglied !== userId);
     user.Gilde = null;
 
-    conn.reply(m.chat, 'du hat ausgehen von Gilde.', m);
+    conn.reply(m.chat, 'Du hast die Gilde verlassen.', m);
 };
 
 handler.help = ['guildleave'];

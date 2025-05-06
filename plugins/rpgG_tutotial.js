@@ -1,58 +1,58 @@
 let handler = async (m, { conn, usedPrefix }) => {
     let tutorial = `
-🏰 *Tutorial Gilde*
+🏰 *Gilden-Tutorial*
 
-1. *Memerstellen Gilde*
-   ${usedPrefix}createguild <nama_guild>
-   Contoh: ${usedPrefix}createguild TheDark
+1. *Gilde erstellen*
+   ${usedPrefix}createguild <gildenname>
+   Beispiel: ${usedPrefix}createguild TheDark
 
-2. *Meansehen Info Gilde*
+2. *Gildeninfo anzeigen*
    ${usedPrefix}guildinfo [@user]
-   Contoh: ${usedPrefix}guildinfo @user
+   Beispiel: ${usedPrefix}guildinfo @user
 
-3. *Bergabung mit Gilde*
-   ${usedPrefix}joinguild <nama_guild>
-   Contoh: ${usedPrefix}joinguild TheDark
+3. *Mit Gilde beitreten*
+   ${usedPrefix}joinguild <gildenname>
+   Beispiel: ${usedPrefix}joinguild TheDark
 
-4. *Mengundang Mitglied zu Gilde*
+4. *Mitglied in die Gilde einladen*
    ${usedPrefix}guildinvite @user
-   Contoh: ${usedPrefix}guildinvite @user
+   Beispiel: ${usedPrefix}guildinvite @user
 
-5. *Empfangen Mitglied zu Gilde (Nur Owner oder Staff)*
+5. *Mitglied zur Gilde annehmen (Nur Besitzer oder Staff)*
    ${usedPrefix}guildaccept @user
-   Contoh: ${usedPrefix}guildaccept @user
+   Beispiel: ${usedPrefix}guildaccept @user
 
-6. *Meninggalkan Gilde*
+6. *Gilde verlassen*
    ${usedPrefix}guildleave
-   Contoh: ${usedPrefix}guildleave
+   Beispiel: ${usedPrefix}guildleave
 
-7. *Meansehen Gilde Sendiri*
+7. *Eigene Gilde anzeigen*
    ${usedPrefix}myguild
-   Contoh: ${usedPrefix}myguild
+   Beispiel: ${usedPrefix}myguild
 
-8. *Upgrade Gilde*
+8. *Gilde upgraden*
    ${usedPrefix}guildupgrade
-   Contoh: ${usedPrefix}guildupgrade
+   Beispiel: ${usedPrefix}guildupgrade
 
-9. *Menglöschen Gilde (Nur Owner)*
-   ${usedPrefix}delguild <nomor_guild>
-   Contoh: ${usedPrefix}delguild 2
+9. *Gilde löschen (Nur Besitzer)*
+   ${usedPrefix}delguild <gilden_id>
+   Beispiel: ${usedPrefix}delguild 2
 
-10. *Misi Tagean für Mendapatkan Eksir und Harta*
+10. *Tägliche Missionen für Elixier und Schatz*
     ${usedPrefix}dailyg
-    Contoh: ${usedPrefix}dailyg
+    Beispiel: ${usedPrefix}dailyg
 
-11. *Menjalankan WarGuild*
+11. *Gildenkrieg starten*
     ${usedPrefix}warguild
-    Contoh: ${usedPrefix}warguild
+    Beispiel: ${usedPrefix}warguild
 
-12. *Menjalankan DeffGuild*
+12. *Gildenverteidigung starten*
     ${usedPrefix}deffguild
-    Contoh: ${usedPrefix}deffguild
+    Beispiel: ${usedPrefix}deffguild
 
-ℹ️ Für information mehr fortfahren über jede Befehl, benutze ${usedPrefix}help [command].
+ℹ️ Weitere Informationen zu jedem Befehl, benutze ${usedPrefix}help [command].
 
-🔗 Herzlichen Glückwunsch menjelajahi Funktion Gilde!
+🔗 Viel Spaß beim Entdecken der Gildenfunktionen!
     `;
 
     conn.reply(m.chat, tutorial, m);

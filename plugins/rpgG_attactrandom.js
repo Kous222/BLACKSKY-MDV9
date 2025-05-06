@@ -6,81 +6,82 @@ let handler = async (m, { conn }) => {
     let guildId = user.Gilde;
 
     if (!guildId) {
-        return conn.reply(m.chat, 'Sie muss bergabung mit sebuah Gilde für benutzen Befehl dies.', m);
+        return conn.reply(m.chat, 'Du musst einer Gilde beitreten, um diesen Befehl zu verwenden.', m);
     }
 
     let Gilde = global.db.data.guilds[guildId];
     if (!Gilde) {
-        return conn.reply(m.chat, 'Gilde Sie nicht gefunden in basis data.', m);
+        return conn.reply(m.chat, 'Deine Gilde wurde in der Datenbank nicht gefunden.', m);
     }
 
     if (Gilde.Besitzer !== m.sender && !Gilde.staff.includes(m.sender)) {
-        return conn.reply(m.chat, 'Sie nicht memiliki izin für angreifen Gilde Gegner.', m);
+        return conn.reply(m.chat, 'Du hast keine Berechtigung, einen Gildenangriff durchzuführen.', m);
     }
 
-    conn.reply(m.chat, 'Mensuchen Gilde Aktiv 🔎', m);
+    conn.reply(m.chat, 'Suche nach aktiver Gilde 🔎', m);
 
     setTimeout(async () => {
-        let attackedGuildId = getRandomGuildId(guildId); // Fungsi für erhalten id Gilde Gegner in einer Weise acak (nicht termasuk Gilde selbst)
-        let attackedGuild = global.db.data.guilds[attackedGuildId];
+        let angegriffeneGildeId = getRandomGuildId(guildId);
+        let angegriffeneGilde = global.db.data.guilds[angegriffeneGildeId];
 
-        if (!attackedGuild) {
-            return conn.reply(m.chat, 'Nein gibt Gilde Gegner die/der/das kann diserang wenn dies.', m);
+        if (!angegriffeneGilde) {
+            return conn.reply(m.chat, 'Es gibt momentan keine angreifbare Gilde.', m);
         }
 
-        conn.reply(m.chat, `Finden Gilde Aktiv ${attackedGuild.name}`, m);
+        conn.reply(m.chat, `Gefundene Zielgilde: *${angegriffeneGilde.name}*`, m);
 
-        await sleep(getRandomInt(1000, 3000)); // Jeda 1-3 Sekunden
+        await sleep(getRandomInt(1000, 3000));
 
-        let itemName = getRandomItemName(); // Fungsi für erhalten name Gegenstand in einer Weise acak
+        let gegenstand = getRandomItemName();
 
-        conn.reply(m.chat, `Mestarten Penyerangan Mengbenutze ${itemName}`, m);
+        conn.reply(m.chat, `Angriff wird vorbereitet mit ${gegenstand}...`, m);
 
-        await sleep(getRandomInt(1000, 5000)); // Jeda 1-5 Sekunden
+        await sleep(getRandomInt(1000, 5000));
 
-        conn.reply(m.chat, `${Gilde.name} VS ${attackedGuild.name}`, m);
+        conn.reply(m.chat, `⚔️ *${Gilde.name}* VS *${angegriffeneGilde.name}* ⚔️`, m);
 
-        await sleep(getRandomInt(60000, 300000)); // Jeda 1-5 menit
+        await sleep(getRandomInt(60000, 300000));
 
-        // Simulasi kerusakan und pencurian
-        let elixirStolen = Math.floor(attackedGuild.elixir / 2); // Mengambil setengah von eliksir Gegner
-        let treasureStolen = Math.floor(attackedGuild.treasure / 2); // Mengambil setengah von Schatz Gegner
+        // Simuliere Schaden und Diebstahl
+        let gestohlenerElixier = Math.floor(angegriffeneGilde.elixir / 2);
+        let gestohlenerSchatz = Math.floor(angegriffeneGilde.treasure / 2);
 
-        attackedGuild.elixir -= elixirStolen;
-        attackedGuild.treasure -= treasureStolen;
+        angegriffeneGilde.elixir -= gestohlenerElixier;
+        angegriffeneGilde.treasure -= gestohlenerSchatz;
 
-        // Update basis data
+        // Speichere Datenbank
         fs.writeFileSync(dbPath, JSON.stringify(global.db.data, null, 2));
 
-        let result = Gilde.name === attackedGuild.name ? 'Draw' : (Gilde.elixir > attackedGuild.elixir ? `${Gilde.name} Win` : `${Gilde.name} Lose`);
+        let ergebnis = Gilde.name === angegriffeneGilde.name
+            ? 'Unentschieden'
+            : (Gilde.elixir > angegriffeneGilde.elixir ? `${Gilde.name} hat gewonnen!` : `${Gilde.name} hat verloren.`);
 
-        conn.reply(m.chat, `${result}:
+        conn.reply(m.chat, `${ergebnis}
 
-Mengambil ${elixirStolen} Eliksir - ${treasureStolen} Harta von ${attackedGuild.name}`, m);
-    }, 3000); // Jeda 3 Sekunden bevor mensuchen Gilde Gegner
+Erbeutet:
+- ${gestohlenerElixier} Elixier
+- ${gestohlenerSchatz} Schatz
+von *${angegriffeneGilde.name}*`, m);
+    }, 3000);
 };
 
-// Fungsi für erhalten id Gilde Gegner in einer Weise acak (kecuali Gilde selbst)
 function getRandomGuildId(currentGuildId) {
     let guildIds = Object.keys(global.db.data.guilds);
-    let filteredGuildIds = guildIds.filter(id => id !== currentGuildId); // filter damit nicht termasuk Gilde selbst
+    let filteredGuildIds = guildIds.filter(id => id !== currentGuildId);
     let randomIndex = getRandomInt(0, filteredGuildIds.length - 1);
     return filteredGuildIds[randomIndex];
 }
 
-// Fungsi für erhalten name Gegenstand in einer Weise acak
 function getRandomItemName() {
-    let items = ['namaitem1', 'namaitem2', 'namaitem3']; // ändern mit name-name Gegenstand die/der/das sesuai
+    let items = ['Feuerkugel', 'Donnerschlag', 'Magisches Schwert'];
     let randomIndex = getRandomInt(0, items.length - 1);
     return items[randomIndex];
 }
 
-// Fungsi für menghasilkan angka acak in rentang bestimmt
 function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-// Fungsi für memerstellen jeda in zeit bestimmt
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -88,5 +89,5 @@ function sleep(ms) {
 handler.help = ['attackguild'];
 handler.tags = ['rpgG'];
 handler.command = /^attackguild$/i;
-handler.rpg = true
+handler.rpg = true;
 module.exports = handler;

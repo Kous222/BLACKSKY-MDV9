@@ -1,32 +1,32 @@
-/** !! THIS CODE GENERATE BY RODOTZBOT !! **/
+/** !! DIESER CODE WURDE VON RODOTZBOT GENERIERT !! **/
 
-const STATES = {
-  IDLE: 0,
-  SEARCHING: 1,
-  FIGHTING: 2,
+const ZUSTÄNDE = {
+  UNTÄTIG: 0,
+  SUCHT: 1,
+  VERFOLGT: 2,
 };
 
-function getRandomInt(min, max) {
+function zufallsZahl(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 const handler = async (m, { conn, usedPrefix, command, args }) => {
   const sender = m.sender;
-  const user = global.db.data.users[sender]
-  conn.players = conn.players || {};
-  const player = conn.players[sender] || { Geld: 0, Pencuri_Terfangen: 0, Waktu_Terfangen: 0, Kaca_Pembesar: 0, Stufe: 1, State: STATES.IDLE };
+  const user = global.db.data.users[sender];
+  conn.spieler = conn.spieler || {};
+  const spieler = conn.spieler[sender] || { geld: 0, gefassteDiebe: 0, letzteSuche: 0, lupe: 0, stufe: 1, zustand: ZUSTÄNDE.UNTÄTIG };
 
-  if (command === "polisi") {
+  if (command === "polizei") {
     if (args.length === 0) {
-      conn.reply(m.chat, "*👮‍♂️ Weg Spielen Spiel Polisi und Pencuri 👮‍♂️*\n\n" +
-        "🔍 benutzen Befehl *.polisi suchen* für suchen pencuri in einer Weise acak.\n" +
-        "🚓 Sie wird finden jejak pencuri und muss durchführen tindakan bestimmt für menangkapnya.\n" +
-        "💰 Sie wird erhalten imbalan wenn erfolgreich menangkap pencuri.\n" +
-        "🚨 Wählen tindakan von: jagen, schießen, werfen, oder fangen.\n" +
-        "🔍 benutzen Befehl *.polisi <tindakan>* für gegen und menangkap pencuri.\n" +
-        "🔎 Sie kann kaufen kaca pembesar *.polisi Gegenstand kaca-pembesar* für meningkatkan peluang menangkap pencuri.\n" +
-        "🏆 Cek peringkat Sie mit Befehl *.polisi leaderboard*.\n" +
-        "ℹ️ benutzen Befehl *.polisi Status* für meansehen Status Sie wenn dies.", m, {
+      conn.reply(m.chat, "*👮‍♂️ Willkommen beim Polizei-und-Dieb-Spiel 👮‍♂️*\n\n" +
+        "🔍 Nutze den Befehl *.polizei suchen*, um nach einem Dieb zu suchen.\n" +
+        "🚓 Wenn du Spuren findest, musst du die richtige Aktion wählen, um ihn zu fangen.\n" +
+        "💰 Du bekommst eine Belohnung, wenn du erfolgreich bist.\n" +
+        "🚨 Wähle eine Aktion aus: verfolgen, schießen, werfen oder fangen.\n" +
+        "🔍 Nutze *.polizei <aktion>*, um den Dieb zu erwischen.\n" +
+        "🔎 Kaufe eine Lupe mit *.polizei gegenstand lupe*, um deine Chancen zu erhöhen.\n" +
+        "🏆 Zeige das Ranking mit *.polizei rangliste* an.\n" +
+        "ℹ️ Nutze *.polizei status*, um deinen aktuellen Status zu sehen.", m, {
         contextInfo: {
           externalAdReply: {
             mediaType: 1,
@@ -40,134 +40,133 @@ const handler = async (m, { conn, usedPrefix, command, args }) => {
       return;
     }
 
-    const subCommand = args[0];
-    if (subCommand === "suchen") {
-      if (player.State !== STATES.IDLE) {
-        return conn.reply(m.chat, "*🔍 gerade in suche...*", m);
+    const unterBefehl = args[0];
+    if (unterBefehl === "suchen") {
+      if (spieler.zustand !== ZUSTÄNDE.UNTÄTIG) {
+        return conn.reply(m.chat, "*🔍 Du suchst bereits...*", m);
       }
 
-      if (Date.now() - player.Waktu_Terfangen < 30000) {
-        return conn.reply(m.chat, "*⏱️ Sie muss warten sebentar bevor kann suchen zurück.*", m);
+      if (Date.now() - spieler.letzteSuche < 30000) {
+        return conn.reply(m.chat, "*⏱️ Du musst etwas warten, bevor du erneut suchen kannst.*", m);
       }
 
-      player.State = STATES.SEARCHING;
-      player.Waktu_Terfangen = Date.now();
+      spieler.zustand = ZUSTÄNDE.SUCHT;
+      spieler.letzteSuche = Date.now();
 
-      const Stufe = player.Stufe;
-      const thiefActions = {
-        1: "jagen",
+      const stufe = spieler.stufe;
+      const aktionen = {
+        1: "verfolgen",
         2: "schießen",
         3: "werfen",
         4: "fangen",
       };
-      const thiefAction = thiefActions[Stufe];
+      const diebAktion = aktionen[stufe];
 
-      conn.reply(m.chat, `*🔍 Sie finden jejak pencuri Stufe ${Stufe}!* für menangkap pencuri, lakukan tindakan: *${thiefAction.toUpperCase()}*.`, m);
+      conn.reply(m.chat, `*🔍 Du hast eine Spur eines Diebs der Stufe ${stufe} gefunden!* Führe die Aktion *${diebAktion.toUpperCase()}* aus, um ihn zu fangen.`, m);
 
-      player.ThiefAction = thiefAction;
-    } else if (subCommand === "Status") {
-      conn.reply(m.chat, `*👮‍♂️ Status Polisi 👮‍♂️*\n\n🔍 gerade suchen Pencuri: ${player.State === STATES.SEARCHING ? "Ja" : "Nein"}\n🚓 Pencuri Terfangen: ${player.Pencuri_Terfangen}\n💰 Geld: Rp${player.Geld.toLocaleString()}\n🏆 Stufe Pencuri: ${player.Stufe}`, m);
-    } else if (subCommand === "Gegenstand") {
+      spieler.aktion = diebAktion;
+    } else if (unterBefehl === "status") {
+      conn.reply(m.chat, `*👮‍♂️ Polizeistatus 👮‍♂️*\n\n🔍 Suche aktiv: ${spieler.zustand === ZUSTÄNDE.SUCHT ? "Ja" : "Nein"}\n🚓 Gefasste Diebe: ${spieler.gefassteDiebe}\n💰 Geld: €${spieler.geld.toLocaleString()}\n🏆 Diebstufe: ${spieler.stufe}`, m);
+    } else if (unterBefehl === "gegenstand") {
       if (args.length === 1) {
-        conn.reply(m.chat, "*🛒 Item Shop 🛒*\n\nKaca Pembesar - 200 coins\n" +
-          `benutzen *${usedPrefix}polisi Gegenstand kaca-pembesar* für kaufen kaca pembesar.`, m);
+        conn.reply(m.chat, "*🛒 Gegenstand-Shop 🛒*\n\nLupe - 200 Münzen\n" +
+          `Nutze *${usedPrefix}polizei gegenstand lupe*, um eine Lupe zu kaufen.`, m);
       } else {
-        const Gegenstand = args[1]?.toLowerCase();
-        if (Gegenstand === "kaca-pembesar") {
-          if (player.Kaca_Pembesar) {
-            return conn.reply(m.chat, "*🛒 Sie bereits haben kaca pembesar.*", m);
+        const gegenstand = args[1]?.toLowerCase();
+        if (gegenstand === "lupe") {
+          if (spieler.lupe) {
+            return conn.reply(m.chat, "*🛒 Du besitzt bereits eine Lupe.*", m);
           }
 
-          if (player.Geld < 200) {
-            return conn.reply(m.chat, "*🛒 Geld Sie nicht genug für kaufen kaca pembesar.*", m);
+          if (spieler.geld < 200) {
+            return conn.reply(m.chat, "*🛒 Du hast nicht genug Geld, um eine Lupe zu kaufen.*", m);
           }
 
-          player.Kaca_Pembesar = 1;
-          player.Geld -= 200;
-          conn.reply(m.chat, "*🛒 Sie erfolgreich kaufen kaca pembesar.* benutzen 'polisi suchen' für meningkatkan peluang menangkap pencuri.", m);
+          spieler.lupe = 1;
+          spieler.geld -= 200;
+          conn.reply(m.chat, "*🛒 Du hast erfolgreich eine Lupe gekauft.* Nutze 'polizei suchen', um deine Chancen zu verbessern.", m);
         } else {
-          conn.reply(m.chat, "*🛒 Item die/der/das gemeint nicht gefunden.*", m);
+          conn.reply(m.chat, "*🛒 Unbekannter Gegenstand.*", m);
         }
       }
-    } else if (subCommand === "leaderboard") {
-      // Sort players based on the number of thieves caught (descending order)
-      const leaderboard = Object.entries(conn.players)
-        .map(([playerId, playerData]) => ({ id: playerId, Pencuri_Terfangen: playerData.Pencuri_Terfangen }))
-        .sort((a, b) => b.Pencuri_Terfangen - a.Pencuri_Terfangen)
-        .slice(0, 5); // Show top 5 players
+    } else if (unterBefehl === "rangliste") {
+      const rangliste = Object.entries(conn.spieler)
+        .map(([id, daten]) => ({ id, gefassteDiebe: daten.gefassteDiebe }))
+        .sort((a, b) => b.gefassteDiebe - a.gefassteDiebe)
+        .slice(0, 5);
 
-      let leaderboardMsg = "*🏆 Leaderboard 🏆*\n\n";
-      for (let i = 0; i < leaderboard.length; i++) {
-        leaderboardMsg += `${i + 1}. @${leaderboard[i].id.split("@")[0]} - ${leaderboard[i].Pencuri_Terfangen} Pencuri Terfangen\n`;
+      let msg = "*🏆 Rangliste 🏆*\n\n";
+      for (let i = 0; i < rangliste.length; i++) {
+        msg += `${i + 1}. @${rangliste[i].id.split("@")[0]} – ${rangliste[i].gefassteDiebe} Diebe gefasst\n`;
       }
 
-      conn.reply(m.chat, leaderboardMsg, m);
-    } else if (subCommand === "stoppen") {
-    user.Münzen += player.Geld * player.Pencuri_Terfangen;
-      let skorMsg = `*🏆 Punktzahl Ende Sie 🏆*\n\n🚓 Pencuri Terfangen: ${player.Pencuri_Terfangen}\n💰 Total Geld: Rp${player.Geld.toLocaleString()}\n🏆 Stufe Pencuri: ${player.Stufe}`;
-
-      conn.reply(m.chat, `*👮‍♂️ Sesi Spiel Polisi und Pencuri hat dihentikan.*\n\n${skorMsg}`, m);
-      player.State = STATES.IDLE;
-      player.ThiefAction = undefined;
+      conn.reply(m.chat, msg, m);
+    } else if (unterBefehl === "stoppen") {
+      user.Münzen += spieler.geld * spieler.gefassteDiebe;
+      let endMsg = `*🏁 Spiel beendet 🏁*\n\n🚓 Gefasste Diebe: ${spieler.gefassteDiebe}\n💰 Gesamtgeld: €${spieler.geld.toLocaleString()}\n🏆 Stufe: ${spieler.stufe}`;
+      conn.reply(m.chat, `*👮‍♂️ Deine Spielsitzung wurde beendet.*\n\n${endMsg}`, m);
+      spieler.zustand = ZUSTÄNDE.UNTÄTIG;
+      spieler.aktion = undefined;
     } else {
-      if (player.State !== STATES.SEARCHING) {
-        return conn.reply(m.chat, "*🔍 Sie muss suchen pencuri besonders erst mit Befehl 'polisi suchen'.*", m);
+      if (spieler.zustand !== ZUSTÄNDE.SUCHT) {
+        return conn.reply(m.chat, "*🔍 Du musst zuerst einen Dieb suchen mit dem Befehl 'polizei suchen'.*", m);
       }
 
-      const polisiAction = subCommand.toLowerCase();
-      const Stufe = player.Stufe;
-      const thiefActions = {
-        1: ["jagen", "schießen", "werfen"],
+      const polizeiAktion = unterBefehl.toLowerCase();
+      const stufe = spieler.stufe;
+      const erlaubteAktionen = {
+        1: ["verfolgen", "schießen", "werfen"],
         2: ["schießen", "fangen"],
         3: ["fangen"],
       };
 
-      if (!thiefActions[Stufe].includes(polisiAction)) {
-        return conn.reply(m.chat, `*🚓 Auswahl tindakan Sie (${polisiAction.toUpperCase()}) nicht sesuai mit Ergebnis die/der/das disuchen.*`, m);
+      if (!erlaubteAktionen[stufe].includes(polizeiAktion)) {
+        return conn.reply(m.chat, `*🚓 Deine Aktion (${polizeiAktion.toUpperCase()}) passt nicht zur gefundenen Spur.*`, m);
       }
 
-      if (thiefActions[Stufe].includes(player.ThiefAction)) {
-        let reward = 0;
-        switch (polisiAction) {
-          case "jagen":
-            reward = 1000 * Stufe;
+      if (erlaubteAktionen[stufe].includes(spieler.aktion)) {
+        let belohnung = 0;
+        switch (polizeiAktion) {
+          case "verfolgen":
+            belohnung = 1000 * stufe;
             break;
           case "schießen":
-            reward = 2000 * Stufe;
+            belohnung = 2000 * stufe;
             break;
           case "werfen":
-            reward = 3000 * Stufe;
+            belohnung = 3000 * stufe;
             break;
           case "fangen":
-            reward = 5000 * Stufe;
+            belohnung = 5000 * stufe;
             break;
         }
 
-        player.Pencuri_Terfangen++;
-        player.Geld += reward;
-        user.Münzen += reward;
-        if (player.Geld < 5000) {
-          player.Geld = 5000;
+        spieler.gefassteDiebe++;
+        spieler.geld += belohnung;
+        user.Münzen += belohnung;
+        if (spieler.geld < 5000) {
+          spieler.geld = 5000;
         }
 
-        conn.reply(m.chat, `*🚓 Sie erfolgreich gegen und menangkap pencuri Stufe ${Stufe}!* Sie erhalten imbalan Rp${reward.toLocaleString()}. Total Geld Sie: Rp${player.Geld.toLocaleString()}.`, m);
+        conn.reply(m.chat, `*🚓 Du hast erfolgreich einen Dieb der Stufe ${stufe} gefasst!* Belohnung: €${belohnung.toLocaleString()}. Gesamtgeld: €${spieler.geld.toLocaleString()}.`, m);
       } else {
-        conn.reply(m.chat, "*🚓 Tindakan Sie nicht genau und pencuri erfolgreich ablegen!*", m);
+        conn.reply(m.chat, "*🚓 Falsche Aktion – der Dieb ist entkommen!*", m);
       }
 
-      player.State = STATES.IDLE;
-      player.ThiefAction = undefined;
+      spieler.zustand = ZUSTÄNDE.UNTÄTIG;
+      spieler.aktion = undefined;
     }
 
-    conn.players[sender] = player;
+    conn.spieler[sender] = spieler;
   } else if (command === "info") {
-    conn.reply(m.chat, "*ℹ️ benutzen Befehl 'polisi' für mestarten spiel Polisi und Pencuri.*", m);
+    conn.reply(m.chat, "*ℹ️ Nutze den Befehl 'polizei', um das Polizei-und-Dieb-Spiel zu starten.*", m);
   }
 };
 
-handler.help = ["polisi", "polisi suchen", "polisi Status", "polisi Gegenstand <Gegenstand>", "polisi leaderboard", "polisi stoppen"];
+handler.help = ["polizei", "polizei suchen", "polizei status", "polizei gegenstand <gegenstand>", "polizei rangliste", "polizei stoppen"];
 handler.tags = ["rpg"];
 handler.group = true;
-handler.command = ["polisi"];
-handler.rpg = true
+handler.command = ["polizei"];
+handler.rpg = true;
+
 module.exports = handler;
