@@ -1,13 +1,37 @@
-const { getBalance, getLastDaily } = require('../lib/bank');
-
 let handler = async (m, { conn, command, usedPrefix }) => {
   try {
-    const id = m.sender.split('@')[0]; // <- Korrektur hier!
-    let balance = getBalance(id);
+    const who = m.sender;
+
+    // Initialisiere Datenbank, falls nötig
+    if (!global.db.data) throw '📂 Datenbank nicht initialisiert!';
+    if (!global.db.data.users[who]) {
+      global.db.data.users[who] = {
+        exp: 0,
+        limit: 10,
+        lastclaim: 0,
+        registered: false,
+        name: conn.getName(who),
+        age: -1,
+        regTime: -1,
+        afk: -1,
+        afkReason: '',
+        banned: false,
+        level: 0,
+        role: 'Rekrut ㋡',
+        autolevelup: true,
+        dailyXP: 0,
+        lastDailyReset: 0,
+        totalMessages: 0,
+        money: 0,
+        lastDaily: 0
+      };
+    }
+
+    let user = global.db.data.users[who];
+
     let now = Date.now();
-    let lastDaily = getLastDaily(id);
     let cooldown = 24 * 60 * 60 * 1000;
-    let remaining = cooldown - (now - lastDaily);
+    let remaining = cooldown - (now - user.lastDaily);
 
     let dailyAvailable = remaining <= 0;
     let dailyText = dailyAvailable
@@ -17,7 +41,7 @@ let handler = async (m, { conn, command, usedPrefix }) => {
     let text = `
 🏦 *Deine Bankübersicht*
 
-💳 *Kontostand:* ${balance} Münzen
+💳 *Kontostand:* ${user.money} Münzen
 
 ${dailyText}
 
@@ -29,6 +53,7 @@ ${dailyText}
 `.trim();
 
     await conn.sendMessage(m.chat, { text }, { quoted: m });
+
   } catch (e) {
     console.error('Fehler im Bank-Plugin:', e);
     m.reply('⚠️ Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.');

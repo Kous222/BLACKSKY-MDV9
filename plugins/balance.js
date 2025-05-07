@@ -1,17 +1,18 @@
-const { getBalance } = require('../lib/bank'); // Ensure the getBalance function interacts with the new bank system
-
 let handler = async (m, { conn }) => {
-  // Fetch the user's balance using the new bank system (MongoDB or another DB solution)
-  let balance = await getBalance(m.sender); // Make sure this is an async function
+  let sender = m.sender;
   
-  // Send the balance information to the chat
+  if (!global.db.data) throw '📂 Datenbank nicht initialisiert!';
+  if (!global.db.data.users[sender]) global.db.data.users[sender] = { money: 0 };
+
+  let balance = global.db.data.users[sender].money;
+
   await conn.sendMessage(m.chat, {
     text: `🏦 *Kontostand*\n\n💳 Du hast aktuell *${balance} Münzen* auf deinem Konto.\n\n💡 Bleib aktiv, um noch reicher zu werden!`,
   }, { quoted: m });
 };
 
-handler.command = ['balance', 'bal', 'kontostand'];  // Commands for checking balance
-handler.help = ['balance'];  // Help message for the command
-handler.tags = ['economy'];  // Tagging it for the economy section
+handler.command = ['balance', 'bal', 'kontostand'];
+handler.help = ['balance'];
+handler.tags = ['economy'];
 
 module.exports = handler;
