@@ -1,29 +1,50 @@
+const mongoose = require('mongoose');
+const { Schema } = mongoose;
+
+// Assuming you have a `User` schema for storing balance
+const userSchema = new Schema({
+  jid: { type: String, unique: true },
+  balance: { type: Number, default: 0 }
+});
+
+const User = mongoose.model('User', userSchema);
+
 let handler = async (m, { conn, args }) => {
-  let sender = m.sender;
   let amount = parseInt(args[0]);
 
-  // Überprüfen, ob der Betrag gültig ist
-  if (!amount || isNaN(amount) || amount <= 0) return m.reply('❗ Bitte gib einen gültigen Betrag an.');
-
-  // Sicherstellen, dass die Datenbank und der Benutzer existieren
-  if (!global.db.data) throw '📂 Datenbank nicht initialisiert!';
-  if (!global.db.data.users[sender]) global.db.data.users[sender] = { money: 0 };
-
-  // Den Kontostand des Benutzers abrufen
-  let balance = global.db.data.users[sender].money;
-
-  // Überprüfen, ob der Benutzer genug Geld hat
-  if (balance < amount) {
-    return m.reply('❗ Du hast nicht genug Münzen auf deinem Konto.');
+  // Validate the amount input
+  if (!amount || isNaN(amount) || amount <= 0) {
+    return m.reply('❗ Bitte gib einen gültigen Betrag an.');
   }
 
-  // Den Betrag abheben
-  global.db.data.users[sender].money -= amount;
+  try {
+    // Get the current balance from the database
+    let user = await User.findOne({ jid: m.sender });
 
-  // Bestätigung des Abhebens
-  await conn.sendMessage(m.chat, {
-    text: `🏧 *Abhebung Erfolgreich!*\n\n💵 Betrag: *${amount} Münzen*\n✅ Viel Spaß beim Ausgeben!`,
-  }, { quoted: m });
+    // If the user doesn't exist in the database, create a new entry
+    if (!user) {
+      user = new User({ jid: m.sender, balance: 0 });
+    }
+
+    // Check if the user has enough balance to withdraw
+    if (user.balance < amount) {
+      return m.reply('❗ Du hast nicht genug Münzen auf deinem Konto, um diese Abhebung vorzunehmen.');
+    }
+
+    // Subtract the withdrawal amount from the balance
+    user.balance -= amount;
+
+    // Save the updated balance to the database
+    await user.save();
+
+    // Send confirmation message
+    await conn.sendMessage(m.chat, {
+      text: `🏧 *Abhebung Erfolgreich!*\n\n💵 Betrag: *${amount} Münzen*\n✅ Viel Spaß beim Ausgeben!`,
+    }, { quoted: m });
+  } catch (err) {
+    console.error(err);
+    m.reply('❗ Es gab einen Fehler bei der Abhebung. Bitte versuche es später noch einmal.');
+  }
 };
 
 handler.command = ['withdraw', 'abheben'];

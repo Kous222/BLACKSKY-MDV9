@@ -6,7 +6,7 @@ let handler = async (m, { isPrems, conn, text, usedPrefix, command }) => {
 
     // Überprüfen, ob der Benutzer einen Job hat
     if (user.job === 'Arbeitslos') {
-        throw `Du hast noch keinen Job. Tippe *${usedPrefix}arbeit (Beruf)*, um dich zu bewerben.`;
+        throw `Du hast noch keinen Job. Tippe *${usedPrefix}applyjob*, um dich zu bewerben.`;
     }
 
     // Überprüfen, ob der Benutzer im Gefängnis oder entführt ist
@@ -73,7 +73,7 @@ let handler = async (m, { isPrems, conn, text, usedPrefix, command }) => {
 
     // Sicherstellen, dass der Job des Benutzers in der Job-Liste vorhanden ist
     if (!jobList[user.job]) {
-        throw `Dein aktueller Job "${user.job}" ist nicht bekannt oder ungültig. Bitte bewirb dich neu mit *${usedPrefix}arbeit*!`;
+        throw `Dein aktueller Job "${user.job}" ist nicht bekannt oder ungültig. Bitte bewirb dich neu mit *${usedPrefix}applyjob*!`;
     }
 
     // Job-Daten abrufen

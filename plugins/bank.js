@@ -1,37 +1,22 @@
+const Bank = require('../lib/bankModel'); // Assuming you have a Bank model for MongoDB
+const { getLastDaily } = require('../lib/bank'); // keep getLastDaily or integrate with MongoDB
+
 let handler = async (m, { conn, command, usedPrefix }) => {
   try {
-    const who = m.sender;
+    const id = m.sender.split('@')[0]; // <- User ID from the sender
+    let user = await Bank.findOne({ userId: id }); // Fetch user from MongoDB
 
-    // Initialisiere Datenbank, falls nötig
-    if (!global.db.data) throw '📂 Datenbank nicht initialisiert!';
-    if (!global.db.data.users[who]) {
-      global.db.data.users[who] = {
-        exp: 0,
-        limit: 10,
-        lastclaim: 0,
-        registered: false,
-        name: conn.getName(who),
-        age: -1,
-        regTime: -1,
-        afk: -1,
-        afkReason: '',
-        banned: false,
-        level: 0,
-        role: 'Rekrut ㋡',
-        autolevelup: true,
-        dailyXP: 0,
-        lastDailyReset: 0,
-        totalMessages: 0,
-        money: 0,
-        lastDaily: 0
-      };
+    if (!user) {
+      // If the user doesn't exist, create a new user record with a starting balance of 0
+      user = new Bank({ userId: id, balance: 0, lastDaily: 0 });
+      await user.save();
     }
 
-    let user = global.db.data.users[who];
-
+    let balance = user.balance;
     let now = Date.now();
+    let lastDaily = user.lastDaily;
     let cooldown = 24 * 60 * 60 * 1000;
-    let remaining = cooldown - (now - user.lastDaily);
+    let remaining = cooldown - (now - lastDaily);
 
     let dailyAvailable = remaining <= 0;
     let dailyText = dailyAvailable
@@ -41,7 +26,7 @@ let handler = async (m, { conn, command, usedPrefix }) => {
     let text = `
 🏦 *Deine Bankübersicht*
 
-💳 *Kontostand:* ${user.money} Münzen
+💳 *Kontostand:* ${balance} Münzen
 
 ${dailyText}
 
@@ -53,7 +38,6 @@ ${dailyText}
 `.trim();
 
     await conn.sendMessage(m.chat, { text }, { quoted: m });
-
   } catch (e) {
     console.error('Fehler im Bank-Plugin:', e);
     m.reply('⚠️ Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.');
