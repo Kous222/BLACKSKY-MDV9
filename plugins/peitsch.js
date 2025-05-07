@@ -1,3 +1,6 @@
+const fs = require('fs');
+const path = require('path');
+
 let handler = async (m, { conn, text }) => {
   let mentioned = m.mentionedJid && m.mentionedJid.length > 0 ? m.mentionedJid[0] : '';
 
@@ -9,15 +12,21 @@ let handler = async (m, { conn, text }) => {
   let mentionedName = await conn.getName(mentioned);
 
   let whipMessage = `⚡ *@${m.sender.split('@')[0]} hat @${mentioned.split('@')[0]} mit der Peitsche geschlagen!* ⚡\n` +
-    `${senderName} hat die Peitsche gezückt und ${mentionedName} gepeitscht! 😱💥`;
+    `@${m.sender.split('@')[0]} hat die Peitsche gezückt und @${mentioned.split('@')[0]} gepeitscht! 😱💥`;
+
+  const gifPath = path.join(__dirname, '../gifs/peitsch.mp4');
+
+  if (!fs.existsSync(gifPath)) return m.reply('Die Datei "peitsch.mp4" wurde im Ordner "gifs" nicht gefunden.');
 
   await conn.sendMessage(m.chat, {
-    text: whipMessage,
+    video: fs.readFileSync(gifPath),
+    gifPlayback: true,
+    caption: whipMessage,
     mentions: [mentioned, m.sender],
   }, { quoted: m });
 };
 
-handler.help = ['peitsch @user'];
+handler.help = ['peitsch [@user]'];
 handler.tags = ['fun', 'interaction'];
 handler.command = /^peitsch$/i;
 handler.group = true;

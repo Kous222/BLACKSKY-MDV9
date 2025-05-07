@@ -1,4 +1,7 @@
-let handler = async (m, { conn, text, participants }) => {
+const fs = require('fs');
+const path = require('path');
+
+let handler = async (m, { conn, text }) => {
   // Check if a user is mentioned in the message
   let mentioned = m.mentionedJid && m.mentionedJid.length > 0 ? m.mentionedJid[0] : '';
 
@@ -14,10 +17,15 @@ let handler = async (m, { conn, text, participants }) => {
   let kackaufMessage = `💩 *@${mentioned.split('@')[0]}*, ich kacke jetzt auf dich! 💩\n\n` +
                        'Ich hoffe, du bist bereit für das unvergessliche Erlebnis! 😂';
 
-  // Send the kackauf message to the group with the mentioned user
+  const gifPath = path.join(__dirname, '../gifs/kackauf.mp4');
+
+  if (!fs.existsSync(gifPath)) return m.reply('Die Datei "kackauf.mp4" wurde im Ordner "gifs" nicht gefunden.');
+
   await conn.sendMessage(m.chat, {
-    text: kackaufMessage,
-    mentions: [mentioned] // This will mention the user like WhatsApp does
+    video: fs.readFileSync(gifPath),
+    gifPlayback: true,
+    caption: kackaufMessage,
+    mentions: [mentioned]
   }, { quoted: m });
 };
 
