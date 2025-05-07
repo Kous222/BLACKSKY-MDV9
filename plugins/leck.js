@@ -1,19 +1,32 @@
- let handler = async (m, { conn, text, participants }) => {
-  // Check if a user is mentioned in the message
+const fs = require('fs');
+const path = require('path');
+
+let handler = async (m, { conn }) => {
+  // Prüfen, ob ein Benutzer erwähnt wurde
   let mentioned = m.mentionedJid && m.mentionedJid.length > 0 ? m.mentionedJid[0] : '';
 
-  // If no user is mentioned, send an error message
   if (!mentioned) {
-    return m.reply('Bitte erwähne die Person, die du lecken möchtest!');
+    return m.reply('❌ *Bitte erwähne die Person, die du lecken möchtest!*');
   }
 
-  // Generate the message in the format "@sender leckt @user 👅"
-  let message = `@${m.sender.split('@')[0]} leckt @${mentioned.split('@')[0]} 👅`;
+  // Nachricht zusammenbauen
+  let senderTag = '@' + m.sender.split('@')[0];
+  let targetTag = '@' + mentioned.split('@')[0];
+  let message = `${senderTag} leckt ${targetTag} 👅`;
 
-  // Send the message with mentions
+  // Pfad zur GIF-/Video-Datei
+  const gifPath = path.join(__dirname, '../gifs/leck.mp4'); // Datei muss existieren!
+
+  if (!fs.existsSync(gifPath)) {
+    return m.reply('❌ Das Video für diesen Befehl wurde nicht gefunden.');
+  }
+
+  // Video/GIF senden mit Caption und Erwähnungen
   await conn.sendMessage(m.chat, {
-    text: message,
-    mentions: [m.sender, mentioned] // Mention both the sender and the mentioned user
+    video: fs.readFileSync(gifPath),
+    gifPlayback: true,
+    caption: message,
+    mentions: [m.sender, mentioned]
   }, { quoted: m });
 };
 

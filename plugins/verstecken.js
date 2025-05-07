@@ -1,19 +1,32 @@
-let handler = async (m, { conn, text, participants }) => {
-  // Check if a user is mentioned in the message
+const fs = require('fs');
+const path = require('path');
+
+let handler = async (m, { conn }) => {
+  // Check if user is mentioned
   let mentioned = m.mentionedJid && m.mentionedJid.length > 0 ? m.mentionedJid[0] : '';
 
-  // If no user is mentioned, send an error message
   if (!mentioned) {
-    return m.reply('Bitte erwähne die Person, vor der du dich verstecken möchtest!');
+    return m.reply('❌ *Bitte erwähne die Person, vor der du dich verstecken möchtest!*');
   }
 
-  // Generate the message in the format "@sender versteckt sich vor @user"
-  let message = `@${m.sender.split('@')[0]} versteckt sich vor @${mentioned.split('@')[0]} 🏃💨`;
+  // Build the message
+  let senderTag = '@' + m.sender.split('@')[0];
+  let targetTag = '@' + mentioned.split('@')[0];
+  let message = `${senderTag} versteckt sich vor ${targetTag} 🏃💨`;
 
-  // Send the message with mentions
+  // Pfad zum Video/GIF
+  const gifPath = path.join(__dirname, '../gifs/versteckt.mp4'); // Stelle sicher, dass diese Datei vorhanden ist
+
+  if (!fs.existsSync(gifPath)) {
+    return m.reply('❌ Das Versteck-Video wurde nicht gefunden.');
+  }
+
+  // Send video with caption and mentions
   await conn.sendMessage(m.chat, {
-    text: message,
-    mentions: [m.sender, mentioned] // Mention both the sender and the mentioned user
+    video: fs.readFileSync(gifPath),
+    gifPlayback: true,
+    caption: message,
+    mentions: [m.sender, mentioned]
   }, { quoted: m });
 };
 

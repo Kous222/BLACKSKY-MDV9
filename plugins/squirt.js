@@ -1,19 +1,32 @@
-let handler = async (m, { conn, text, participants }) => {
-  // Check if a user is mentioned in the message
+const fs = require('fs');
+const path = require('path');
+
+let handler = async (m, { conn }) => {
+  // Check if a user is mentioned
   let mentioned = m.mentionedJid && m.mentionedJid.length > 0 ? m.mentionedJid[0] : '';
 
-  // If no user is mentioned, send an error message
   if (!mentioned) {
     return m.reply('Bitte erwähne die Person, auf die du squirtest!');
   }
 
-  // Generate the message in the format "@sender squirtet auf @user 💦💦"
-  let message = `@${m.sender.split('@')[0]} squirtet auf @${mentioned.split('@')[0]} 💦💦`;
+  // Create message
+  let senderTag = '@' + m.sender.split('@')[0];
+  let targetTag = '@' + mentioned.split('@')[0];
+  let message = `${senderTag} squirtet auf ${targetTag} 💦💦`;
 
-  // Send the message with mentions
+  // Path to video or gif file
+  const gifPath = path.join(__dirname, '../gifs/squirt.mp4');
+
+  if (!fs.existsSync(gifPath)) {
+    return m.reply('❌ Das Video für diesen Befehl wurde nicht gefunden.');
+  }
+
+  // Send video with mentions
   await conn.sendMessage(m.chat, {
-    text: message,
-    mentions: [m.sender, mentioned] // Mention both the sender and the mentioned user
+    video: fs.readFileSync(gifPath),
+    gifPlayback: true,
+    caption: message,
+    mentions: [m.sender, mentioned]
   }, { quoted: m });
 };
 

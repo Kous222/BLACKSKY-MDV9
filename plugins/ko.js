@@ -1,19 +1,32 @@
-let handler = async (m, { conn, text, participants }) => {
-  // Check if a user is mentioned in the message
+const fs = require('fs');
+const path = require('path');
+
+let handler = async (m, { conn }) => {
+  // Prüfe, ob jemand erwähnt wurde
   let mentioned = m.mentionedJid && m.mentionedJid.length > 0 ? m.mentionedJid[0] : '';
 
-  // If no user is mentioned, send an error message
   if (!mentioned) {
-    return m.reply('Bitte erwähne die Person, die du K.O. schlagen möchtest!');
+    return m.reply('❌ *Bitte erwähne die Person, die du K.O. schlagen möchtest!*');
   }
 
-  // Generate the message in the format "@sender schlägt @user K.O💀"
-  let message = `@${m.sender.split('@')[0]} schlägt @${mentioned.split('@')[0]} K.O💀`;
+  // Nachricht aufbauen
+  let senderTag = '@' + m.sender.split('@')[0];
+  let targetTag = '@' + mentioned.split('@')[0];
+  let message = `${senderTag} schlägt ${targetTag} K.O 💀`;
 
-  // Send the message with mentions
+  // Pfad zur lokalen Video-/GIF-Datei
+  const gifPath = path.join(__dirname, '../gifs/ko.mp4'); // Stelle sicher, dass diese Datei existiert
+
+  if (!fs.existsSync(gifPath)) {
+    return m.reply('❌ Das K.O.-Video wurde nicht gefunden.');
+  }
+
+  // Sende das Video mit Caption und Erwähnungen
   await conn.sendMessage(m.chat, {
-    text: message,
-    mentions: [m.sender, mentioned] // Mention both the sender and the mentioned user
+    video: fs.readFileSync(gifPath),
+    gifPlayback: true,
+    caption: message,
+    mentions: [m.sender, mentioned]
   }, { quoted: m });
 };
 

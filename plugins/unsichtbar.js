@@ -1,19 +1,32 @@
-let handler = async (m, { conn, text, participants }) => {
-  // Check if a user is mentioned in the message
+const fs = require('fs');
+const path = require('path');
+
+let handler = async (m, { conn }) => {
+  // Check if user is mentioned
   let mentioned = m.mentionedJid && m.mentionedJid.length > 0 ? m.mentionedJid[0] : '';
 
-  // If no user is mentioned, send an error message
   if (!mentioned) {
-    return m.reply('Bitte erwähne die Person, vor der du unsichtbar bist!');
+    return m.reply('❌ *Bitte erwähne die Person, vor der du unsichtbar sein willst!*');
   }
 
-  // Generate the message in the format "@sender ist unsichtbar vor @user"
-  let message = `@${m.sender.split('@')[0]} ist unsichtbar vor @${mentioned.split('@')[0]} 🕵️‍♂️❌`;
+  // Generate the message
+  let senderTag = '@' + m.sender.split('@')[0];
+  let targetTag = '@' + mentioned.split('@')[0];
+  let message = `${senderTag} ist unsichtbar vor ${targetTag} 🕵️‍♂️❌`;
 
-  // Send the message with mentions
+  // Pfad zum GIF/Video
+  const gifPath = path.join(__dirname, '../gifs/unsichtbar.mp4'); // Stelle sicher, dass diese Datei existiert
+
+  if (!fs.existsSync(gifPath)) {
+    return m.reply('❌ Das Unsichtbar-Video wurde nicht gefunden.');
+  }
+
+  // Send video with caption and mentions
   await conn.sendMessage(m.chat, {
-    text: message,
-    mentions: [m.sender, mentioned] // Mention both the sender and the mentioned user
+    video: fs.readFileSync(gifPath),
+    gifPlayback: true,
+    caption: message,
+    mentions: [m.sender, mentioned]
   }, { quoted: m });
 };
 

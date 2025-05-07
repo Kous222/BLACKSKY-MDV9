@@ -1,26 +1,41 @@
-let handler = async (m, { text, conn }) => {
-  const target = text ? `@${text.replace(/[^0-9]/g, '')}` : '';
-  const sender = `@${m.sender.split('@')[0]}`;
+const fs = require('fs');
+const path = require('path');
 
-  // Check if there's a target
-  if (!target) {
-    await m.reply('❌ *Bitte gib den Benutzernamen an, den du in den Müll werfen möchtest!*');
-    return;
+let handler = async (m, { conn }) => {
+  // Check if user is mentioned
+  let mentioned = m.mentionedJid && m.mentionedJid.length > 0 ? m.mentionedJid[0] : '';
+
+  if (!mentioned) {
+    return m.reply('❌ *Bitte erwähne die Person, die du in den Müll werfen möchtest!*');
   }
 
-  const trashMessages = [
-    `${sender} wirft ${target} in den Müll! 🗑️💥`,
-    `${sender} hat beschlossen, ${target} im Müll zu entsorgen! 🗑️🙃`,
-    `${sender} packt ${target} in den Mülleimer! 🗑️🔥`,
-    `${sender} hat den ultimativen Müllkampf gestartet und wirft ${target} in den Abfall! 🗑️💪`,
-    `${sender} hat den Müllberg erreicht und schubst ${target} direkt rein! 🗑️😈`
+  // Create message with @mentions
+  let senderTag = '@' + m.sender.split('@')[0];
+  let targetTag = '@' + mentioned.split('@')[0];
+  let trashMessages = [
+    `${senderTag} wirft ${targetTag} in den Müll! 🗑️💥`,
+    `${senderTag} hat beschlossen, ${targetTag} im Müll zu entsorgen! 🗑️🙃`,
+    `${senderTag} packt ${targetTag} in den Mülleimer! 🗑️🔥`,
+    `${senderTag} hat den ultimativen Müllkampf gestartet und wirft ${targetTag} in den Abfall! 🗑️💪`,
+    `${senderTag} hat den Müllberg erreicht und schubst ${targetTag} direkt rein! 🗑️😈`
   ];
 
-  // Select a random trash message from the list
-  const randomMessage = trashMessages[Math.floor(Math.random() * trashMessages.length)];
+  let message = trashMessages[Math.floor(Math.random() * trashMessages.length)];
 
-  // Send the trash message
-  await m.reply(randomMessage);
+  // Pfad zur lokalen GIF/Video-Datei
+  const gifPath = path.join(__dirname, '../gifs/trash.mp4'); // Stelle sicher, dass 'gifs/trash.mp4' existiert
+
+  if (!fs.existsSync(gifPath)) {
+    return m.reply('❌ Das Trash-Video wurde nicht gefunden.');
+  }
+
+  // Send video with message and mentions
+  await conn.sendMessage(m.chat, {
+    video: fs.readFileSync(gifPath),
+    gifPlayback: true,
+    caption: message,
+    mentions: [m.sender, mentioned]
+  }, { quoted: m });
 };
 
 handler.command = ['trash', 'wirfinmüll'];
