@@ -1,4 +1,5 @@
 const Intro = require('../lib/Intro'); // Import the MongoDB model
+const moment = require('moment'); // For date and time manipulation
 
 let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
     if (!m.isGroup) return m.reply('❌ Dieser Befehl funktioniert nur in Gruppen.');
@@ -17,6 +18,7 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
             introData = new Intro({
                 groupId,
                 introCode: newCode,
+                introTimestamp: Date.now(), // Store the timestamp when the intro code is generated
                 introducedUsers: {}
             });
 
@@ -92,12 +94,22 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         });
     }
 
-    // delintro - Delete the intro code after everyone has introduced themselves
+    // delintro - Delete the intro code after everyone has introduced themselves or 24 hours have passed
     if (command === 'delintro') {
         if (!isAdmin && !isOwner) return m.reply('Nur Admins dürfen diesen Befehl nutzen.');
 
         let currentIntroData = await Intro.findOne({ groupId });
         if (!currentIntroData) return m.reply('❌ Es gibt keinen Vorstellungscode, den man löschen könnte.');
+
+        // Check if 24 hours have passed since the intro code was created
+        const timeElapsed = Date.now() - currentIntroData.introTimestamp;
+        const hoursElapsed = timeElapsed / (1000 * 60 * 60); // Convert to hours
+
+        if (hoursElapsed >= 24) {
+            // Delete the intro code if 24 hours have passed
+            await Intro.deleteOne({ groupId });
+            return m.reply('✅ Der Vorstellungscode wurde nach 24 Stunden automatisch gelöscht.');
+        }
 
         // Check if all members have introduced themselves
         let participants = (await conn.groupMetadata(groupId)).participants.map(p => p.id);
