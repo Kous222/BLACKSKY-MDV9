@@ -1,3 +1,6 @@
+const fs = require('fs');
+const path = require('path');
+
 let handler = async (m, { conn, text, participants }) => {
   // Check if a user is mentioned in the message
   let mentioned = m.mentionedJid && m.mentionedJid.length > 0 ? m.mentionedJid[0] : '';
@@ -8,12 +11,21 @@ let handler = async (m, { conn, text, participants }) => {
   }
 
   // Generate the message in the format "@sender furzt auf @user"
-  let message = `@${m.sender.split('@')[0]} furzt auf @${mentioned.split('@')[0]}`;
+  let message = `💨 @${m.sender.split('@')[0]} furzt auf @${mentioned.split('@')[0]} 🤢`;
 
-  // Send the message with mentions
+  // Path to the fart GIF/video
+  const gifPath = path.join(__dirname, '../gifs/furz.mp4'); // Stelle sicher, dass diese Datei existiert
+
+  if (!fs.existsSync(gifPath)) {
+    return m.reply('❌ Das Furz-Video wurde nicht gefunden.');
+  }
+
+  // Send the message with the video and mentions
   await conn.sendMessage(m.chat, {
-    text: message,
-    mentions: [m.sender, mentioned] // Mention both the sender and the mentioned user
+    video: fs.readFileSync(gifPath),
+    gifPlayback: true,
+    caption: message,
+    mentions: [m.sender, mentioned]
   }, { quoted: m });
 };
 

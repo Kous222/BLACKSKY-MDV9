@@ -1,3 +1,6 @@
+const fs = require('fs');
+const path = require('path');
+
 let handler = async (m, { conn, text, participants }) => {
   // Check if a user is mentioned in the message
   let mentioned = m.mentionedJid && m.mentionedJid.length > 0 ? m.mentionedJid[0] : '';
@@ -10,10 +13,19 @@ let handler = async (m, { conn, text, participants }) => {
   // Generate the message in the format "@sender gibt @user ein BJ🍌"
   let message = `@${m.sender.split('@')[0]} gibt @${mentioned.split('@')[0]} ein BJ🍌`;
 
-  // Send the message with mentions
+  // Pfad zum GIF/Video
+  const gifPath = path.join(__dirname, '../gifs/bj.mp4'); // Stelle sicher, dass diese Datei existiert
+
+  if (!fs.existsSync(gifPath)) {
+    return m.reply('❌ Das BJ-GIF wurde nicht gefunden.');
+  }
+
+  // Send the message with the GIF, caption, and mentions
   await conn.sendMessage(m.chat, {
-    text: message,
-    mentions: [m.sender, mentioned] // Mention both the sender and the mentioned user
+    video: fs.readFileSync(gifPath),
+    gifPlayback: true,
+    caption: message,
+    mentions: [m.sender, mentioned]
   }, { quoted: m });
 };
 

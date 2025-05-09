@@ -1,3 +1,6 @@
+const fs = require('fs');
+const path = require('path');
+
 let handler = async (m, { conn, text, participants }) => {
   let target;
 
@@ -19,9 +22,19 @@ let handler = async (m, { conn, text, participants }) => {
 
   let message = `🍻 @${sender.split('@')[0]} wünscht @${target.split('@')[0]} einen richtigen Kater! 🤕`;
 
-  await conn.sendMessage(m.chat, { 
-    text: message, 
-    mentions: [sender, target] 
+  // Pfad zum GIF/Video
+  const gifPath = path.join(__dirname, '../gifs/kater.mp4'); // Stelle sicher, dass diese Datei existiert
+
+  if (!fs.existsSync(gifPath)) {
+    return m.reply('❌ Das Kater-GIF wurde nicht gefunden.');
+  }
+
+  // Send the message with the GIF, caption, and mentions
+  await conn.sendMessage(m.chat, {
+    video: fs.readFileSync(gifPath),
+    gifPlayback: true,
+    caption: message,
+    mentions: [sender, target]
   }, { quoted: m });
 };
 
