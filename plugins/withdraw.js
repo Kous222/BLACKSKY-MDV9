@@ -1,50 +1,24 @@
-const mongoose = require('mongoose');
-const { Schema } = mongoose;
-
-// Assuming you have a `User` schema for storing balance
-const userSchema = new Schema({
-  jid: { type: String, unique: true },
-  balance: { type: Number, default: 0 }
-});
-
-const User = mongoose.model('User', userSchema);
+const { getBalance, subtractBalance } = require('../lib/bank'); // MongoDB methods
 
 let handler = async (m, { conn, args }) => {
+  let sender = m.sender;
   let amount = parseInt(args[0]);
 
-  // Validate the amount input
-  if (!amount || isNaN(amount) || amount <= 0) {
-    return m.reply('❗ Bitte gib einen gültigen Betrag an.');
+  if (!amount || isNaN(amount) || amount <= 0) return m.reply('❗ Bitte gib einen gültigen Betrag an.');
+
+  // Fetch balance from MongoDB
+  let balance = await getBalance(sender);
+
+  if (balance < amount) {
+    return m.reply('❗ Du hast nicht genug Münzen auf deinem Konto.');
   }
 
-  try {
-    // Get the current balance from the database
-    let user = await User.findOne({ jid: m.sender });
+  // Subtract amount from MongoDB
+  await subtractBalance(sender, amount);
 
-    // If the user doesn't exist in the database, create a new entry
-    if (!user) {
-      user = new User({ jid: m.sender, balance: 0 });
-    }
-
-    // Check if the user has enough balance to withdraw
-    if (user.balance < amount) {
-      return m.reply('❗ Du hast nicht genug Münzen auf deinem Konto, um diese Abhebung vorzunehmen.');
-    }
-
-    // Subtract the withdrawal amount from the balance
-    user.balance -= amount;
-
-    // Save the updated balance to the database
-    await user.save();
-
-    // Send confirmation message
-    await conn.sendMessage(m.chat, {
-      text: `🏧 *Abhebung Erfolgreich!*\n\n💵 Betrag: *${amount} Münzen*\n✅ Viel Spaß beim Ausgeben!`,
-    }, { quoted: m });
-  } catch (err) {
-    console.error(err);
-    m.reply('❗ Es gab einen Fehler bei der Abhebung. Bitte versuche es später noch einmal.');
-  }
+  await conn.sendMessage(m.chat, {
+    text: `🏧 *Abhebung Erfolgreich!*\n\n💵 Betrag: *${amount} Münzen*\n✅ Viel Spaß beim Ausgeben!`,
+  }, { quoted: m });
 };
 
 handler.command = ['withdraw', 'abheben'];

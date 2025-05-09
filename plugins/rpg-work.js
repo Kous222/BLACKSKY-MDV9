@@ -1,10 +1,26 @@
-const { addSaldo } = require('../lib/bank'); // Ensure the addSaldo function is updated to work with the new system
+const mongoose = require('mongoose');
+
+// MongoDB Schema for Users (if not defined elsewhere)
+const userSchema = new mongoose.Schema({
+    sender: String,
+    balance: { type: Number, default: 0 },
+    lastkerja: { type: Number, default: 0 },
+});
+
+const User = mongoose.models.User || mongoose.model('User', userSchema);
 
 let handler = async (m, { conn, command, args, usedPrefix }) => {
     let type = (args[0] || '').toLowerCase();
-    let users = global.db.data.users[m.sender];
-    let time = users.lastkerja + 300000;
-    let __timers = (new Date - users.lastkerja);
+    
+    // Fetch user from MongoDB (create if not exists)
+    let user = await User.findOne({ sender: m.sender });
+    if (!user) {
+        user = new User({ sender: m.sender });
+        await user.save();
+    }
+
+    let time = user.lastkerja + 300000;
+    let __timers = (new Date - user.lastkerja);
     let _timers = (0 - __timers);
     let timers = clockString(_timers);
 
@@ -22,24 +38,9 @@ let handler = async (m, { conn, command, args, usedPrefix }) => {
     let rumah = pickRandom(ruma);
     let pnjh = ['Dieb', 'Verkehrssünder', 'Bankräuber', 'Taschendieb', 'Korruptionsverdächtiger'];
     let pnjht = pickRandom(pnjh);
-
-    // Atlas command: to view user's current job progress
-    if (/atlas/i.test(command)) {
-        let atlasMessage = `
-        _*Dein Atlas: Aktueller Beruf und Status*_
-
-        Letzte Arbeit: ${users.lastkerja ? new Date(users.lastkerja).toLocaleString() : 'Noch keine Arbeit'}
-
-        Beruf: ${type || 'Unbestimmt'}
-        Letzte Belohnung: *${users.lastkerja ? 'Münzen' : 'Keine Belohnung'}*
-
-        Aktueller Status: ${timers}
-        `;
-        return m.reply(atlasMessage);
-    }
-
+    
     if (/kerjadulu|arbeiten|work|arbeit/i.test(command)) {
-        if (new Date - users.lastkerja < 300000) return m.reply(`Du arbeitest bereits\nZeit für eine Pause für 🕜 ${clockString(time - new Date())}`);
+        if (new Date - user.lastkerja < 300000) return m.reply(`Du arbeitest bereits\nZeit für eine Pause für 🕜 ${clockString(time - new Date())}`);
 
         let hasil = Math.floor(Math.random() * 5000000);
         let message;
@@ -115,18 +116,22 @@ _*Wähle einen Beruf, den du ausüben möchtest*_
                 return conn.relayMessage(m.chat, msg, {});
         }
 
-        // Update the user's balance after completing the job
-        await addSaldo(m.sender, hasil, 'Münzen');
-        users.lastkerja = new Date * 1; // Update the time of the last work
+        // Update user's balance in the database
+        user.balance += hasil;
+        await user.save();
 
-        // Send the message with the earnings
+        // Update the last work time
+        user.lastkerja = new Date().getTime();
+        await user.save();
+
+        // Send message to user
         await m.reply(message);
     }
-}
+};
 
-handler.help = ['arbeiten', 'arbeit', 'work', 'atlas'];
+handler.help = ['arbeiten', 'arbeit', 'work'];
 handler.tags = ['rpg'];
-handler.command = /^(arbeiten|arbeit|work|atlas)$/i;
+handler.command = /^(arbeiten|arbeit|work)$/i;
 handler.register = true;
 handler.group = true;
 handler.rpg = true;

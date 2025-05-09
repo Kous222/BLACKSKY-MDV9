@@ -1,12 +1,13 @@
 const cooldown = 300000; // Standard-Cooldown (5 Minuten in Millisekunden)
 const cooldownAfterWork = 5 * 60 * 1000; // Cooldown nach der Arbeit für 5 Minuten
+const { addBalance } = require('../lib/bank'); // Pfad anpassen, falls anders!
 
 let handler = async (m, { isPrems, conn, text, usedPrefix, command }) => {
     const user = global.db.data.users[m.sender];
 
     // Überprüfen, ob der Benutzer einen Job hat
     if (user.job === 'Arbeitslos') {
-        throw `Du hast noch keinen Job. Tippe *${usedPrefix}applyjob*, um dich zu bewerben.`;
+        throw `Du hast noch keinen Job. Tippe *${usedPrefix}arbeit (Beruf)*, um dich zu bewerben.`;
     }
 
     // Überprüfen, ob der Benutzer im Gefängnis oder entführt ist
@@ -73,7 +74,7 @@ let handler = async (m, { isPrems, conn, text, usedPrefix, command }) => {
 
     // Sicherstellen, dass der Job des Benutzers in der Job-Liste vorhanden ist
     if (!jobList[user.job]) {
-        throw `Dein aktueller Job "${user.job}" ist nicht bekannt oder ungültig. Bitte bewirb dich neu mit *${usedPrefix}applyjob*!`;
+        throw `Dein aktueller Job "${user.job}" ist nicht bekannt oder ungültig. Bitte bewirb dich neu mit *${usedPrefix}arbeit*!`;
     }
 
     // Job-Daten abrufen
@@ -98,6 +99,9 @@ let handler = async (m, { isPrems, conn, text, usedPrefix, command }) => {
 • Arbeitsfortschritt: +1%`;
 
     conn.reply(m.chat, message, m);
+
+    // Füge die Belohnung zum Atlas hinzu
+    await addBalance(m.sender, geld, 'Münzen');
 };
 
 handler.help = ['work'];

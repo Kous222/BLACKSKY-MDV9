@@ -1,46 +1,23 @@
-const mongoose = require('mongoose');
-const { Schema } = mongoose;
-
-// Assuming you have a `User` schema for storing balance
-const userSchema = new Schema({
-  jid: { type: String, unique: true },
-  balance: { type: Number, default: 0 }
-});
-
-const User = mongoose.model('User', userSchema);
+const { getBalance, addBalance } = require('../lib/bank'); // Import MongoDB functions
 
 let handler = async (m, { conn, args }) => {
-  // Parse amount from args
+  let sender = m.sender;
   let amount = parseInt(args[0]);
 
-  // Validate the amount input
   if (!amount || isNaN(amount) || amount <= 0) {
-    return m.reply('❗ Bitte gib einen gültigen Betrag an.');
+    return m.reply('❗ Bitte gib einen gültigen Betrag an.\nBeispiel: .deposit 100');
   }
 
-  try {
-    // Get the current balance from the database
-    let user = await User.findOne({ jid: m.sender });
+  // Fetch current balance from MongoDB
+  let balance = await getBalance(sender);
 
-    // If the user doesn't exist in the database, create a new entry
-    if (!user) {
-      user = new User({ jid: m.sender, balance: 0 });
-    }
+  // Add the deposit amount to the balance
+  await addBalance(sender, amount);
 
-    // Add the deposit amount to the current balance
-    user.balance += amount;
-
-    // Save the updated balance to the database
-    await user.save();
-
-    // Send confirmation message
-    await conn.sendMessage(m.chat, {
-      text: `✅ *Einzahlung Erfolgreich!*\n\n💸 Betrag: *${amount} Münzen*\n🪪 Konto aktualisiert!`,
-    }, { quoted: m });
-  } catch (err) {
-    console.error(err);
-    m.reply('❗ Es gab einen Fehler bei der Einzahlung. Bitte versuche es später noch einmal.');
-  }
+  // Send success message
+  await conn.sendMessage(m.chat, {
+    text: `✅ *Einzahlung Erfolgreich!*\n\n💸 Betrag: *${amount} Münzen*\n📈 Neuer Kontostand: *${balance + amount} Münzen*`,
+  }, { quoted: m });
 };
 
 handler.command = ['deposit', 'einzahlen'];

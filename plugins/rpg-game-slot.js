@@ -1,6 +1,18 @@
+const mongoose = require('mongoose');
+const { initUser, getBalance, addBalance, subtractBalance } = require('../lib/bank'); // Bankfunktionen importieren
 const fs = require('fs');
 const path = require('path');
-const { getBalance, addBalance, subtractBalance } = require('../lib/bank'); // Bankfunktionen importieren
+const ms = require('ms'); // Make sure you have this library installed (npm install ms)
+
+// MongoDB Schema für Benutzer erstellen
+const userSchema = new mongoose.Schema({
+    sender: String,
+    balance: { type: Number, default: 0 },
+    lastslot: { type: Number, default: 0 },
+});
+
+// Avoid overwriting the model if it already exists
+const User = mongoose.models.User || mongoose.model('User', userSchema);
 
 let reg = 100; // Kleiner Gewinnbetrag
 
@@ -21,16 +33,17 @@ ${usedPrefix + command} 100
     let cooldown = 20000; // 20 Sekunden
     let now = Date.now();
 
-    // Userdaten initialisieren
-    global.db.data.users = global.db.data.users || {};
-    global.db.data.users[m.sender] = global.db.data.users[m.sender] || {};
+    // Benutzer in der MongoDB-Datenbank suchen oder erstellen
+    let user = await User.findOne({ sender: m.sender });
+    if (!user) {
+        user = new User({ sender: m.sender });
+        await user.save();
+    }
 
-    if (!global.db.data.users[m.sender].lastslot) global.db.data.users[m.sender].lastslot = 0;
-
-    let lastslot = global.db.data.users[m.sender].lastslot;
+    let lastslot = user.lastslot;
 
     if (now - lastslot < cooldown) {
-        throw `⏳ Bitte warte *${msToTime(lastslot + cooldown - now)}*, bevor du erneut spielst.`;
+        throw `⏳ Bitte warte *${ms(lastslot + cooldown - now)}*, bevor du erneut spielst.`;
     }
 
     let balance = await getBalance(m.sender);
@@ -38,7 +51,8 @@ ${usedPrefix + command} 100
     if (bet < 100) throw '⚠️ Der Mindesteinsatz beträgt *100 MONEY*.';
     if (balance < bet) throw `❌ Du hast nicht genug *MONEY*.\nPrüfe deinen Kontostand mit *.balance*`;
 
-    global.db.data.users[m.sender].lastslot = now;
+    user.lastslot = now; // Aktualisieren des Zeitstempels für das letzte Spiel
+    await user.save();
 
     const emojis = ["🍒", "🍋", "🍇", "⭐", "💎"];
     let x = [], y = [], z = [];

@@ -1,37 +1,36 @@
-const { getBalance, addBalance } = require('../lib/bank');
+const { addBalance, initUser } = require('../lib/bank');
 
-let handler = async (m, { conn, text }) => {
-  // Check if the sender is the owner
-  if (!global.owner.includes(m.sender.split('@')[0])) {
-    return m.reply('❌ Du bist nicht der Besitzer!');
+let handler = async (m, { conn, command, args, usedPrefix }) => {
+  try {
+    // Extracting the target user and amount
+    let target = m.mentionedJid[0] || args[0]; // If a user is tagged, use that; otherwise, the first argument
+    const amount = parseInt(args[1]); // Amount is the second argument
+
+    if (!target) {
+      return m.reply('⚠️ Bitte gib den Benutzer an, dem du Geld hinzufügen möchtest. Beispiel: @Benutzer 100');
+    }
+
+    if (isNaN(amount) || amount <= 0) {
+      return m.reply('⚠️ Bitte gib einen gültigen Betrag an, den du hinzufügen möchtest.');
+    }
+
+    // Initialize the target user
+    let user = await initUser(target);
+
+    // Add the balance to the target user
+    await addBalance(target, amount);
+
+    // Respond with the success message
+    m.reply(`💰 *${amount}* Münzen wurden erfolgreich zu *${target}*'s Konto hinzugefügt!\n💳 *Neuer Kontostand:* ${user.balance} Münzen`);
+  } catch (e) {
+    console.error('Fehler im addmoney-Plugin:', e);
+    m.reply('⚠️ Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.');
   }
-
-  // Get the user to whom the money will be added
-  let who
-  if (m.isGroup) who = m.mentionedJid[0] ? m.mentionedJid[0] : m.quoted ? m.quoted.sender : text
-  else who = m.chat
-
-  if (!who) return m.reply('❗ Bitte markiere jemanden!');
-  
-  // Check if the amount is provided and valid
-  let amount = parseInt(text.split(' ')[1]);
-  if (!amount || isNaN(amount) || amount <= 0) {
-    return m.reply('❗ Bitte gib einen gültigen Betrag an!');
-  }
-
-  // Add money to the user's balance
-  addBalance(who, amount);
-
-  // Respond with a success message
-  await conn.sendMessage(m.chat, {
-    text: `✅ *Erfolgreich!* ${amount} Münzen wurden dem Konto von @${who.split('@')[0]} hinzugefügt.`,
-    mentions: [who],
-  }, { quoted: m });
 };
 
-handler.help = ['addmoney [@user] [amount]'];
-handler.tags = ['owner', 'economy'];
-handler.command = /^(addmoney|fügeGeldhinzu)$/i;
-handler.owner = true;
+handler.command = ['addmoney', 'geldhinzufügen'];
+handler.help = ['addmoney [Benutzer] [Betrag]'];
+handler.tags = ['economy'];
+handler.admin = true; // Only admins can use this command
 
 module.exports = handler;

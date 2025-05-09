@@ -1,22 +1,15 @@
-const Bank = require('../lib/bankModel'); // Assuming you have a Bank model for MongoDB
-const { getLastDaily } = require('../lib/bank'); // keep getLastDaily or integrate with MongoDB
+const { initUser, getBalance, getLastDaily, setLastDaily }=require('../lib/bank');
 
 let handler = async (m, { conn, command, usedPrefix }) => {
   try {
-    const id = m.sender.split('@')[0]; // <- User ID from the sender
-    let user = await Bank.findOne({ userId: id }); // Fetch user from MongoDB
+    const who = m.sender;
 
-    if (!user) {
-      // If the user doesn't exist, create a new user record with a starting balance of 0
-      user = new Bank({ userId: id, balance: 0, lastDaily: 0 });
-      await user.save();
-    }
+    // Fetch user data from MongoDB
+    let user = await initUser(who);
 
-    let balance = user.balance;
     let now = Date.now();
-    let lastDaily = user.lastDaily;
     let cooldown = 24 * 60 * 60 * 1000;
-    let remaining = cooldown - (now - lastDaily);
+    let remaining = cooldown - (now - user.lastDaily);
 
     let dailyAvailable = remaining <= 0;
     let dailyText = dailyAvailable
@@ -26,7 +19,7 @@ let handler = async (m, { conn, command, usedPrefix }) => {
     let text = `
 🏦 *Deine Bankübersicht*
 
-💳 *Kontostand:* ${balance} Münzen
+💳 *Kontostand:* ${user.balance} Münzen
 
 ${dailyText}
 
@@ -38,6 +31,7 @@ ${dailyText}
 `.trim();
 
     await conn.sendMessage(m.chat, { text }, { quoted: m });
+
   } catch (e) {
     console.error('Fehler im Bank-Plugin:', e);
     m.reply('⚠️ Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.');
