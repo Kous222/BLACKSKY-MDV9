@@ -1,12 +1,27 @@
-const Intro = require('../lib/Intro'); // Import the MongoDB model
-const moment = require('moment'); // For date and time manipulation
+const Intro = require('../lib/Intro'); // MongoDB Model
+const moment = require('moment'); // Für Datum/Zeit
+
+// Funktion zum Parsen der Eingabe
+function parseIntroInput(input) {
+    const parts = input.trim().split(/\s+/);
+    if (parts.length < 4) {
+        return { name: null, alter: null, ort: null, code: null };
+    }
+
+    const name = parts[0];
+    const alter = parts[1];
+    const ort = parts.slice(2, parts.length - 1).join(' ');
+    const code = parts[parts.length - 1];
+
+    return { name, alter, ort, code };
+}
 
 let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
     if (!m.isGroup) return m.reply('❌ Dieser Befehl funktioniert nur in Gruppen.');
 
     const groupId = m.chat;
 
-    // introcode setzen
+    // introcode
     if (command === 'introcode') {
         if (!isAdmin && !isOwner) return m.reply('Nur Admins dürfen den Vorstellungsprozess starten.');
 
@@ -18,7 +33,7 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
             introData = new Intro({
                 groupId,
                 introCode: newCode,
-                introTimestamp: Date.now(), // Store the timestamp when the intro code is generated
+                introTimestamp: Date.now(),
                 introducedUsers: {}
             });
 
@@ -48,16 +63,12 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         let { name, alter, ort, code } = parseIntroInput(text);
 
         if (code !== currentIntroData.introCode) return m.reply('❌ Falscher oder fehlender Code.');
-        if (!name || !alter || !ort) {
-            return m.reply('❌ Bitte gib Name, Alter und Wohnort an.');
-        }
+        if (!name || !alter || !ort) return m.reply('❌ Bitte gib Name, Alter und Wohnort an.');
 
-        // Check if the user has already introduced themselves
         if (currentIntroData.introducedUsers.has(m.sender)) {
             return m.reply('❌ Du hast dich bereits vorgestellt.');
         }
 
-        // Save the user introduction in MongoDB
         currentIntroData.introducedUsers.set(m.sender, { name, alter, ort });
         await currentIntroData.save();
 
@@ -69,6 +80,8 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         if (!isAdmin && !isOwner) return m.reply('Nur Admins dürfen diesen Befehl nutzen.');
 
         let currentIntroData = await Intro.findOne({ groupId });
+        if (!currentIntroData) return m.reply('❌ Es gibt keine laufende Vorstellungsrunde.');
+
         let participants = (await conn.groupMetadata(groupId)).participants.map(p => p.id);
         let nichtVorgestellt = participants.filter(p => !currentIntroData.introducedUsers.has(p) && !p.endsWith(conn.user.jid));
 
@@ -83,49 +96,27 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         if (!isAdmin && !isOwner) return m.reply('Nur Admins dürfen diesen Befehl nutzen.');
 
         let currentIntroData = await Intro.findOne({ groupId });
+        if (!currentIntroData || currentIntroData.introducedUsers.size === 0)
+            return m.reply('❌ Es hat sich noch niemand vorgestellt.');
+
         let list = Array.from(currentIntroData.introducedUsers.entries()).map(([id, data]) =>
             `• @${id.split('@')[0]} - *Name:* ${data.name}, *Alter:* ${data.alter}, *Wohnort:* ${data.ort}`
         ).join('\n');
-
-        if (!list) return m.reply('❌ Es hat sich noch niemand vorgestellt.');
 
         return m.reply(`*Bereits vorgestellte Mitglieder:*\n\n${list}`, null, {
             mentions: Array.from(currentIntroData.introducedUsers.keys())
         });
     }
 
-    // delintro - Delete the intro code after everyone has introduced themselves or 24 hours have passed
+    // delintro
     if (command === 'delintro') {
         if (!isAdmin && !isOwner) return m.reply('Nur Admins dürfen diesen Befehl nutzen.');
 
         let currentIntroData = await Intro.findOne({ groupId });
         if (!currentIntroData) return m.reply('❌ Es gibt keinen Vorstellungscode, den man löschen könnte.');
 
-        // Check if 24 hours have passed since the intro code was created
-        const timeElapsed = Date.now() - currentIntroData.introTimestamp;
-        const hoursElapsed = timeElapsed / (1000 * 60 * 60); // Convert to hours
-
-        if (hoursElapsed >= 24) {
-            // Delete the intro code if 24 hours have passed
-            await Intro.deleteOne({ groupId });
-            return m.reply('✅ Der Vorstellungscode wurde nach 24 Stunden automatisch gelöscht.');
-        }
-
-        // Check if all members have introduced themselves
-        let participants = (await conn.groupMetadata(groupId)).participants.map(p => p.id);
-        let nichtVorgestellt = participants.filter(p => !currentIntroData.introducedUsers.has(p) && !p.endsWith(conn.user.jid));
-
-        // Debugging: Log to check the non-introduced members
-        console.log('Nicht vorgestellte Mitglieder:', nichtVorgestellt);
-
-        if (nichtVorgestellt.length > 0) {
-            return m.reply(`❌ Es haben sich noch nicht alle Mitglieder vorgestellt. ${nichtVorgestellt.length} Mitglieder müssen sich noch vorstellen.`);
-        }
-
-        // All members have introduced themselves, so delete the intro code
         await Intro.deleteOne({ groupId });
-
-        return m.reply('✅ Alle Mitglieder haben sich vorgestellt. Der Vorstellungscode wurde gelöscht.');
+        return m.reply('✅ Die Vorstellungsrunde wurde gelöscht.');
     }
 };
 
