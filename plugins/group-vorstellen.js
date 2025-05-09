@@ -1,5 +1,4 @@
-
-const Intro = require('../lib/intro'); // Import the MongoDB model from lib/intro
+const Intro = require('./Intro'); // Import the MongoDB model
 
 let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
     if (!m.isGroup) return m.reply('❌ Dieser Befehl funktioniert nur in Gruppen.');
@@ -20,8 +19,8 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
             // Save the new code to MongoDB
             introData = new Intro({
                 groupId,
-                introCode: newCode,
-                introducedUsers: {}
+                introCode: newCode,  // Ensure the introCode is set
+                introducedUsers: {}  // Default empty introducedUsers object
             });
 
             await introData.save();
