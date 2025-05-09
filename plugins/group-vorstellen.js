@@ -1,4 +1,4 @@
-const Intro = require('./Intro'); // Import the MongoDB model
+const Intro = require('./intro'); // Import the MongoDB model
 
 let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
     if (!m.isGroup) return m.reply('❌ Dieser Befehl funktioniert nur in Gruppen.');
