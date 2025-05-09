@@ -1,32 +1,32 @@
 const fs = require('fs');
 const path = require('path');
 
-let handler = async (m, { text, conn }) => {
-  // Check if a target user is provided
-  const target = text ? `@${text.replace(/[^0-9]/g, '')}` : null;
+let handler = async (m, { conn }) => {
+  // Prüfe, ob eine Person erwähnt wurde
+  const mentioned = m.mentionedJid && m.mentionedJid.length > 0 ? m.mentionedJid[0] : '';
 
-  if (!target) {
-    return m.reply('❗ Bitte gib einen Benutzer an, den du nach nudes fragen möchtest. Beispiel: `.nudes @Benutzer`');
+  if (!mentioned) {
+    return m.reply('❗ Bitte erwähne die Person, von der du Nudes willst!\nBeispiel: `.nudes @Benutzer`');
   }
 
   let sender = m.sender;
 
-  // Generate the message asking for nudes
-  let message = `@${sender.split('@')[0]} fragt ${target} nach nudes💦`;
+  // Nachricht generieren
+  const message = `@${sender.split('@')[0]} fragt @${mentioned.split('@')[0]} nach nudes💦`;
 
-  // Pfad zum GIF/Video
-  const gifPath = path.join(__dirname, '../gifs/nudes.mp4'); // Stelle sicher, dass diese Datei existiert
+  // Pfad zum Video
+  const gifPath = path.join(__dirname, '../gifs/nudes.mp4'); // Stelle sicher, dass diese Datei vorhanden ist
 
   if (!fs.existsSync(gifPath)) {
     return m.reply('❌ Das Nudes-GIF wurde nicht gefunden.');
   }
 
-  // Send the message with the GIF, caption, and mentions
+  // Nachricht mit Video und Mentions senden
   await conn.sendMessage(m.chat, {
     video: fs.readFileSync(gifPath),
     gifPlayback: true,
     caption: message,
-    mentions: [sender, target]
+    mentions: [sender, mentioned]
   }, { quoted: m });
 };
 
