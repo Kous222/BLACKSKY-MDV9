@@ -9,18 +9,15 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
     if (command === 'introcode') {
         if (!isAdmin && !isOwner) return m.reply('Nur Admins dürfen den Vorstellungsprozess starten.');
 
-        // Check if the intro code exists for the group
         let introData = await Intro.findOne({ groupId });
 
         if (!introData) {
-            // Generate a new code if it doesn't exist
             const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-            // Save the new code to MongoDB
             introData = new Intro({
                 groupId,
-                introCode: newCode,  // Ensure the introCode is set
-                introducedUsers: {}  // Default empty introducedUsers object
+                introCode: newCode,
+                introducedUsers: {}
             });
 
             await introData.save();
@@ -106,7 +103,12 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         let participants = (await conn.groupMetadata(groupId)).participants.map(p => p.id);
         let nichtVorgestellt = participants.filter(p => !currentIntroData.introducedUsers.has(p) && !p.endsWith(conn.user.jid));
 
-        if (nichtVorgestellt.length > 0) return m.reply(`❌ Es haben sich noch nicht alle Mitglieder vorgestellt. ${nichtVorgestellt.length} Mitglieder müssen sich noch vorstellen.`);
+        // Debugging: Log to check the non-introduced members
+        console.log('Nicht vorgestellte Mitglieder:', nichtVorgestellt);
+
+        if (nichtVorgestellt.length > 0) {
+            return m.reply(`❌ Es haben sich noch nicht alle Mitglieder vorgestellt. ${nichtVorgestellt.length} Mitglieder müssen sich noch vorstellen.`);
+        }
 
         // All members have introduced themselves, so delete the intro code
         await Intro.deleteOne({ groupId });
