@@ -23,10 +23,18 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
     // Log groupId to check if it's being passed correctly
     console.log("Group ID:", groupId);
 
-    // Ensure cached participants list exists, if not fetch and cache
+    // Ensure global.cachedParticipants is initialized
+    global.cachedParticipants = global.cachedParticipants || {};
+
+    // Ensure groupId cache exists
+    if (!global.cachedParticipants[groupId]) {
+        global.cachedParticipants[groupId] = []; // Initialize as an empty array if undefined
+    }
+
     let cachedParticipants = global.cachedParticipants[groupId] || [];
     console.log("Cached Participants before check:", cachedParticipants);
 
+    // If participants list is empty, fetch group metadata
     if (cachedParticipants.length === 0) {
         try {
             console.log(`Fetching metadata for group ${groupId}...`);
