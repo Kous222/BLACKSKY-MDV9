@@ -1,7 +1,6 @@
 const Intro = require('../lib/Intro'); // MongoDB Model
 const moment = require('moment'); // Für Datum/Zeit
 
-// Funktion zum Parsen der Eingabe
 function parseIntroInput(input) {
     const parts = input.trim().split(/\s+/);
     if (parts.length < 4) {
@@ -21,7 +20,6 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
 
     const groupId = m.chat;
 
-    // introcode
     if (command === 'introcode') {
         if (!isAdmin && !isOwner) return m.reply('Nur Admins dürfen den Vorstellungsprozess starten.');
 
@@ -33,7 +31,6 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
             introData = new Intro({
                 groupId,
                 introCode: newCode,
-                introTimestamp: Date.now(),
                 introducedUsers: {}
             });
 
@@ -53,7 +50,6 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         );
     }
 
-    // vorstellen
     if (command === 'vorstellen') {
         const currentIntroData = await Intro.findOne({ groupId });
 
@@ -69,14 +65,12 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
             return m.reply('❌ Du hast dich bereits vorgestellt.');
         }
 
-        currentIntroData.introducedUsers[m.sender] = { name, alter, ort };
-        currentIntroData.markModified('introducedUsers');
+        currentIntroData.introducedUsers.set(m.sender, { name, alter, ort });
         await currentIntroData.save();
 
         return m.reply(`✅ *Vorstellung erfolgreich!*\n\n*Name:* ${name}\n*Alter:* ${alter}\n*Wohnort:* ${ort}`);
     }
 
-    // checkintro
     if (command === 'checkintro') {
         if (!isAdmin && !isOwner) return m.reply('Nur Admins dürfen diesen Befehl nutzen.');
 
@@ -84,7 +78,7 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         if (!currentIntroData) return m.reply('❌ Es gibt keine laufende Vorstellungsrunde.');
 
         let participants = (await conn.groupMetadata(groupId)).participants.map(p => p.id);
-        let nichtVorgestellt = participants.filter(p => !currentIntroData.introducedUsers[p] && !p.endsWith(conn.user.jid));
+        let nichtVorgestellt = participants.filter(p => !(p in currentIntroData.introducedUsers) && p !== conn.user.jid);
 
         if (nichtVorgestellt.length === 0) return m.reply('✅ Alle Mitglieder haben sich vorgestellt!');
 
@@ -92,7 +86,6 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         return m.reply(`*Noch nicht vorgestellt:*\n\n${list}`, null, { mentions: nichtVorgestellt });
     }
 
-    // introlist
     if (command === 'introlist') {
         if (!isAdmin && !isOwner) return m.reply('Nur Admins dürfen diesen Befehl nutzen.');
 
@@ -109,7 +102,6 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         });
     }
 
-    // delintro
     if (command === 'delintro') {
         if (!isAdmin && !isOwner) return m.reply('Nur Admins dürfen diesen Befehl nutzen.');
 
