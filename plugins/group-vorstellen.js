@@ -1,6 +1,11 @@
 const Intro = require('../lib/Intro');
 const moment = require('moment');
 
+// Funktion zur Normalisierung der `jid` (ersetze "." mit "_")
+function normalizeKey(jid) {
+    return jid.replace(/\./g, '_');
+}
+
 function parseIntroInput(input) {
     const parts = input.trim().split(/\s+/);
     if (parts.length < 4) return { name: null, alter: null, ort: null, code: null };
@@ -64,7 +69,7 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         if (code !== introData.introCode) return m.reply('❌ Falscher oder fehlender Code.');
         if (!name || !alter || !ort) return m.reply('❌ Bitte gib Name, Alter und Wohnort an.');
 
-        const senderId = m.sender;
+        const senderId = normalizeKey(m.sender); // Normalisiere den SenderID
 
         if (!introData.introducedUsers) introData.introducedUsers = new Map();
 
@@ -86,7 +91,7 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         if (!introData) return m.reply('❌ Es gibt keine laufende Vorstellungsrunde.');
 
         const notIntroduced = cachedParticipants.filter(p =>
-            !introData.introducedUsers?.has(p) && p !== conn.user.jid
+            !introData.introducedUsers?.has(normalizeKey(p)) && p !== conn.user.jid
         );
 
         if (notIntroduced.length === 0) return m.reply('✅ Alle Mitglieder haben sich vorgestellt!');
