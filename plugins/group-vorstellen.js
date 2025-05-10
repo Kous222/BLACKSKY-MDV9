@@ -85,7 +85,12 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
             return m.reply('❌ Du hast dich bereits vorgestellt.');
         }
 
-        // Save the user's introduction in the object (using Object instead of Map for MongoDB compatibility)
+        // Ensure introducedUsers is initialized
+        if (!currentIntroData.introducedUsers) {
+            currentIntroData.introducedUsers = {};
+        }
+
+        // Save the user's introduction in the object
         currentIntroData.introducedUsers[m.sender] = { name, alter, ort };
 
         await currentIntroData.save();
