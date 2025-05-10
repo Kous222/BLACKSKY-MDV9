@@ -25,24 +25,23 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
 
     // Ensure groupId cache exists
     if (!global.cachedParticipants[groupId]) {
-        global.cachedParticipants[groupId] = []; // Initialize as an empty array if undefined
+        global.cachedParticipants[groupId] = [];
     }
 
-    let cachedParticipants = global.cachedParticipants[groupId] || [];
+    let cachedParticipants = global.cachedParticipants[groupId];
 
     // If participants list is empty, fetch group metadata
     if (cachedParticipants.length === 0) {
         try {
             const groupMeta = await conn.groupMetadata(groupId);
-            cachedParticipants = groupMeta.participants.map(u => u.id.split(':')[0]); // bare JIDs
-            global.cachedParticipants[groupId] = cachedParticipants; // Cache the participants list
+            cachedParticipants = groupMeta.participants.map(u => u.id);
+            global.cachedParticipants[groupId] = cachedParticipants;
         } catch (error) {
             console.error('Error fetching group metadata:', error);
             return m.reply('❌ Fehler beim Abrufen der Gruppendaten.');
         }
     }
 
-    // Commands
     if (command === 'introcode') {
         if (!isAdmin && !isOwner) return m.reply('Nur Admins dürfen den Vorstellungsprozess starten.');
 
@@ -83,9 +82,8 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         if (code !== currentIntroData.introCode) return m.reply('❌ Falscher oder fehlender Code.');
         if (!name || !alter || !ort) return m.reply('❌ Bitte gib Name, Alter und Wohnort an.');
 
-        const senderId = m.sender.split(':')[0];
+        const senderId = m.sender; // ✅ vollständige JID inkl. @s.whatsapp.net
 
-        // Ensure introducedUsers is initialized
         if (!currentIntroData.introducedUsers) {
             currentIntroData.introducedUsers = {};
         }
@@ -94,9 +92,7 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
             return m.reply('❌ Du hast dich bereits vorgestellt.');
         }
 
-        // Save the user's introduction in the object
         currentIntroData.introducedUsers[senderId] = { name, alter, ort };
-
         await currentIntroData.save();
 
         return m.reply(`✅ *Vorstellung erfolgreich!*\n\n*Name:* ${name}\n*Alter:* ${alter}\n*Wohnort:* ${ort}`);
@@ -111,7 +107,7 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         let participants = cachedParticipants;
         let nichtVorgestellt = participants.filter(p =>
             !(p in currentIntroData.introducedUsers) &&
-            p !== conn.user.jid.split(':')[0]
+            p !== conn.user.jid // exclude bot itself
         );
 
         if (nichtVorgestellt.length === 0) return m.reply('✅ Alle Mitglieder haben sich vorgestellt!');
