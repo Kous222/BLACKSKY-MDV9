@@ -1,5 +1,5 @@
 const Intro = require('../lib/Intro'); // MongoDB Model
-const moment = require('moment'); // For date/time handling
+const moment = require('moment'); // Optional für zukünftige Features
 
 function parseIntroInput(input) {
     const parts = input.trim().split(/\s+/);
@@ -82,7 +82,7 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         if (code !== currentIntroData.introCode) return m.reply('❌ Falscher oder fehlender Code.');
         if (!name || !alter || !ort) return m.reply('❌ Bitte gib Name, Alter und Wohnort an.');
 
-        const senderId = m.sender; // ✅ vollständige JID inkl. @s.whatsapp.net
+        const senderId = m.sender; // z. B. 49123456789@s.whatsapp.net
 
         if (!currentIntroData.introducedUsers) {
             currentIntroData.introducedUsers = {};
@@ -104,7 +104,7 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         let currentIntroData = await Intro.findOne({ groupId });
         if (!currentIntroData) return m.reply('❌ Es gibt keine laufende Vorstellungsrunde.');
 
-        let participants = cachedParticipants;
+        let participants = cachedParticipants.map(p => p.includes('@') ? p : `${p}@s.whatsapp.net`);
         let nichtVorgestellt = participants.filter(p =>
             !(p in currentIntroData.introducedUsers) &&
             p !== conn.user.jid // exclude bot itself
