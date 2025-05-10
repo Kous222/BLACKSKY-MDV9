@@ -88,6 +88,79 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
             currentIntroData.introducedUsers = {};
         }
 
+let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
+    if (!m.isGroup) return m.reply('❌ Dieser Befehl funktioniert nur in Gruppen.');
+
+    const groupId = m.chat;
+
+    // Ensure global.cachedParticipants is initialized
+    global.cachedParticipants = global.cachedParticipants || {};
+
+    // Ensure groupId cache exists
+    if (!global.cachedParticipants[groupId]) {
+        global.cachedParticipants[groupId] = [];
+    }
+
+    let cachedParticipants = global.cachedParticipants[groupId];
+
+    // If participants list is empty, fetch group metadata
+    if (cachedParticipants.length === 0) {
+        try {
+            const groupMeta = await conn.groupMetadata(groupId);
+            cachedParticipants = groupMeta.participants.map(u => u.id);
+            global.cachedParticipants[groupId] = cachedParticipants;
+        } catch (error) {
+            console.error('Error fetching group metadata:', error);
+            return m.reply('❌ Fehler beim Abrufen der Gruppendaten.');
+        }
+    }
+
+    if (command === 'introcode') {
+        if (!isAdmin && !isOwner) return m.reply('Nur Admins dürfen den Vorstellungsprozess starten.');
+
+        let introData = await Intro.findOne({ groupId });
+
+        if (!introData) {
+            const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+            introData = new Intro({
+                groupId,
+                introCode: newCode,
+                introducedUsers: {}
+            });
+
+            await introData.save();
+        }
+
+        const tagList = cachedParticipants.map(p => '@' + p.split('@')[0]).join(' ');
+
+        return m.reply(
+            `📢 *Vorstellungsrunde gestartet!*\n\n` +
+            `Verwende den Code: *${introData.introCode}*\n` +
+            `Beispiel: .vorstellen Max 16 Berlin ${introData.introCode}\n\n` +
+            `${tagList}`,
+            null,
+            { mentions: cachedParticipants }
+        );
+    }
+
+    if (command === 'vorstellen') {
+        const currentIntroData = await Intro.findOne({ groupId });
+
+        if (!currentIntroData) return m.reply('❌ Es wurde noch kein Vorstellungscode festgelegt.');
+        if (!text) return m.reply('Bitte sende deine Daten wie z. B.: .vorstellen Max 16 Berlin ABC123');
+
+        let { name, alter, ort, code } = parseIntroInput(text);
+
+        if (code !== currentIntroData.introCode) return m.reply('❌ Falscher oder fehlender Code.');
+        if (!name || !alter || !ort) return m.reply('❌ Bitte gib Name, Alter und Wohnort an.');
+
+        const senderId = m.sender.split('@')[0] + '@s.whatsapp.net'; // Normalize senderId to include '@s.whatsapp.net'
+
+        if (!currentIntroData.introducedUsers) {
+            currentIntroData.introducedUsers = {};
+        }
+
         if (currentIntroData.introducedUsers[senderId]) {
             return m.reply('❌ Du hast dich bereits vorgestellt.');
         }
@@ -105,9 +178,11 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         if (!currentIntroData) return m.reply('❌ Es gibt keine laufende Vorstellungsrunde.');
 
         let participants = cachedParticipants;
+
+        // Normalize participant IDs for comparison
         let nichtVorgestellt = participants.filter(p =>
-            !(p + '@s.whatsapp.net' in currentIntroData.introducedUsers) && // Normalize the participant ID to include '@s.whatsapp.net'
-            p !== conn.user.jid // exclude bot itself
+            !currentIntroData.introducedUsers.hasOwnProperty(p + '@s.whatsapp.net') && // Normalize the participant ID to include '@s.whatsapp.net'
+            p !== conn.user.jid.split('@')[0] // exclude bot itself
         );
 
         if (nichtVorgestellt.length === 0) return m.reply('✅ Alle Mitglieder haben sich vorgestellt!');
