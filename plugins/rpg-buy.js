@@ -1,7 +1,7 @@
 // buy.js
 
 const { initUser, subtractBalance, addBalance } = require('../lib/bank');
-const { getItemPrice, isValidItem } = require('../lib/shopItems');
+const { getItemPrice, isValidItem } = require('../lib/shopitems');
 
 let handler = async (m, { args }) => {
   const item = args[0]?.toLowerCase();
