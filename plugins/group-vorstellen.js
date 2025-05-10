@@ -1,7 +1,6 @@
-const Intro = require('../lib/Intro'); // MongoDB Model
-const moment = require('moment'); // Für Datum/Zeit
+const Intro = require('../lib/Intro');
+const moment = require('moment');
 
-// Funktion zum Parsen der Eingabe
 function parseIntroInput(input) {
     const parts = input.trim().split(/\s+/);
     if (parts.length < 4) {
@@ -16,12 +15,19 @@ function parseIntroInput(input) {
     return { name, alter, ort, code };
 }
 
+function sanitizeId(id) {
+    return id.replace(/\./g, '(dot)');
+}
+
+function unsanitizeId(sanitized) {
+    return sanitized.replace(/\(dot\)/g, '.');
+}
+
 let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
     if (!m.isGroup) return m.reply('❌ Dieser Befehl funktioniert nur in Gruppen.');
 
     const groupId = m.chat;
 
-    // introcode
     if (command === 'introcode') {
         if (!isAdmin && !isOwner) return m.reply('Nur Admins dürfen den Vorstellungsprozess starten.');
 
@@ -53,7 +59,6 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         );
     }
 
-    // vorstellen
     if (command === 'vorstellen') {
         const currentIntroData = await Intro.findOne({ groupId });
 
@@ -65,17 +70,17 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         if (code !== currentIntroData.introCode) return m.reply('❌ Falscher oder fehlender Code.');
         if (!name || !alter || !ort) return m.reply('❌ Bitte gib Name, Alter und Wohnort an.');
 
-        if (currentIntroData.introducedUsers.has(m.sender)) {
+        const safeId = sanitizeId(m.sender);
+        if (currentIntroData.introducedUsers[safeId]) {
             return m.reply('❌ Du hast dich bereits vorgestellt.');
         }
 
-        currentIntroData.introducedUsers.set(m.sender, { name, alter, ort });
+        currentIntroData.introducedUsers[safeId] = { name, alter, ort };
         await currentIntroData.save();
 
         return m.reply(`✅ *Vorstellung erfolgreich!*\n\n*Name:* ${name}\n*Alter:* ${alter}\n*Wohnort:* ${ort}`);
     }
 
-    // checkintro
     if (command === 'checkintro') {
         if (!isAdmin && !isOwner) return m.reply('Nur Admins dürfen diesen Befehl nutzen.');
 
@@ -83,7 +88,8 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         if (!currentIntroData) return m.reply('❌ Es gibt keine laufende Vorstellungsrunde.');
 
         let participants = (await conn.groupMetadata(groupId)).participants.map(p => p.id);
-        let nichtVorgestellt = participants.filter(p => !currentIntroData.introducedUsers.has(p) && !p.endsWith(conn.user.jid));
+        let vorgestellt = Object.keys(currentIntroData.introducedUsers).map(unsanitizeId);
+        let nichtVorgestellt = participants.filter(p => !vorgestellt.includes(p) && p !== conn.user.jid);
 
         if (nichtVorgestellt.length === 0) return m.reply('✅ Alle Mitglieder haben sich vorgestellt!');
 
@@ -91,24 +97,22 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         return m.reply(`*Noch nicht vorgestellt:*\n\n${list}`, null, { mentions: nichtVorgestellt });
     }
 
-    // introlist
     if (command === 'introlist') {
         if (!isAdmin && !isOwner) return m.reply('Nur Admins dürfen diesen Befehl nutzen.');
 
         let currentIntroData = await Intro.findOne({ groupId });
-        if (!currentIntroData || currentIntroData.introducedUsers.size === 0)
+        if (!currentIntroData || Object.keys(currentIntroData.introducedUsers).length === 0)
             return m.reply('❌ Es hat sich noch niemand vorgestellt.');
 
-        let list = Array.from(currentIntroData.introducedUsers.entries()).map(([id, data]) =>
-            `• @${id.split('@')[0]} - *Name:* ${data.name}, *Alter:* ${data.alter}, *Wohnort:* ${data.ort}`
-        ).join('\n');
+        let list = Object.entries(currentIntroData.introducedUsers).map(([id, data]) => {
+            let realId = unsanitizeId(id);
+            return `• @${realId.split('@')[0]} - *Name:* ${data.name}, *Alter:* ${data.alter}, *Wohnort:* ${data.ort}`;
+        }).join('\n');
 
-        return m.reply(`*Bereits vorgestellte Mitglieder:*\n\n${list}`, null, {
-            mentions: Array.from(currentIntroData.introducedUsers.keys())
-        });
+        let mentions = Object.keys(currentIntroData.introducedUsers).map(unsanitizeId);
+        return m.reply(`*Bereits vorgestellte Mitglieder:*\n\n${list}`, null, { mentions });
     }
 
-    // delintro
     if (command === 'delintro') {
         if (!isAdmin && !isOwner) return m.reply('Nur Admins dürfen diesen Befehl nutzen.');
 
