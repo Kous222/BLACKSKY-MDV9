@@ -82,7 +82,7 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         if (code !== currentIntroData.introCode) return m.reply('❌ Falscher oder fehlender Code.');
         if (!name || !alter || !ort) return m.reply('❌ Bitte gib Name, Alter und Wohnort an.');
 
-        const senderId = m.sender.split('@')[0]; // Normalize senderId by splitting
+        const senderId = m.sender.split('@')[0] + '@s.whatsapp.net'; // Normalize senderId to include '@s.whatsapp.net'
 
         if (!currentIntroData.introducedUsers) {
             currentIntroData.introducedUsers = {};
@@ -106,7 +106,7 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
 
         let participants = cachedParticipants;
         let nichtVorgestellt = participants.filter(p =>
-            !(p.split('@')[0] in currentIntroData.introducedUsers) && // Normalize the participant ID
+            !(p + '@s.whatsapp.net' in currentIntroData.introducedUsers) && // Normalize the participant ID to include '@s.whatsapp.net'
             p !== conn.user.jid // exclude bot itself
         );
 
@@ -124,11 +124,11 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
             return m.reply('❌ Es hat sich noch niemand vorgestellt.');
 
         let list = Object.entries(currentIntroData.introducedUsers).map(([id, data]) =>
-            `• @${id} - *Name:* ${data.name}, *Alter:* ${data.alter}, *Wohnort:* ${data.ort}`
+            `• @${id.split('@')[0]} - *Name:* ${data.name}, *Alter:* ${data.alter}, *Wohnort:* ${data.ort}`
         ).join('\n');
 
         return m.reply(`*Bereits vorgestellte Mitglieder:*\n\n${list}`, null, {
-            mentions: Object.keys(currentIntroData.introducedUsers).map(id => id + '@s.whatsapp.net') // Rebuild full JID
+            mentions: Object.keys(currentIntroData.introducedUsers).map(id => id) // Rebuild full JID here as well
         });
     }
 
