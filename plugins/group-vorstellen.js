@@ -31,7 +31,7 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
             introData = new Intro({
                 groupId,
                 introCode: newCode,
-                introducedUsers: {}
+                introducedUsers: {} // Use an object for introducedUsers
             });
 
             await introData.save();
@@ -61,11 +61,14 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         if (code !== currentIntroData.introCode) return m.reply('❌ Falscher oder fehlender Code.');
         if (!name || !alter || !ort) return m.reply('❌ Bitte gib Name, Alter und Wohnort an.');
 
+        // Checking if the user has already introduced themselves
         if (currentIntroData.introducedUsers[m.sender]) {
             return m.reply('❌ Du hast dich bereits vorgestellt.');
         }
 
-        currentIntroData.introducedUsers.set(m.sender, { name, alter, ort });
+        // Save the user's introduction in the object (not Map)
+        currentIntroData.introducedUsers[m.sender] = { name, alter, ort };
+
         await currentIntroData.save();
 
         return m.reply(`✅ *Vorstellung erfolgreich!*\n\n*Name:* ${name}\n*Alter:* ${alter}\n*Wohnort:* ${ort}`);
