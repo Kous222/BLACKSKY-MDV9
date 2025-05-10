@@ -1,5 +1,5 @@
 const Intro = require('../lib/Intro'); // MongoDB Model
-const moment = require('moment'); // Für Datum/Zeit
+const moment = require('moment'); // For date/time handling
 
 function parseIntroInput(input) {
     const parts = input.trim().split(/\s+/);
@@ -20,6 +20,17 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
 
     const groupId = m.chat;
 
+    // Cache participants list in memory to avoid repeated group metadata fetching
+    let cachedParticipants = global.cachedParticipants[groupId] || [];
+
+    // If cached participants are not available, fetch and cache them
+    if (cachedParticipants.length === 0) {
+        const groupMeta = await conn.groupMetadata(groupId);
+        cachedParticipants = groupMeta.participants.map(u => u.id);
+        global.cachedParticipants[groupId] = cachedParticipants;  // Cache the participants list
+    }
+
+    // Commands
     if (command === 'introcode') {
         if (!isAdmin && !isOwner) return m.reply('Nur Admins dürfen den Vorstellungsprozess starten.');
 
@@ -31,14 +42,13 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
             introData = new Intro({
                 groupId,
                 introCode: newCode,
-                introducedUsers: {} // Use an object for introducedUsers
+                introducedUsers: {}
             });
 
             await introData.save();
         }
 
-        const participants = (await conn.groupMetadata(groupId)).participants.map(u => u.id);
-        const tagList = participants.map(p => '@' + p.split('@')[0]).join(' ');
+        const tagList = cachedParticipants.map(p => '@' + p.split('@')[0]).join(' ');
 
         return m.reply(
             `📢 *Vorstellungsrunde gestartet!*\n\n` +
@@ -46,7 +56,7 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
             `Beispiel: .vorstellen Max 16 Berlin ${introData.introCode}\n\n` +
             `${tagList}`,
             null,
-            { mentions: participants }
+            { mentions: cachedParticipants }
         );
     }
 
@@ -61,12 +71,11 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         if (code !== currentIntroData.introCode) return m.reply('❌ Falscher oder fehlender Code.');
         if (!name || !alter || !ort) return m.reply('❌ Bitte gib Name, Alter und Wohnort an.');
 
-        // Checking if the user has already introduced themselves
         if (currentIntroData.introducedUsers[m.sender]) {
             return m.reply('❌ Du hast dich bereits vorgestellt.');
         }
 
-        // Save the user's introduction in the object (not Map)
+        // Save the user's introduction in the object (using Object instead of Map for MongoDB compatibility)
         currentIntroData.introducedUsers[m.sender] = { name, alter, ort };
 
         await currentIntroData.save();
@@ -80,7 +89,7 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         let currentIntroData = await Intro.findOne({ groupId });
         if (!currentIntroData) return m.reply('❌ Es gibt keine laufende Vorstellungsrunde.');
 
-        let participants = (await conn.groupMetadata(groupId)).participants.map(p => p.id);
+        let participants = cachedParticipants;
         let nichtVorgestellt = participants.filter(p => !(p in currentIntroData.introducedUsers) && p !== conn.user.jid);
 
         if (nichtVorgestellt.length === 0) return m.reply('✅ Alle Mitglieder haben sich vorgestellt!');
