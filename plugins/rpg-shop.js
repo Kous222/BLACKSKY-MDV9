@@ -1,6 +1,6 @@
 let handler = async (m, { conn }) => {
   // Lese die Shop-Items aus der Datei
-  const { getAllItems } = require('./lib/shopitems'); // Importiere die Funktionen aus shopItems.js
+  const { getAllItems } = require('../lib/shopitems'); // Importiere die Funktionen aus shopItems.js
 
   // Berechne Rüstungspreis
   const _armor = global.db.data.users[m.sender].Rüstung || 0;
