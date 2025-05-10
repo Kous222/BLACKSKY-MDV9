@@ -20,9 +20,6 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
 
     const groupId = m.chat;
 
-    // Log groupId to check if it's being passed correctly
-    console.log("Group ID:", groupId);
-
     // Ensure global.cachedParticipants is initialized
     global.cachedParticipants = global.cachedParticipants || {};
 
@@ -32,16 +29,13 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
     }
 
     let cachedParticipants = global.cachedParticipants[groupId] || [];
-    console.log("Cached Participants before check:", cachedParticipants);
 
     // If participants list is empty, fetch group metadata
     if (cachedParticipants.length === 0) {
         try {
-            console.log(`Fetching metadata for group ${groupId}...`);
             const groupMeta = await conn.groupMetadata(groupId);
-            cachedParticipants = groupMeta.participants.map(u => u.id);
-            global.cachedParticipants[groupId] = cachedParticipants;  // Cache the participants list
-            console.log(`Cached Participants after fetch:`, cachedParticipants);
+            cachedParticipants = groupMeta.participants.map(u => u.id.split(':')[0]); // bare JIDs
+            global.cachedParticipants[groupId] = cachedParticipants; // Cache the participants list
         } catch (error) {
             console.error('Error fetching group metadata:', error);
             return m.reply('❌ Fehler beim Abrufen der Gruppendaten.');
@@ -89,17 +83,19 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         if (code !== currentIntroData.introCode) return m.reply('❌ Falscher oder fehlender Code.');
         if (!name || !alter || !ort) return m.reply('❌ Bitte gib Name, Alter und Wohnort an.');
 
-        if (currentIntroData.introducedUsers[m.sender]) {
-            return m.reply('❌ Du hast dich bereits vorgestellt.');
-        }
+        const senderId = m.sender.split(':')[0];
 
         // Ensure introducedUsers is initialized
         if (!currentIntroData.introducedUsers) {
             currentIntroData.introducedUsers = {};
         }
 
+        if (currentIntroData.introducedUsers[senderId]) {
+            return m.reply('❌ Du hast dich bereits vorgestellt.');
+        }
+
         // Save the user's introduction in the object
-        currentIntroData.introducedUsers[m.sender] = { name, alter, ort };
+        currentIntroData.introducedUsers[senderId] = { name, alter, ort };
 
         await currentIntroData.save();
 
@@ -113,7 +109,10 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         if (!currentIntroData) return m.reply('❌ Es gibt keine laufende Vorstellungsrunde.');
 
         let participants = cachedParticipants;
-        let nichtVorgestellt = participants.filter(p => !(p in currentIntroData.introducedUsers) && p !== conn.user.jid);
+        let nichtVorgestellt = participants.filter(p =>
+            !(p in currentIntroData.introducedUsers) &&
+            p !== conn.user.jid.split(':')[0]
+        );
 
         if (nichtVorgestellt.length === 0) return m.reply('✅ Alle Mitglieder haben sich vorgestellt!');
 
