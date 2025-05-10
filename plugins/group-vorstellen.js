@@ -1,5 +1,5 @@
 const Intro = require('../lib/Intro'); // MongoDB Model
-const moment = require('moment'); // For date/time handling
+const moment = require('moment'); // Optional for date handling
 
 function parseIntroInput(input) {
     const parts = input.trim().split(/\s+/);
@@ -20,17 +20,13 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
 
     const groupId = m.chat;
 
-    // Ensure global.cachedParticipants is initialized
     global.cachedParticipants = global.cachedParticipants || {};
-
-    // Ensure groupId cache exists
     if (!global.cachedParticipants[groupId]) {
         global.cachedParticipants[groupId] = [];
     }
 
     let cachedParticipants = global.cachedParticipants[groupId];
 
-    // If participants list is empty, fetch group metadata
     if (cachedParticipants.length === 0) {
         try {
             const groupMeta = await conn.groupMetadata(groupId);
@@ -82,7 +78,7 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         if (code !== currentIntroData.introCode) return m.reply('❌ Falscher oder fehlender Code.');
         if (!name || !alter || !ort) return m.reply('❌ Bitte gib Name, Alter und Wohnort an.');
 
-        const senderId = m.sender.split('@')[0] + '@s.whatsapp.net'; // Normalize senderId to include '@s.whatsapp.net'
+        const senderId = m.sender; // Already includes @s.whatsapp.net
 
         if (!currentIntroData.introducedUsers) {
             currentIntroData.introducedUsers = {};
@@ -95,6 +91,7 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         currentIntroData.introducedUsers[senderId] = { name, alter, ort };
         await currentIntroData.save();
 
+        await m.react('✅');
         return m.reply(`✅ *Vorstellung erfolgreich!*\n\n*Name:* ${name}\n*Alter:* ${alter}\n*Wohnort:* ${ort}`);
     }
 
@@ -106,10 +103,9 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
 
         let participants = cachedParticipants;
 
-        // Normalize participant IDs for comparison
         let nichtVorgestellt = participants.filter(p =>
-            !currentIntroData.introducedUsers.hasOwnProperty(p + '@s.whatsapp.net') && // Normalize the participant ID to include '@s.whatsapp.net'
-            p !== conn.user.jid.split('@')[0] // exclude bot itself
+            !currentIntroData.introducedUsers.hasOwnProperty(p) &&
+            p !== conn.user.jid // exclude bot
         );
 
         if (nichtVorgestellt.length === 0) return m.reply('✅ Alle Mitglieder haben sich vorgestellt!');
@@ -130,7 +126,7 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         ).join('\n');
 
         return m.reply(`*Bereits vorgestellte Mitglieder:*\n\n${list}`, null, {
-            mentions: Object.keys(currentIntroData.introducedUsers).map(id => id) // Rebuild full JID here as well
+            mentions: Object.keys(currentIntroData.introducedUsers)
         });
     }
 
