@@ -1,5 +1,5 @@
 const Intro = require('../lib/Intro'); // MongoDB Model
-const moment = require('moment'); // Optional für zukünftige Features
+const moment = require('moment'); // For date/time handling
 
 function parseIntroInput(input) {
     const parts = input.trim().split(/\s+/);
@@ -82,7 +82,7 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         if (code !== currentIntroData.introCode) return m.reply('❌ Falscher oder fehlender Code.');
         if (!name || !alter || !ort) return m.reply('❌ Bitte gib Name, Alter und Wohnort an.');
 
-        const senderId = m.sender; // z. B. 49123456789@s.whatsapp.net
+        const senderId = m.sender.split('@')[0]; // Normalize senderId by splitting
 
         if (!currentIntroData.introducedUsers) {
             currentIntroData.introducedUsers = {};
@@ -104,9 +104,9 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         let currentIntroData = await Intro.findOne({ groupId });
         if (!currentIntroData) return m.reply('❌ Es gibt keine laufende Vorstellungsrunde.');
 
-        let participants = cachedParticipants.map(p => p.includes('@') ? p : `${p}@s.whatsapp.net`);
+        let participants = cachedParticipants;
         let nichtVorgestellt = participants.filter(p =>
-            !(p in currentIntroData.introducedUsers) &&
+            !(p.split('@')[0] in currentIntroData.introducedUsers) && // Normalize the participant ID
             p !== conn.user.jid // exclude bot itself
         );
 
@@ -124,11 +124,11 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
             return m.reply('❌ Es hat sich noch niemand vorgestellt.');
 
         let list = Object.entries(currentIntroData.introducedUsers).map(([id, data]) =>
-            `• @${id.split('@')[0]} - *Name:* ${data.name}, *Alter:* ${data.alter}, *Wohnort:* ${data.ort}`
+            `• @${id} - *Name:* ${data.name}, *Alter:* ${data.alter}, *Wohnort:* ${data.ort}`
         ).join('\n');
 
         return m.reply(`*Bereits vorgestellte Mitglieder:*\n\n${list}`, null, {
-            mentions: Object.keys(currentIntroData.introducedUsers)
+            mentions: Object.keys(currentIntroData.introducedUsers).map(id => id + '@s.whatsapp.net') // Rebuild full JID
         });
     }
 
