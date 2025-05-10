@@ -78,7 +78,7 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         if (code !== currentIntroData.introCode) return m.reply('❌ Falscher oder fehlender Code.');
         if (!name || !alter || !ort) return m.reply('❌ Bitte gib Name, Alter und Wohnort an.');
 
-        const senderId = m.sender; // Already includes @s.whatsapp.net
+        const senderId = m.sender;
 
         if (!currentIntroData.introducedUsers) {
             currentIntroData.introducedUsers = {};
@@ -91,7 +91,7 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
         currentIntroData.introducedUsers[senderId] = { name, alter, ort };
         await currentIntroData.save();
 
-        await m.react('✅');
+        await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
         return m.reply(`✅ *Vorstellung erfolgreich!*\n\n*Name:* ${name}\n*Alter:* ${alter}\n*Wohnort:* ${ort}`);
     }
 
@@ -105,7 +105,7 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
 
         let nichtVorgestellt = participants.filter(p =>
             !currentIntroData.introducedUsers.hasOwnProperty(p) &&
-            p !== conn.user.jid // exclude bot
+            p !== conn.user.jid
         );
 
         if (nichtVorgestellt.length === 0) return m.reply('✅ Alle Mitglieder haben sich vorgestellt!');
