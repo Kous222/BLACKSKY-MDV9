@@ -20,15 +20,22 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
 
     const groupId = m.chat;
 
+    // Log groupId to check if it's being passed correctly
+    console.log("Group ID:", groupId);
+
     // Ensure cached participants list exists, if not fetch and cache
     let cachedParticipants = global.cachedParticipants[groupId] || [];
+    console.log("Cached Participants before check:", cachedParticipants);
 
     if (cachedParticipants.length === 0) {
         try {
+            console.log(`Fetching metadata for group ${groupId}...`);
             const groupMeta = await conn.groupMetadata(groupId);
             cachedParticipants = groupMeta.participants.map(u => u.id);
             global.cachedParticipants[groupId] = cachedParticipants;  // Cache the participants list
+            console.log(`Cached Participants after fetch:`, cachedParticipants);
         } catch (error) {
+            console.error('Error fetching group metadata:', error);
             return m.reply('❌ Fehler beim Abrufen der Gruppendaten.');
         }
     }
