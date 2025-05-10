@@ -20,14 +20,17 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
 
     const groupId = m.chat;
 
-    // Cache participants list in memory to avoid repeated group metadata fetching
+    // Ensure cached participants list exists, if not fetch and cache
     let cachedParticipants = global.cachedParticipants[groupId] || [];
 
-    // If cached participants are not available, fetch and cache them
     if (cachedParticipants.length === 0) {
-        const groupMeta = await conn.groupMetadata(groupId);
-        cachedParticipants = groupMeta.participants.map(u => u.id);
-        global.cachedParticipants[groupId] = cachedParticipants;  // Cache the participants list
+        try {
+            const groupMeta = await conn.groupMetadata(groupId);
+            cachedParticipants = groupMeta.participants.map(u => u.id);
+            global.cachedParticipants[groupId] = cachedParticipants;  // Cache the participants list
+        } catch (error) {
+            return m.reply('❌ Fehler beim Abrufen der Gruppendaten.');
+        }
     }
 
     // Commands
