@@ -1,11 +1,9 @@
-const Intro = require('../lib/Intro'); // MongoDB Model
-const moment = require('moment'); // Optional for date handling
+const Intro = require('../lib/Intro');
+const moment = require('moment');
 
 function parseIntroInput(input) {
     const parts = input.trim().split(/\s+/);
-    if (parts.length < 4) {
-        return { name: null, alter: null, ort: null, code: null };
-    }
+    if (parts.length < 4) return { name: null, alter: null, ort: null, code: null };
 
     const name = parts[0];
     const alter = parts[1];
@@ -17,26 +15,19 @@ function parseIntroInput(input) {
 
 let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
     if (!m.isGroup) return m.reply('❌ Dieser Befehl funktioniert nur in Gruppen.');
-
     const groupId = m.chat;
 
     global.cachedParticipants = global.cachedParticipants || {};
     if (!global.cachedParticipants[groupId]) {
-        global.cachedParticipants[groupId] = [];
-    }
-
-    let cachedParticipants = global.cachedParticipants[groupId];
-
-    if (cachedParticipants.length === 0) {
         try {
             const groupMeta = await conn.groupMetadata(groupId);
-            cachedParticipants = groupMeta.participants.map(u => u.id);
-            global.cachedParticipants[groupId] = cachedParticipants;
-        } catch (error) {
-            console.error('Error fetching group metadata:', error);
-            return m.reply('❌ Fehler beim Abrufen der Gruppendaten.');
+            global.cachedParticipants[groupId] = groupMeta.participants.map(u => u.id);
+        } catch (e) {
+            return m.reply('❌ Fehler beim Laden der Gruppenmitglieder.');
         }
     }
+
+    const cachedParticipants = global.cachedParticipants[groupId];
 
     if (command === 'introcode') {
         if (!isAdmin && !isOwner) return m.reply('Nur Admins dürfen den Vorstellungsprozess starten.');
@@ -45,18 +36,15 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
 
         if (!introData) {
             const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-
             introData = new Intro({
                 groupId,
                 introCode: newCode,
-                introducedUsers: {}
+                introducedUsers: new Map()
             });
-
             await introData.save();
         }
 
         const tagList = cachedParticipants.map(p => '@' + p.split('@')[0]).join(' ');
-
         return m.reply(
             `📢 *Vorstellungsrunde gestartet!*\n\n` +
             `Verwende den Code: *${introData.introCode}*\n` +
@@ -68,28 +56,24 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
     }
 
     if (command === 'vorstellen') {
-        const currentIntroData = await Intro.findOne({ groupId });
-
-        if (!currentIntroData) return m.reply('❌ Es wurde noch kein Vorstellungscode festgelegt.');
-        if (!text) return m.reply('Bitte sende deine Daten wie z. B.: .vorstellen Max 16 Berlin ABC123');
+        const introData = await Intro.findOne({ groupId });
+        if (!introData) return m.reply('❌ Es wurde noch kein Vorstellungscode festgelegt.');
+        if (!text) return m.reply('Bitte sende deine Daten wie: .vorstellen Max 16 Berlin CODE');
 
         let { name, alter, ort, code } = parseIntroInput(text);
-
-        if (code !== currentIntroData.introCode) return m.reply('❌ Falscher oder fehlender Code.');
+        if (code !== introData.introCode) return m.reply('❌ Falscher oder fehlender Code.');
         if (!name || !alter || !ort) return m.reply('❌ Bitte gib Name, Alter und Wohnort an.');
 
         const senderId = m.sender;
 
-        if (!currentIntroData.introducedUsers) {
-            currentIntroData.introducedUsers = {};
-        }
+        if (!introData.introducedUsers) introData.introducedUsers = new Map();
 
-        if (currentIntroData.introducedUsers[senderId]) {
+        if (introData.introducedUsers.has(senderId)) {
             return m.reply('❌ Du hast dich bereits vorgestellt.');
         }
 
-        currentIntroData.introducedUsers[senderId] = { name, alter, ort };
-        await currentIntroData.save();
+        introData.introducedUsers.set(senderId, { name, alter, ort });
+        await introData.save();
 
         await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
         return m.reply(`✅ *Vorstellung erfolgreich!*\n\n*Name:* ${name}\n*Alter:* ${alter}\n*Wohnort:* ${ort}`);
@@ -98,43 +82,41 @@ let handler = async (m, { conn, text, isAdmin, isOwner, command }) => {
     if (command === 'checkintro') {
         if (!isAdmin && !isOwner) return m.reply('Nur Admins dürfen diesen Befehl nutzen.');
 
-        let currentIntroData = await Intro.findOne({ groupId });
-        if (!currentIntroData) return m.reply('❌ Es gibt keine laufende Vorstellungsrunde.');
+        const introData = await Intro.findOne({ groupId });
+        if (!introData) return m.reply('❌ Es gibt keine laufende Vorstellungsrunde.');
 
-        let participants = cachedParticipants;
-
-        let nichtVorgestellt = participants.filter(p =>
-            !currentIntroData.introducedUsers.hasOwnProperty(p) &&
-            p !== conn.user.jid
+        const notIntroduced = cachedParticipants.filter(p =>
+            !introData.introducedUsers?.has(p) && p !== conn.user.jid
         );
 
-        if (nichtVorgestellt.length === 0) return m.reply('✅ Alle Mitglieder haben sich vorgestellt!');
+        if (notIntroduced.length === 0) return m.reply('✅ Alle Mitglieder haben sich vorgestellt!');
 
-        let list = nichtVorgestellt.map(p => '• @' + p.split('@')[0]).join('\n');
-        return m.reply(`*Noch nicht vorgestellt:*\n\n${list}`, null, { mentions: nichtVorgestellt });
+        const list = notIntroduced.map(p => '• @' + p.split('@')[0]).join('\n');
+        return m.reply(`*Noch nicht vorgestellt:*\n\n${list}`, null, { mentions: notIntroduced });
     }
 
     if (command === 'introlist') {
         if (!isAdmin && !isOwner) return m.reply('Nur Admins dürfen diesen Befehl nutzen.');
 
-        let currentIntroData = await Intro.findOne({ groupId });
-        if (!currentIntroData || Object.keys(currentIntroData.introducedUsers).length === 0)
+        const introData = await Intro.findOne({ groupId });
+        if (!introData || !introData.introducedUsers || introData.introducedUsers.size === 0) {
             return m.reply('❌ Es hat sich noch niemand vorgestellt.');
+        }
 
-        let list = Object.entries(currentIntroData.introducedUsers).map(([id, data]) =>
+        const list = Array.from(introData.introducedUsers.entries()).map(([id, data]) =>
             `• @${id.split('@')[0]} - *Name:* ${data.name}, *Alter:* ${data.alter}, *Wohnort:* ${data.ort}`
         ).join('\n');
 
         return m.reply(`*Bereits vorgestellte Mitglieder:*\n\n${list}`, null, {
-            mentions: Object.keys(currentIntroData.introducedUsers)
+            mentions: Array.from(introData.introducedUsers.keys())
         });
     }
 
     if (command === 'delintro') {
         if (!isAdmin && !isOwner) return m.reply('Nur Admins dürfen diesen Befehl nutzen.');
 
-        let currentIntroData = await Intro.findOne({ groupId });
-        if (!currentIntroData) return m.reply('❌ Es gibt keinen Vorstellungscode, den man löschen könnte.');
+        const introData = await Intro.findOne({ groupId });
+        if (!introData) return m.reply('❌ Es gibt keinen Vorstellungscode.');
 
         await Intro.deleteOne({ groupId });
         return m.reply('✅ Die Vorstellungsrunde wurde gelöscht.');
