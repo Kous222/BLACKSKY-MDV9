@@ -6,9 +6,11 @@ let handler = async (m, { conn, text, args, usedPrefix, command }) => {
   let mention = m.mentionedJid[0] || (m.quoted ? m.quoted.sender : null) || text.replace(/[^0-9]/g, '') + '@s.whatsapp.net';
   if (!mention) return m.reply(`✳️ Bitte gib einen Benutzer an`);
 
+  // Check if user exists in DB
   let user = await User.findOne({ jid: mention });
   if (!user) {
-    user = new User({ jid: mention });
+    // Create new user with required 'sender' field
+    user = new User({ jid: mention, sender: mention }); // Add 'sender' here
   }
 
   // prevent banning the owner
