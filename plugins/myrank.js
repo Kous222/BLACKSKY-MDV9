@@ -1,18 +1,13 @@
-const fs = require('fs');
-const file = './lib/ranks.json';
+const { getUserRank } = require('../lib/rank');
 
-let ranks = {};
-if (fs.existsSync(file)) {
+let handler = async (m) => {
   try {
-    ranks = JSON.parse(fs.readFileSync(file));
-  } catch {
-    ranks = {};
+    const rank = await getUserRank(m.sender);
+    await m.reply(`🧾 Dein aktueller Rang: *${rank}*`);
+  } catch (err) {
+    console.error('Fehler beim Abrufen des Rangs:', err);
+    await m.reply('❌ Es gab ein Problem beim Abrufen deines Rangs.');
   }
-}
-
-let handler = async (m, { conn }) => {
-  const rank = ranks[m.sender] || 'Kein Rang';
-  await m.reply(`🧾 Dein aktueller Rang: *${rank}*`);
 };
 
 handler.command = ['myrank'];

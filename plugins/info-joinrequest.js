@@ -1,6 +1,17 @@
+const { getUserRank } = require('../lib/rank'); // Nutzt Atlas-Ranking-System
+
 let joinRequests = global.joinRequests = global.joinRequests || [];
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
+  const allowedRanks = ['owner', 'teamleiter', 'manager'];
+  const senderRank = await getUserRank(m.sender);
+
+  const isAuthorized = allowedRanks.includes(senderRank) || global.owner?.includes(m.sender.split('@')[0]);
+
+  if (!isAuthorized) {
+    return m.reply('❌ Du hast keine Berechtigung, diesen Befehl zu nutzen.');
+  }
+
   const action = (args[0] || '').toLowerCase();
   const index = parseInt(args[1]) - 1;
 
@@ -30,24 +41,17 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 
   if (action === 'accept') {
     joinRequests.splice(index, 1);
-    
-    // Bot tritt der Gruppe bei
-    const groupId = await conn.groupAcceptInvite(groupCode);
 
-    // Warten kurz, um sicherzustellen, dass der Bot vollständig beigetreten ist
+    const groupId = await conn.groupAcceptInvite(groupCode);
     await new Promise(resolve => setTimeout(resolve, 3000));
 
-    // Holen wir das Profilbild der neuen Gruppe
     const groupProfilePic = await conn.profilePictureUrl(groupId, 'image').catch(_ => null);
 
     const welcomeMessage = `🌟🎉 *Hurra!* 🎉🌟\n\n` +
-      `❤️ Der Owner (@${m.sender.split('@')[0]}) hat mich in eure Gruppe geschickt!\n` +
-      `🤖 Ich bin hier, um Spaß und Ordnung zu bringen!\n\n` +
-      `🔔 *Owner wird bald nachkommen.*\n` +
-      `💬 Nutzt mich gerne für Spiele, Infos und vieles mehr!\n\n` +
-      `✨ Viel Spaß zusammen! ✨`;
+      `❤️ Ein Admin (@${m.sender.split('@')[0]}) hat mich in eure Gruppe eingeladen!\n` +
+      `🤖 Ich bin da für Spaß, Games und Ordnung!\n\n` +
+      `✨ Viel Freude miteinander! ✨`;
 
-    // Nachricht an die neue Gruppe schicken
     if (groupProfilePic) {
       await conn.sendMessage(groupId, {
         image: { url: groupProfilePic },
@@ -61,14 +65,14 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
       });
     }
 
-    return m.reply(`✅ Anfrage von @${sender.split('@')[0]} wurde **akzeptiert** und der Bot ist der Gruppe beigetreten.`, null, {
+    return m.reply(`✅ Anfrage von @${sender.split('@')[0]} wurde akzeptiert. Bot ist der Gruppe beigetreten.`, null, {
       mentions: [sender]
     });
   }
 
   if (action === 'decline') {
     joinRequests.splice(index, 1);
-    return m.reply(`❌ Anfrage von @${sender.split('@')[0]} wurde **abgelehnt** und gelöscht.`, null, {
+    return m.reply(`❌ Anfrage von @${sender.split('@')[0]} wurde abgelehnt.`, null, {
       mentions: [sender]
     });
   }
@@ -77,8 +81,7 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 };
 
 handler.help = ['joinrequests', 'joinrequests accept <Nummer>', 'joinrequests decline <Nummer>', 'joinrequests clear'];
-handler.tags = ['owner'];
+handler.tags = ['admin'];
 handler.command = ['joinrequests'];
-handler.rowner = true;
 
 module.exports = handler;
