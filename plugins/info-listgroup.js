@@ -1,5 +1,4 @@
-const fs = require('fs');
-const path = './lib/info-listgroup.json';
+const GroupSettings = require('../lib/groupSettings'); // Mongoose model
 
 const msToDate = (ms) => {
   const d = Math.floor(ms / 86400000);
@@ -9,21 +8,9 @@ const msToDate = (ms) => {
 };
 
 let handler = async (m, { conn }) => {
-  if (!fs.existsSync(path)) fs.writeFileSync(path, JSON.stringify({}, null, 2));
-
-  let groupData = {};
-  try {
-    const fileContent = fs.readFileSync(path, 'utf-8');
-    groupData = fileContent.trim() ? JSON.parse(fileContent) : {};
-  } catch (e) {
-    console.error('Fehler beim Einlesen der JSON-Datei:', e);
-    groupData = {};
-  }
-
-  const now = Date.now();
   let text = '';
-
   let allGroups;
+
   try {
     allGroups = await conn.groupFetchAllParticipating();
   } catch (e) {
@@ -32,22 +19,19 @@ let handler = async (m, { conn }) => {
   }
 
   const groupIDs = Object.keys(allGroups);
+  const now = Date.now();
 
   for (const jid of groupIDs) {
     const metadata = allGroups[jid];
     const name = metadata?.subject || 'Unbenannte Gruppe';
 
-    if (!groupData[jid]) {
-      groupData[jid] = {
-        isBanned: false,
-        welcome: false,
-        antiLink: false,
-        delete: true,
-        expired: null
-      };
+    // Find or create group settings in database
+    let g = await GroupSettings.findOne({ jid });
+    if (!g) {
+      g = new GroupSettings({ jid });
+      await g.save();
     }
 
-    const g = groupData[jid];
     const ablauf = g.expired ? msToDate(g.expired - now) : '*Keine abgelaufene Gruppe festgelegt*';
 
     let inviteLink = '';
@@ -63,8 +47,6 @@ ${g.isBanned ? '✅' : '❌'} _Gesperrt_
 ${g.welcome ? '✅' : '❌'} _Willkommen_
 ${g.antiLink ? '✅' : '❌'} _Anti-Link_\n\n`;
   }
-
-  fs.writeFileSync(path, JSON.stringify(groupData, null, 2));
 
   m.reply(`📋 *Gruppenübersicht*\n\nGesamt: ${groupIDs.length}\n\n${text}`.trim());
 };

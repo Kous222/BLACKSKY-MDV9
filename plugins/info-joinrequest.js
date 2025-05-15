@@ -2,7 +2,7 @@ const { getUserRank } = require('../lib/rank'); // Nutzt Atlas-Ranking-System
 
 let joinRequests = global.joinRequests = global.joinRequests || [];
 
-let handler = async (m, { conn, args, usedPrefix, command }) => {
+let handler = async (m, { conn, text }) => {
   const allowedRanks = ['owner', 'teamleiter', 'manager'];
   const senderRank = await getUserRank(m.sender);
 
@@ -12,11 +12,12 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     return m.reply('❌ Du hast keine Berechtigung, diesen Befehl zu nutzen.');
   }
 
-  const action = (args[0] || '').toLowerCase();
-  const index = parseInt(args[1]) - 1;
+  let [actionRaw, indexRaw] = text.trim().split(/\s+/);
+  const action = (actionRaw || '').toLowerCase();
+  const index = parseInt(indexRaw) - 1;
 
-  if (!action) {
-    if (!joinRequests.length) throw '📭 Keine offenen Beitrittsanfragen.';
+  if (!action || action === 'list') {
+    if (!joinRequests.length) return m.reply('📭 Keine offenen Beitrittsanfragen.');
 
     let list = joinRequests.map((req, i) =>
       `*${i + 1}.* 👤 @${req.sender.split('@')[0]}\n🔗 ${req.link}`
@@ -34,7 +35,7 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   }
 
   if (isNaN(index) || index < 0 || index >= joinRequests.length)
-    throw `❗ Ungültiger Index. Benutze z. B. \`${usedPrefix + command} accept 1\``;
+    return m.reply(`❗ Ungültiger Index. Beispiel: .joinrequests accept 1`);
 
   const { link, sender } = joinRequests[index];
   const groupCode = link.split('/').pop();
@@ -77,11 +78,11 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     });
   }
 
-  throw `❗ Unbekannter Befehl. Verwende:\n- \`${usedPrefix + command} accept <Nummer>\`\n- \`${usedPrefix + command} decline <Nummer>\`\n- \`${usedPrefix + command} clear\``;
+  throw `❗ Unbekannter Befehl. Verwende:\n- .joinrequests accept <Nummer>\n- .joinrequests decline <Nummer>\n- .joinrequests clear`;
 };
 
-handler.help = ['joinrequests', 'joinrequests accept <Nummer>', 'joinrequests decline <Nummer>', 'joinrequests clear'];
+handler.help = ['joinrequests [accept|decline|clear] <Nummer>'];
 handler.tags = ['admin'];
-handler.command = ['joinrequests'];
+handler.command = /^joinrequests(?:\s+(accept|decline|clear)?(?:\s+\d+)?)?$/i;
 
 module.exports = handler;

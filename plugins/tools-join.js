@@ -3,7 +3,12 @@ let joinRequests = global.joinRequests = global.joinRequests || [];
 let handler = async (m, { conn, text }) => {
   if (!text) throw '❗ Bitte gib einen gültigen Gruppenlink an.\n\nBeispiel:\n.join https://chat.whatsapp.com/AbCdEfGhIjK';
 
-  if (!text.includes('whatsapp.com/')) throw '❌ Das sieht nicht nach einem gültigen WhatsApp-Gruppenlink aus.';
+  if (!/chat\.whatsapp\.com\/[A-Za-z0-9]{20,}/.test(text))
+    throw '❌ Das sieht nicht nach einem gültigen WhatsApp-Gruppenlink aus.';
+
+  // Dublettenprüfung
+  const alreadyRequested = joinRequests.some(req => req.link === text && req.sender === m.sender);
+  if (alreadyRequested) return m.reply('⚠️ Du hast diese Anfrage bereits gestellt. Bitte warte auf die Entscheidung des Teams.');
 
   joinRequests.push({
     sender: m.sender,
@@ -13,9 +18,15 @@ let handler = async (m, { conn, text }) => {
   await m.reply('✅ Deine Beitrittsanfrage wurde gespeichert und an das Support-Team gesendet. Bitte habe etwas Geduld.');
 
   // An Supportgruppe senden
-  let supportGroupId = '120363399996195320@g.us';
+  const supportGroupId = '120363399996195320@g.us';
+  const requestText =
+    `📩 *Neue Join-Anfrage:*\n\n` +
+    `👤 Von: @${m.sender.split('@')[0]}\n` +
+    `🔗 Link: ${text}\n\n` +
+    `🔍 Überprüfe und verwalte sie mit:\n.joinrequests`;
+
   await conn.sendMessage(supportGroupId, {
-    text: `📩 *Neue Join-Anfrage eingegangen:*\n\n👤 Von: @${m.sender.split('@')[0]}\n🔗 Link: ${text}`,
+    text: requestText,
     mentions: [m.sender]
   });
 };
