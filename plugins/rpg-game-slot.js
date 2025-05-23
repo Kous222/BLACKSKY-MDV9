@@ -20,7 +20,6 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     try {
         let infoText = `
     let infoText = `
->>>>>>> fc7a41b (Erster Commit)
 🎰 *BLACKSKY-MD SLOT*
 
 Wie viel möchtest du setzen?
