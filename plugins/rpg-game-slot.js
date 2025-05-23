@@ -13,7 +13,6 @@ const userSchema = new mongoose.Schema({
 
 // Avoid overwriting the model if it already exists
 const User = mongoose.models.User || mongoose.model('User', userSchema);
->>>>>>> fc7a41b (Erster Commit)
 
 let reg = 100; // Kleiner Gewinnbetrag
 
