@@ -1,0 +1,110 @@
+const crypto = require('crypto');
+const { PhoneNumber } = require('libphonenumber-js');
+
+let profileHandler = async (m, { conn, text }) => {
+  let who = m.mentionedJid[0] || m.sender;
+  
+  // Handle profile data retrieval or initialization
+  if (!global.db.data) {
+    throw 'Datenbank nicht initialisiert! Bitte starte den Bot neu.';
+  }
+  if (typeof global.db.data.users[who] === 'undefined') {
+    global.db.data.users[who] = {
+      exp: 0,
+      level: 0,
+      role: 'Newbie ㋡',
+      registered: false,
+      name: conn.getName(who),
+      age: -1,
+      regTime: -1,
+      afk: -1,
+      afkReason: '',
+      banned: false,
+      premiumTime: 0
+    };
+  }
+
+  let user = global.db.data.users[who];
+  let now = Date.now();
+  let { exp, level, role, name, age, regTime, premiumTime, premium, dailyXP, lastDailyReset } = user;
+
+  // Daily XP reset logic
+  if (typeof dailyXP === 'undefined') user.dailyXP = dailyXP = 0;
+  if (typeof lastDailyReset === 'undefined') user.lastDailyReset = lastDailyReset = 0;
+
+  const today = new Date().setHours(0, 0, 0, 0);
+  if (lastDailyReset < today) {
+    user.dailyXP = dailyXP = 0;
+    user.lastDailyReset = lastDailyReset = today;
+  }
+
+  const DAILY_XP_CAP = 1500;
+  
+  // Level and XP calculations
+  let xpInfo = { min: 0, xp: 1, max: 1 };  // Default values for XP calculation
+  try {
+    xpInfo = levelling.xpRange(level, 1); // Assuming you have a levelling module
+  } catch (e) {
+    console.error('XP calculation error:', e);
+  }
+
+  let minXP = xpInfo.min || 0;
+  let requiredXP = xpInfo.xp || 100;
+  let maxXP = xpInfo.max || minXP + requiredXP;
+
+  const isMaxLevel = level >= 100;
+  let currentXP, xpLeft;
+
+  if (isMaxLevel) {
+    currentXP = requiredXP;
+    xpLeft = 0;
+  } else {
+    currentXP = Math.max(0, exp - minXP);
+    xpLeft = Math.max(0, maxXP - exp);
+  }
+
+  let progressPercent = Math.min(100, Math.floor((currentXP / requiredXP) * 100));
+  let progressBar = '█'.repeat(Math.floor((progressPercent / 100) * 15)) + '░'.repeat(15 - Math.floor((progressPercent / 100) * 15));
+
+  let profileText = `
+┌─⊷ *PROFIL*
+👤 • Benutzername: ${name} (@${who.split`@`[0]})
+📞 • Nummer: ${new PhoneNumber('+' + who.replace('@s.whatsapp.net', '')).formatInternational()}
+🔢 • Seriennummer: ${crypto.createHash('md5').update(who).digest('hex')}
+🎂 • Alter: ${age}
+└──────────────
+
+┌─⊷ *LEVEL & ROLLE*
+🏅 • Level: ${level}
+⭐ • Rolle: ${role}
+└──────────────
+
+┌─⊷ *XP FORTSCHRITT*
+🔰 • XP: ${currentXP} / ${requiredXP} (Total: ${exp})
+📊 • ${progressBar} ${progressPercent}%
+${isMaxLevel ? `🏆 *MAXIMALES LEVEL ERREICHT!*` : (xpLeft <= 0 ? `✅ Bereit für *levelup*` : `⏳ ${xpLeft} XP übrig bis zum nächsten Level`)}
+🕒 • Heute: ${dailyXP}/${DAILY_XP_CAP} XP
+└──────────────
+
+┌─⊷ *STATUS*
+🌟 • Premium: ${premium ? 'Ja' : 'Nein'}
+⏰ • PremiumZeit: ${premiumTime > now ? msToDate(premiumTime - now) : '*Kein Ablaufdatum für Premium!*'}
+└──────────────
+`.trim();
+
+  let pp = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSXIdvC1Q4WL7_zA6cJm3yileyBT2OsWhBb9Q&usqp=CAU';
+  try {
+    pp = await conn.profilePictureUrl(who, 'image');
+  } catch (e) {}
+
+  conn.sendFile(m.chat, pp, 'pp.jpg', profileText, m, false, {
+    contextInfo: { mentionedJid: [who] }
+  });
+};
+
+profileHandler.help = ['profile [@user]'];
+profileHandler.tags = ['info'];
+profileHandler.command = /^profile$/i;
+profileHandler.limit = true;
+
+module.exports = profileHandler;

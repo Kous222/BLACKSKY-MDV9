@@ -1,0 +1,43 @@
+let handler = async (m, { conn, text, isROwner, isOwner }) => {
+  // Überprüfen, ob ein Text eingegeben wurde
+  if (text) {
+    // Setze die benutzerdefinierte Willkommensnachricht für die Gruppe
+    if (isROwner) global.conn.welcome = text;
+    else if (isOwner) conn.welcome = text;
+
+    // Speichern der Willkommensnachricht in der Datenbank für die Gruppe
+    global.db.data.chats[m.chat].sWelcome = text;
+
+    // Bestätigung an den Benutzer senden
+    m.reply(`Willkommensnachricht erfolgreich festgelegt! ✨\nVerwendbare Platzhalter:\n- @user (für den Nutzer)\n- @subject (Gruppenname)\n- @desc (Gruppenbeschreibung)`);
+  } else {
+    // Wenn kein Text eingegeben wurde, nach einem fragen
+    throw 'Bitte gib eine Willkommensnachricht ein!';
+  }
+};
+
+// Event für neue Mitglieder, die der Gruppe beitreten
+handler.events = {
+  async 'group-participants-update' (chatUpdate) {
+    const { participants, action, chat } = chatUpdate;
+    if (action === 'add') {
+      const user = participants[0];
+      const welcomeMessage = global.db.data.chats[chat].sWelcome || conn.welcome;
+
+      if (welcomeMessage) {
+        // Ersetzen des @user Platzhalters durch die Benutzer-ID
+        const message = welcomeMessage.replace('@user', `@${user.split('@')[0]}`).replace('@subject', chatUpdate.chat).replace('@desc', chatUpdate.desc || 'Keine Beschreibung');
+        
+        // Senden der Nachricht mit Erwähnung des Benutzers
+        await conn.sendMessage(chat, { text: message, mentions: [user] });
+      }
+    }
+  }
+}
+
+handler.help = ['setwelcome <text>'];
+handler.tags = ['owner', 'group'];
+handler.command = /^setwelcome$/i;
+handler.botAdmin = true;  // Der Bot muss ein Admin in der Gruppe sein
+
+module.exports = handler;
