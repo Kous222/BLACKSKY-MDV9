@@ -1,7 +1,6 @@
 const cooldown = 300000; // Standard-Cooldown (5 Minuten in Millisekunden)
 const cooldownAfterWork = 5 * 60 * 1000; // Cooldown nach der Arbeit für 5 Minuten
-<<<<<<< HEAD
-=======
+
 const { addBalance } = require('../lib/bank'); // Pfad anpassen, falls anders!
 >>>>>>> fc7a41b (Erster Commit)
 
