@@ -5,7 +5,7 @@ let handler = async (m, { conn, command, args, usedPrefix }) => {
     let users = global.db.data.users[m.sender];
     let time = users.lastkerja + 300000;
     let __timers = (new Date - users.lastkerja);
-=======
+
 const mongoose = require('mongoose');
 
 // MongoDB Schema for Users (if not defined elsewhere)
@@ -29,7 +29,6 @@ let handler = async (m, { conn, command, args, usedPrefix }) => {
 
     let time = user.lastkerja + 300000;
     let __timers = (new Date - user.lastkerja);
->>>>>>> fc7a41b (Erster Commit)
     let _timers = (0 - __timers);
     let timers = clockString(_timers);
 
@@ -49,11 +48,8 @@ let handler = async (m, { conn, command, args, usedPrefix }) => {
     let pnjht = pickRandom(pnjh);
     
     if (/kerjadulu|arbeiten|work|arbeit/i.test(command)) {
-<<<<<<< HEAD
         if (new Date - users.lastkerja < 300000) return m.reply(`Du arbeitest bereits\nZeit für eine Pause für 🕜 ${clockString(time - new Date())}`);
-=======
         if (new Date - user.lastkerja < 300000) return m.reply(`Du arbeitest bereits\nZeit für eine Pause für 🕜 ${clockString(time - new Date())}`);
->>>>>>> fc7a41b (Erster Commit)
 
         let hasil = Math.floor(Math.random() * 5000000);
         let message;
@@ -129,7 +125,6 @@ _*Wähle einen Beruf, den du ausüben möchtest*_
                 return conn.relayMessage(m.chat, msg, {});
         }
 
-<<<<<<< HEAD
         // After a valid profession is chosen:
         await m.reply(message);
 
@@ -138,7 +133,7 @@ _*Wähle einen Beruf, den du ausüben möchtest*_
 
         // Save the new data to the database
         users.lastkerja = new Date * 1;
-=======
+
         // Update user's balance in the database
         user.balance += hasil;
         await user.save();
@@ -149,7 +144,6 @@ _*Wähle einen Beruf, den du ausüben möchtest*_
 
         // Send message to user
         await m.reply(message);
->>>>>>> fc7a41b (Erster Commit)
     }
 };
 

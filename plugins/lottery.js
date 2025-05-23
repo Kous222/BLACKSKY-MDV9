@@ -137,4 +137,3 @@ handler.help = ['lottery [betrag]'];
 handler.tags = ['economy'];
 
 module.exports = handler;
->>>>>>> fc7a41b (Erster Commit)

@@ -2,7 +2,6 @@ const cooldown = 300000; // Standard-Cooldown (5 Minuten in Millisekunden)
 const cooldownAfterWork = 5 * 60 * 1000; // Cooldown nach der Arbeit für 5 Minuten
 
 const { addBalance } = require('../lib/bank'); // Pfad anpassen, falls anders!
->>>>>>> fc7a41b (Erster Commit)
 
 let handler = async (m, { isPrems, conn, text, usedPrefix, command }) => {
     const user = global.db.data.users[m.sender];
@@ -100,18 +99,15 @@ let handler = async (m, { isPrems, conn, text, usedPrefix, command }) => {
 • Erfahrung: ${exp} XP
 • Arbeitsfortschritt: +1%`;
 
-<<<<<<< HEAD
     // Speichern der neuen Daten im 'database.json'
     await global.db.save();
 
     // Antwort an den Benutzer
     conn.reply(m.chat, message, m);
-=======
     conn.reply(m.chat, message, m);
 
     // Füge die Belohnung zum Atlas hinzu
     await addBalance(m.sender, geld, 'Münzen');
->>>>>>> fc7a41b (Erster Commit)
 };
 
 handler.help = ['work'];

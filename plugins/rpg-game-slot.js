@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-=======
 const mongoose = require('mongoose');
 const { initUser, getBalance, addBalance, subtractBalance } = require('../lib/bank'); // Bankfunktionen importieren
 const fs = require('fs');
@@ -21,10 +20,8 @@ const User = mongoose.models.User || mongoose.model('User', userSchema);
 let reg = 100; // Kleiner Gewinnbetrag
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
-<<<<<<< HEAD
     try {
         let infoText = `
-=======
     let infoText = `
 >>>>>>> fc7a41b (Erster Commit)
 🎰 *BLACKSKY-MD SLOT*
@@ -35,7 +32,6 @@ Wie viel möchtest du setzen?
 ${usedPrefix + command} 100
     `.trim();
 
-<<<<<<< HEAD
         if (!args[0]) throw infoText;
         if (isNaN(args[0])) throw '❌ Bitte gib eine gültige Zahl als Einsatz an.';
         
@@ -117,7 +113,6 @@ ${usedPrefix + command} 100
         console.error('Fehler im Slot-Plugin:', e);
         m.reply('⚠️ Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.');
     }
-=======
     if (!args[0]) throw infoText;
     if (isNaN(args[0])) throw '❌ Bitte gib eine gültige Zahl als Einsatz an.';
     
@@ -177,7 +172,6 @@ ${usedPrefix + command} 100
         image: { url: slotImagePath },
         caption: `🎰 *BLACKSKY-MD SLOT Result*\n\n${formatSlot(x, y, z)}\n\n${resultMessage}`
     });
->>>>>>> fc7a41b (Erster Commit)
 }
 
 handler.help = ['slot <betrag>'];
