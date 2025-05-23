@@ -98,7 +98,7 @@ function msToTime(ms) {
     let sec = Math.floor(ms / 1000);
     return `${sec} Sekunde${sec !== 1 ? 'n' : ''}`;
 }
-=======
+
 const { getBalance, subtractBalance, addBalance } = require('../lib/bank');
 
 let handler = async (m, { conn, args }) => {
