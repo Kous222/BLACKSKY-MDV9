@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 const { addSaldo } = require('../lib/bank'); // Adjust the path if needed!
 
 let handler = async (m, { conn, command, args, usedPrefix }) => {
