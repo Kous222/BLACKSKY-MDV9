@@ -2,7 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const mongoose = require('mongoose');
 const { initUser, getBalance, addBalance, subtractBalance } = require('../lib/bank'); // Bankfunktionen importieren
-const path = require('path');
 const ms = require('ms'); // Make sure you have this library installed (npm install ms)
 
 // MongoDB Schema für Benutzer erstellen
