@@ -130,6 +130,33 @@
 
   await loadDatabase();
   
+  // Load plugins from MongoDB Atlas and write them to disk on startup
+const Plugin = require('./lib/Plugin'); // Mongoose Plugin Model
+const { addPluginPath } = require('./lib/mongo'); // Adds plugin to runtime
+const pluginFolder = path.join(__dirname, 'plugins');
+
+const loadPluginsFromDB = async () => {
+  try {
+    if (!fs.existsSync(pluginFolder)) fs.mkdirSync(pluginFolder, { recursive: true });
+
+    const plugins = await Plugin.find({});
+    let loaded = 0;
+
+    for (let plugin of plugins) {
+      const filename = path.join(pluginFolder, `${plugin.name}.js`);
+      fs.writeFileSync(filename, plugin.code, 'utf8');
+      await addPluginPath(filename);
+      loaded++;
+    }
+
+    console.log(chalk.greenBright(`✅ ${loaded} Plugins automatically loaded from MongoDB.`));
+  } catch (err) {
+    console.error(chalk.red('❌ Fehler beim Laden der Plugins aus MongoDB:'), err);
+  }
+};
+
+await loadPluginsFromDB(); // <- This line ensures plugins are loaded before bot continues
+
   // Set up sessions directory
   const sessionsDir = '' + (opts._[0] || 'sessions');
   global.isInit = !fs.existsSync(sessionsDir);
