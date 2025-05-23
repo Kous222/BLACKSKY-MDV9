@@ -1,94 +1,69 @@
-const { getUserRank } = require('../lib/rank'); // Falls nicht vorhanden: ersetze durch manuelle Rangprüfung
-
 let joinRequests = global.joinRequests = global.joinRequests || [];
 
-let handler = async (m, { conn, text, command }) => {
-  // ---- Ränge prüfen ----
-  let sender = m.sender;
-  let senderNumber = sender.split('@')[0];
-  let senderRank = (await getUserRank?.(sender)) || 'member';
-  let allowedRanks = ['owner', 'teamleiter', 'manager'];
-  let isOwner = global.owner?.includes?.(senderNumber);
+let handler = async (m, { conn, text }) => {
+  const sender = m.sender;
+  const senderNum = sender.split('@')[0];
+  const isOwner = global.owner?.some(id => id.includes(senderNum));
+  if (!isOwner) return m.reply('❌ Nur globale Owner dürfen das verwenden.');
 
-  if (!allowedRanks.includes(senderRank) && !isOwner) {
-    return m.reply('❌ Du hast keine Berechtigung, diesen Befehl zu nutzen.');
-  }
-
-  // ---- Eingabe analysieren ----
-  let [actionRaw, indexRaw] = text.trim().split(/\s+/);
-  let action = (actionRaw || '').toLowerCase();
+  let [action, indexRaw] = text.trim().split(/\s+/);
   let index = parseInt(indexRaw) - 1;
 
   if (!action || action === 'list') {
-    if (!joinRequests.length) {
-      return m.reply('📭 Es gibt derzeit keine offenen Beitrittsanfragen.');
-    }
-
+    if (!joinRequests.length) return m.reply('📭 Keine offenen Anfragen.');
     let list = joinRequests.map((req, i) =>
       `*${i + 1}.* 👤 @${req.sender.split('@')[0]}\n🔗 ${req.link}`
     ).join('\n\n');
-
     return conn.sendMessage(m.chat, {
-      text: `📬 *Offene Beitrittsanfragen:*\n\n${list}`,
+      text: `📬 *Offene Anfragen:*\n\n${list}`,
       mentions: joinRequests.map(req => req.sender)
     });
   }
 
   if (action === 'clear') {
     joinRequests.length = 0;
-    return m.reply('✅ Alle Beitrittsanfragen wurden gelöscht.');
+    return m.reply('✅ Alle Anfragen wurden gelöscht.');
   }
 
-  if (isNaN(index) || index < 0 || index >= joinRequests.length) {
+  if (isNaN(index) || index < 0 || index >= joinRequests.length)
     return m.reply(`❗ Ungültiger Index. Beispiel: .joinrequests accept 1`);
-  }
 
-  const { link, sender: requester } = joinRequests[index];
-  const groupCode = link.split('/').pop();
+  let { link, sender: requester } = joinRequests[index];
+  let code = link.split('/').pop();
 
   if (action === 'accept') {
     joinRequests.splice(index, 1);
-
     try {
-      const groupId = await conn.groupAcceptInvite(groupCode);
-      await new Promise(r => setTimeout(r, 2000));
+      const groupId = await conn.groupAcceptInvite(code);
 
-      let groupPic = await conn.profilePictureUrl(groupId, 'image').catch(() => null);
-      let welcomeText = `🎉 *Ich wurde in die Gruppe eingeladen!*\n\n` +
-        `❤️ Eingeladen von: @${senderNumber}\n` +
-        `🤖 Bereit für Games, Tools & Spaß!`;
+      // Nachricht mit Owner-Nummer
+      const ownerNumber = global.owner && global.owner.length ? global.owner[0] : 'Owner unbekannt';
+      const welcomeText = `❤️ Hallo Ich bin BLACKSKY BOT der Owner (${ownerNumber}) hat mich in eure Gruppe geschickt. Vielen Dank für die Einladung und ich hoffe ihr werdet Spaß mit mir haben ❤️`;
 
-      await conn.sendMessage(groupId, groupPic ? {
-        image: { url: groupPic },
-        caption: welcomeText,
-        mentions: [sender]
-      } : {
-        text: welcomeText,
-        mentions: [sender]
+      await conn.sendMessage(groupId, {
+        text: welcomeText
       });
 
-      return m.reply(`✅ Anfrage von @${requester.split('@')[0]} wurde akzeptiert. Bot ist der Gruppe beigetreten.`, null, {
+      return m.reply(`✅ Anfrage von @${requester.split('@')[0]} akzeptiert.`, null, {
         mentions: [requester]
       });
-
     } catch (e) {
-      return m.reply(`❌ Fehler beim Beitritt zur Gruppe: ${e.message}`);
+      return m.reply(`❌ Fehler beim Beitritt: ${e.message}`);
     }
   }
 
   if (action === 'decline') {
     joinRequests.splice(index, 1);
-    return m.reply(`❌ Anfrage von @${requester.split('@')[0]} wurde abgelehnt.`, null, {
+    return m.reply(`❌ Anfrage von @${requester.split('@')[0]} abgelehnt.`, null, {
       mentions: [requester]
     });
   }
 
-  return m.reply(`❗ Unbekannter Befehl. Verwende:\n- .joinrequests accept <Nummer>\n- .joinrequests decline <Nummer>\n- .joinrequests clear`);
+  return m.reply(`❗ Unbekannter Befehl. Verwende:\n.joinrequests [accept|decline|clear] <Nummer>`);
 };
 
 handler.help = ['joinrequests [accept|decline|clear] <Nummer>'];
-handler.tags = ['admin'];
+handler.tags = ['owner'];
 handler.command = /^joinrequests$/i;
-handler.rowner = true;
 
 module.exports = handler;
