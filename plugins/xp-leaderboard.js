@@ -40,7 +40,7 @@ ${userRank > 10 ? `\n┌─⊷ *DEINE POSITION*
   m.reply(text)
 }
 
-handler.help = ['toplevel', 'topxp', 'leaderboard', 'rangliste - Zeigt die Top-10-Rangliste der Benutzer basierend auf ihren XP und Leveln.']
+handler.help = ['toplevel', 'topxp', 'leaderboard', 'rangliste']
 handler.tags = ['xp']
 handler.command = /^(toplevel|leaderboard|rangliste|topxp)$/i
 

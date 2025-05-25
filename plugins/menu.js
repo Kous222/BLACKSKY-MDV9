@@ -18,14 +18,13 @@ let moment = require('moment-timezone');
 let levelling = require('../lib/levelling');
 
 let arrayMenü = [
-    'all', 'ai', 'spielen', 'database', 'herunterladener', 'rpg', 'rpgG', 'sticker', 'advanced', 'xp', 'fun', 'spiel', 'github', 'group', 'image', 'nsfw', 'info', 'internet', 'islam', 'kerang', 'maker', 'news', 'owner', 'voice', 'quotes', 'store', 'stalk', 'shortlink', 'tools', 'anonymous'
+    'all', 'ai', 'database', 'herunterladener', 'rpg', 'rpgG', 'sticker', 'advanced', 'xp', 'fun', 'spiel', 'github', 'group', 'image', 'nsfw', 'info', 'internet', 'islam', 'kerang', 'maker', 'news', 'owner', 'voice', 'quotes', 'store', 'stalk', 'shortlink', 'tools', 'anonymous'
 ];
 
 // Emoji mapping for categories
 const categoryEmojis = {
     'all': '🌟',
     'ai': '🤖',
-    'spielen': '🎮',
     'database': '🗄️',
     'herunterladener': '📥',
     'rpg': '⚔️',
@@ -70,7 +69,7 @@ const defaultMenü = {
 ╰━━━━━━━━━━━━━━━━╯
 
 👋 Hallo, %name!
-🤖 Ich bin ein KI-gestützter WhatsApp Bot, der dir bei verschiedenen Aufgaben helfen kann.
+❤️ Ich bin BLACKSKY dein Lieblings Bot ❤️.
 
 ╭━━━━⟮ 📊 BOT INFO ⟯━━━━╮
 │ 
@@ -86,10 +85,10 @@ const defaultMenü = {
     after: `
 ╭━━━━⟮ 💡 HINWEIS ⟯━━━━╮
 │ 
-│ • Tippe %_pmenu <kategorie>
+│ • Tippe .menu <kategorie>
 │   für ein bestimmtes Menü
-│ • Beispiel: %_pmenu tools
-│ • Nutze %_philfe für Hilfe
+│ • Beispiel: .menu tools
+│ • Nutze .hilfe für Hilfe
 │
 ╰━━━━━━━━━━━━━━━━╯`
 };
@@ -208,7 +207,7 @@ let handler = async (m, { conn, usedPrefix: _p, args = [], command }) => {
             
             // Organize categories in a logical order
             const categoryOrder = [
-                'all', 'tools', 'info', 'spielen', 'spiel', 'xp', 'rpg', 'rpgG',
+                'all', 'tools', 'info', 'spiel', 'xp', 'rpg', 'rpgG',
                 'ai', 'fun', 'quotes', 'voice', 'anonymous', 
                 'herunterladener', 'sticker', 'image', 'maker',
                 'internet', 'github', 'news', 'shortlink', 'store', 'stalk',
@@ -228,7 +227,7 @@ let handler = async (m, { conn, usedPrefix: _p, args = [], command }) => {
             // Add a helpful header to the all menu
             allMenüs += `╭━━━━⟮ 📋 VOLLSTÄNDIGE BEFEHLSLISTE ⟯━━━━╮\n`;
             allMenüs += `│ Alle verfügbaren Befehle sind nach Kategorien sortiert\n`;
-            allMenüs += `│ 🔒 = Limitierte Funktion | ⭐ = Premium Funktion\n`;
+            allMenüs += `│ ☠️ = Limitierte Funktion | ⭐ = Premium Funktion\n`;
             allMenüs += `╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯\n\n`;
             
             // Process each category
@@ -288,7 +287,7 @@ let handler = async (m, { conn, usedPrefix: _p, args = [], command }) => {
                     
                     // Display all commands in vertical list format
                     for (let item of commandList) {
-                        const limitIcon = item.limit ? ' 🔒' : '';
+                        const limitIcon = item.limit ? ' ☠️' : '';
                         const premiumIcon = item.premium ? ' ⭐' : '';
                         
                         // Format each command in a consistent vertical style
@@ -349,13 +348,13 @@ let handler = async (m, { conn, usedPrefix: _p, args = [], command }) => {
         commandItems.sort((a, b) => a.cmd.localeCompare(b.cmd));
         
         for (let item of commandItems) {
-            const limitIcon = item.limit ? '🔒' : '';
+            const limitIcon = item.limit ? '☠️' : '';
             const premiumIcon = item.Premium ? '⭐' : '';
             const combinedCmd = `${_p}${item.cmd}`;
             
             menuCategory += defaultMenü.body
                 .replace(/%cmd/g, combinedCmd)
-                .replace(/%islimit/g, item.limit ? ' 🔒' : '') // Replace with icon
+                .replace(/%islimit/g, item.limit ? ' ☠️' : '') // Replace with icon
                 .replace(/%isPremium/g, item.Premium ? ' ⭐' : '') + '\n'; // Replace with icon
         }
         
@@ -367,9 +366,9 @@ let handler = async (m, { conn, usedPrefix: _p, args = [], command }) => {
     }
 };
 
-handler.help = ['menu', 'hilfe', 'info'];
+handler.help = ['menu', 'info'];
 handler.tags = ['spielen'];
-handler.command = /^(menu|hilfe|help|info|bot)$/i;
+handler.command = /^(menu|info|bot)$/i;
 handler.exp = 3;
 
 module.exports = handler;
@@ -387,7 +386,7 @@ function sendMenü(m, conn, text, replace) {
 │ 
 │ • BLACKSKY-MD Bot v1.5.0
 │ • © 2023-2025 BLACKSKY
-│ • !help für weitere Hilfe
+│ • .help für weitere Hilfe
 │
 ╰━━━━━━━━━━━━━━━━╯`;
     

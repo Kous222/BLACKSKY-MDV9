@@ -1,61 +1,44 @@
 let handler = async (m, { conn, text, args, usedPrefix, command }) => {
     if (!args[0]) 
-        return m.reply(`
-✳️ *Benutzung:*
-
-• *Ban:*
+        return m.reply(`✳️ Benutze: 
 ${usedPrefix + command} [group] @user <Dauer> <Grund>
-
-• *Unban:*
 ${usedPrefix + command} unban [group] @user
 
----
-
-📌 *Beispiele:*
-• ${usedPrefix + command} @user 1d Spam
-• ${usedPrefix + command} group @user Spam
-• ${usedPrefix + command} unban @user
-• ${usedPrefix + command} unban group @user
-`.trim());
+Beispiele:
+${usedPrefix + command} @user 1d Spam
+${usedPrefix + command} group @user Spam
+${usedPrefix + command} unban @user
+${usedPrefix + command} unban group @user`);
 
     const isUnban = command.toLowerCase() === 'unban';
     const isGroupScope = args[0].toLowerCase() === 'group';
     let argIndex = isGroupScope ? 1 : 0;
 
-    // Handle unban
+    // Determine action: ban or unban
     if (isUnban) {
+        // unban logic
         if (args[argIndex] === 'group') {
             // unban group @user
-            if (!m.isGroup) 
-                return m.reply('❌ *Dieser Befehl kann nur in Gruppen verwendet werden.*');
-
+            if (!m.isGroup) return m.reply('❌ Dieser Befehl kann nur in Gruppen verwendet werden.');
             argIndex++;
-            if (!args[argIndex]) 
-                return m.reply(`✳️ Bitte gib einen Benutzer an, z.B. ${usedPrefix}unban group @user`);
-
+            if (!args[argIndex]) return m.reply(`✳️ Bitte gib einen Benutzer an, z.B. ${usedPrefix}unban group @user`);
             const mention = m.mentionedJid[0] || (m.quoted ? m.quoted.sender : null) || (args[argIndex].replace(/[^0-9]/g, '') + '@s.whatsapp.net');
-            if (!mention) 
-                return m.reply('✳️ Bitte gib einen gültigen Benutzer an.');
+            if (!mention) return m.reply('✳️ Bitte gib einen gültigen Benutzer an.');
 
             if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {};
             if (!global.db.data.chats[m.chat].memgc) global.db.data.chats[m.chat].memgc = {};
-
-            if (!global.db.data.chats[m.chat].memgc[mention] || !global.db.data.chats[m.chat].memgc[mention].banned) 
+            if (!global.db.data.chats[m.chat].memgc[mention]) 
                 return m.reply('❌ Dieser Benutzer ist in dieser Gruppe nicht gebannt.');
 
             global.db.data.chats[m.chat].memgc[mention].banned = false;
             global.db.data.chats[m.chat].memgc[mention].bannedTime = 0;
-
             await m.reply(`✅ Benutzer @${mention.split('@')[0]} wurde in dieser Gruppe entbannt.`, null, { mentions: [mention] });
             return;
         } else {
             // unban global @user
-            if (!args[argIndex]) 
-                return m.reply(`✳️ Bitte gib einen Benutzer an, z.B. ${usedPrefix}unban @user`);
-
+            if (!args[argIndex]) return m.reply(`✳️ Bitte gib einen Benutzer an, z.B. ${usedPrefix}unban @user`);
             const mention = m.mentionedJid[0] || (m.quoted ? m.quoted.sender : null) || (args[argIndex].replace(/[^0-9]/g, '') + '@s.whatsapp.net');
-            if (!mention) 
-                return m.reply('✳️ Bitte gib einen gültigen Benutzer an.');
+            if (!mention) return m.reply('✳️ Bitte gib einen gültigen Benutzer an.');
 
             if (!global.db.data.users[mention] || !global.db.data.users[mention].banned)
                 return m.reply('❌ Dieser Benutzer ist nicht global gebannt.');
@@ -77,25 +60,22 @@ ${usedPrefix + command} unban [group] @user
         }
     }
 
-    // Handle ban
+    // From here, handle ban commands
+
     let banScope = isGroupScope ? 'group' : 'global';
     let userArgIndex = argIndex;
-    if (!args[userArgIndex]) 
-        return m.reply(`✳️ Bitte gib einen Benutzer an, z.B. ${usedPrefix}ban${isGroupScope ? ' group' : ''} @user`);
-
+    if (!args[userArgIndex]) return m.reply(`✳️ Bitte gib einen Benutzer an, z.B. ${usedPrefix}ban${isGroupScope ? ' group' : ''} @user`);
     const mention = m.mentionedJid[0] || (m.quoted ? m.quoted.sender : null) || (args[userArgIndex].replace(/[^0-9]/g, '') + '@s.whatsapp.net');
-    if (!mention) 
-        return m.reply('✳️ Bitte gib einen gültigen Benutzer an.');
+    if (!mention) return m.reply('✳️ Bitte gib einen gültigen Benutzer an.');
 
     // Prevent banning the bot owner
     const isOwner = (global.owner || []).some(ownerNum => {
         const ownerJid = ownerNum.replace(/[^0-9]/g, '') + '@s.whatsapp.net';
         return mention === ownerJid;
     });
-    if (isOwner) 
-        return m.reply('❌ Du kannst den Bot-Besitzer nicht bannen.');
+    if (isOwner) return m.reply('❌ Du kannst den Bot-Besitzer nicht bannen.');
 
-    // Parse duration & reason only for global ban
+    // Parse duration & reason only for global ban (group ban is usually permanent or without duration)
     let duration = 0;
     let banType = 'permanent';
     let reason = 'Kein Grund angegeben';
@@ -118,7 +98,7 @@ ${usedPrefix + command} unban [group] @user
         }
         reason = args.slice(durationArg ? userArgIndex + 2 : userArgIndex + 1).join(' ') || reason;
     } else {
-        // group ban: reason starts after user arg
+        // group ban: reason starts right after user arg
         reason = args.slice(userArgIndex + 1).join(' ') || reason;
     }
 
@@ -133,7 +113,7 @@ ${usedPrefix + command} unban [group] @user
         if (banType === 'temporary' && duration > 0) {
             user.bannedTime = Date.now() + duration;
 
-            // Format duration text
+            // Send ban message
             const hours = Math.floor(duration / (60 * 60 * 1000));
             const days = Math.floor(hours / 24);
             const remainingHours = hours % 24;
@@ -161,9 +141,7 @@ ${usedPrefix + command} unban [group] @user
         }
     } else {
         // Group ban logic
-        if (!m.isGroup) 
-            return m.reply('❌ *Dieser Befehl kann nur in Gruppen verwendet werden.*');
-
+        if (!m.isGroup) return m.reply('❌ Dieser Befehl kann nur in Gruppen verwendet werden.');
         if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {};
         if (!global.db.data.chats[m.chat].memgc) global.db.data.chats[m.chat].memgc = {};
 

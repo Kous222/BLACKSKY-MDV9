@@ -31,7 +31,6 @@ const stickerAPIs = [
     async (buffer, conn, m, options) => {
         return await conn.sendImageAsSticker(m.chat, buffer, m, options);
     },
-
     async (buffer, conn, m, options) => {
         const url = await uploadImage(buffer);
         const apiUrl = `https://api.betabotz.eu.org/api/maker/sticker?url=${encodeURIComponent(url)}&apikey=${lann}`;
@@ -40,7 +39,6 @@ const stickerAPIs = [
         const stickerBuffer = await response.buffer();
         return await conn.sendMessage(m.chat, { sticker: stickerBuffer }, { quoted: m });
     },
-
     async (buffer, conn, m, options) => {
         try {
             const { default: WSF } = await import('wa-sticker-formatter');
@@ -71,22 +69,32 @@ let handler = async (m, { conn, command, usedPrefix }) => {
 
         try {
             const mediaHash = calculateHash(media);
-
             if (stickerCache.has(mediaHash)) {
                 console.log(`Sticker aus Cache (${mediaHash})`);
                 await conn.sendMessage(m.chat, { sticker: stickerCache.get(mediaHash) }, { quoted: m });
-                console.log(`Aus Cache gesendet in ${(Date.now() - startTime) / 1000}s`);
                 return;
             }
 
-            const processed = await sharp(media)
+            const metadata = await sharp(media).metadata();
+            const scale = Math.min(700 / metadata.width, 700 / metadata.height, 2);
+            const resized = await sharp(media)
                 .resize({
+                    width: Math.round(metadata.width * scale),
+                    height: Math.round(metadata.height * scale),
+                    fit: 'inside'
+                })
+                .toBuffer();
+
+            const processed = await sharp({
+                create: {
                     width: 700,
                     height: 700,
-                    fit: 'contain',
+                    channels: 4,
                     background: { r: 0, g: 0, b: 0, alpha: 0 }
-                })
-                .png({ quality: 100, compressionLevel: 5, adaptiveFiltering: true })
+                }
+            })
+                .composite([{ input: resized, gravity: 'center' }])
+                .png()
                 .toBuffer();
 
             let success = false, finalStickerBuffer = null;
@@ -108,15 +116,12 @@ let handler = async (m, { conn, command, usedPrefix }) => {
                     }
 
                     success = true;
-
                     if (finalStickerBuffer) {
                         if (stickerCache.size >= STICKER_CACHE_SIZE) {
                             stickerCache.delete(stickerCache.keys().next().value);
                         }
                         stickerCache.set(mediaHash, finalStickerBuffer);
-                        console.log(`Sticker gecached ${mediaHash}, Cachegröße: ${stickerCache.size}`);
                     }
-
                     break;
                 } catch (e) {
                     console.error('Methode fehlgeschlagen:', e);
@@ -125,7 +130,6 @@ let handler = async (m, { conn, command, usedPrefix }) => {
 
             if (!success) throw new Error('Alle Methoden zur Stickererstellung sind fehlgeschlagen.');
 
-            console.log(`Sticker erstellt in ${(Date.now() - startTime) / 1000}s`);
         } catch (e) {
             console.error('Fehler:', e);
             m.reply('Fehler beim Erstellen des Stickers: ' + e.message);
@@ -135,14 +139,11 @@ let handler = async (m, { conn, command, usedPrefix }) => {
         if ((q.msg || q).seconds > 7) return m.reply('Maximale Videodauer ist 6 Sekunden.');
 
         m.reply('Video wird verarbeitet...');
-        const startTime = Date.now();
         let media = await q.download();
 
         try {
             const mediaHash = calculateHash(media);
-
             if (stickerCache.has(`video_${mediaHash}`)) {
-                console.log(`Sticker aus Video-Cache (${mediaHash})`);
                 await conn.sendMessage(m.chat, { sticker: stickerCache.get(`video_${mediaHash}`) }, { quoted: m });
                 return;
             }
@@ -153,8 +154,6 @@ let handler = async (m, { conn, command, usedPrefix }) => {
             });
 
         } catch (e) {
-            console.error('Fehler bei Video-Sticker:', e);
-
             try {
                 const tempFile = path.join(TMP_DIR, `video_${Date.now()}.mp4`);
                 fs.writeFileSync(tempFile, media);
@@ -175,7 +174,6 @@ let handler = async (m, { conn, command, usedPrefix }) => {
 
                 fs.existsSync(tempFile) && fs.unlinkSync(tempFile);
             } catch (fallbackError) {
-                console.error('Fallback fehlgeschlagen:', fallbackError);
                 m.reply('Fehler beim Video. Nutze ein kürzeres Video oder ein Bild.');
             }
         }

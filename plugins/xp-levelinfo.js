@@ -91,7 +91,7 @@ ${targetLevel === levelling.maxLevel() ? `*Gratulation!* Du hast das maximale Le
   }
 }
 
-handler.help = ['levelinfo', 'xpinfo', 'leveldetails - Zeigt detaillierte Informationen über ein bestimmtes Level, einschließlich XP-Anforderungen und Rollen. Du kannst eine Levelnummer angeben, oder deinen eigenen Level anzeigen lassen.']
+handler.help = ['levelinfo', 'xpinfo']
 handler.tags = ['xp']
 handler.command = /^(levelinfo|xpinfo|leveldetails)$/i
 
