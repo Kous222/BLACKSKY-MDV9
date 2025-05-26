@@ -21,7 +21,7 @@ let arrayMenü = [
     'all', 'ai', 'database', 'herunterladener', 'rpg', 'rpgG', 'sticker', 'advanced', 'xp', 'fun', 'spiel', 'github', 'group', 'image', 'nsfw', 'info', 'internet', 'islam', 'kerang', 'maker', 'news', 'owner', 'voice', 'quotes', 'store', 'stalk', 'shortlink', 'tools', 'anonymous'
 ];
 
-// Emoji mapping for categories
+// Emoji mapping für Kategorien
 const categoryEmojis = {
     'all': '🌟',
     'ai': '🤖',
@@ -64,12 +64,12 @@ allTags['all'] = '🌟 ALLE MENÜS';
 const defaultMenü = {
     before: `
 ╭━━━━━━━━━━━━━━━━╮
-│   *BLACKSKY-MD*
-│  ⚡ PREMIUM BOT ⚡
+│        *BLACKSKY-MD*
+│  *⚡ PREMIUM BOT ⚡*
 ╰━━━━━━━━━━━━━━━━╯
 
-👋 Hallo, %name!
-❤️ Ich bin BLACKSKY dein Lieblings Bot ❤️.
+*👋 Hallo, %name!*
+*❤️ Ich bin BLACKSKY dein Lieblings Bot ❤️*
 
 ╭━━━━⟮ 📊 BOT INFO ⟯━━━━╮
 │ 
@@ -115,17 +115,17 @@ let handler = async (m, { conn, usedPrefix: _p, args = [], command }) => {
         if (!teks) {
             let menuList = `${defaultMenü.before}\n\n╭━━━⟮ 📋 MENÜLISTE ⟯━━━╮\n`;
             
-            // Add all categories with emojis
+            // Hauptkategorien mit Emojis hinzufügen
             const menuItems = arrayMenü.map(tag => {
                 const emoji = categoryEmojis[tag] || '📋';
                 return { tag, emoji };
             });
             
-            // Function to add divider line
+            // Funktion zum Hinzufügen einer Trennlinie
             const addDivider = () => menuList += `│ ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n`;
             
-            // Main sections
-            menuList += `│ *🌟 HAUPTMENÜS*\n`;
+            // Hauptbereiche
+            menuList += `│ *🌟 HAUPTMENÜ*\n`;
             menuList += `│ ${categoryEmojis['all']} ${_p}menu all\n`;
             menuList += `│ ${categoryEmojis['tools']} ${_p}menu tools\n`;
             menuList += `│ ${categoryEmojis['info']} ${_p}menu info\n`;
@@ -133,9 +133,8 @@ let handler = async (m, { conn, usedPrefix: _p, args = [], command }) => {
             
             addDivider();
             
-            // Entertainment section
+            // Unterhaltungsbereich
             menuList += `│ *🎮 UNTERHALTUNG*\n`;
-            menuList += `│ ${categoryEmojis['spielen']} ${_p}menu spielen\n`;
             menuList += `│ ${categoryEmojis['rpg']} ${_p}menu rpg\n`;
             menuList += `│ ${categoryEmojis['spiel']} ${_p}menu spiel\n`;
             menuList += `│ ${categoryEmojis['rpgG']} ${_p}menu rpgG\n`;
@@ -144,7 +143,7 @@ let handler = async (m, { conn, usedPrefix: _p, args = [], command }) => {
             
             addDivider();
             
-            // Media section
+            // Medienbereich
             menuList += `│ *📥 MEDIEN*\n`;
             menuList += `│ ${categoryEmojis['herunterladener']} ${_p}menu herunterladener\n`;
             menuList += `│ ${categoryEmojis['sticker']} ${_p}menu sticker\n`;
@@ -154,7 +153,7 @@ let handler = async (m, { conn, usedPrefix: _p, args = [], command }) => {
             
             addDivider();
             
-            // Communication section
+            // Kommunikationsbereich
             menuList += `│ *💬 KOMMUNIKATION*\n`;
             menuList += `│ ${categoryEmojis['ai']} ${_p}menu ai\n`;
             menuList += `│ ${categoryEmojis['anonymous']} ${_p}menu anonymous\n`;
@@ -163,7 +162,7 @@ let handler = async (m, { conn, usedPrefix: _p, args = [], command }) => {
             
             addDivider();
             
-            // Internet section
+            // Internetbereich
             menuList += `│ *🌐 INTERNET*\n`;
             menuList += `│ ${categoryEmojis['internet']} ${_p}menu internet\n`;
             menuList += `│ ${categoryEmojis['github']} ${_p}menu github\n`;
@@ -172,7 +171,7 @@ let handler = async (m, { conn, usedPrefix: _p, args = [], command }) => {
             menuList += `│ ${categoryEmojis['shortlink']} ${_p}menu shortlink\n`;
             menuList += `│ ${categoryEmojis['store']} ${_p}menu store\n`;
             
-            // Admin section
+            // Adminbereich
             addDivider();
             menuList += `│ *⚙️ VERWALTUNG*\n`;
             menuList += `│ ${categoryEmojis['advanced']} ${_p}menu advanced\n`;
@@ -180,8 +179,8 @@ let handler = async (m, { conn, usedPrefix: _p, args = [], command }) => {
             menuList += `│ ${categoryEmojis['database']} ${_p}menu database\n`;
             menuList += `│ ${categoryEmojis['nsfw']} ${_p}menu nsfw\n`;
             
-            // Get remaining categories not listed above
-            const listedCategories = ['all', 'tools', 'info', 'owner', 'spielen', 'rpg', 'spiel', 
+            // Restliche Kategorien hinzufügen
+            const listedCategories = ['all', 'tools', 'info', 'owner', 'rpg', 'spiel', 
                 'rpgG', 'fun', 'xp', 'herunterladener', 'sticker', 'image', 'maker', 'voice', 
                 'ai', 'anonymous', 'quotes', 'islam', 'internet', 'github', 'news', 'stalk', 
                 'shortlink', 'store', 'advanced', 'group', 'database', 'nsfw'];
@@ -204,8 +203,6 @@ let handler = async (m, { conn, usedPrefix: _p, args = [], command }) => {
         
         if (teks.toLowerCase() === 'all') {
             let allMenüs = `${defaultMenü.before}\n\n`;
-            
-            // Organize categories in a logical order
             const categoryOrder = [
                 'all', 'tools', 'info', 'spiel', 'xp', 'rpg', 'rpgG',
                 'ai', 'fun', 'quotes', 'voice', 'anonymous', 
@@ -214,38 +211,27 @@ let handler = async (m, { conn, usedPrefix: _p, args = [], command }) => {
                 'database', 'advanced', 'group', 'owner',
                 'nsfw', 'islam', 'kerang'
             ];
-            
-            // Filter ordered categories to only include ones that exist in arrayMenü
             const orderedTags = categoryOrder.filter(tag => arrayMenü.includes(tag));
-            // Add any remaining categories that aren't in our predefined order
             const remainingTags = arrayMenü.filter(tag => !orderedTags.includes(tag));
             const allOrderedTags = [...orderedTags, ...remainingTags];
-            
-            // Initialize command count for summary
+
             let totalCommandCount = 0;
-            
-            // Add a helpful header to the all menu
+
             allMenüs += `╭━━━━⟮ 📋 VOLLSTÄNDIGE BEFEHLSLISTE ⟯━━━━╮\n`;
-            allMenüs += `│ Alle verfügbaren Befehle sind nach Kategorien sortiert\n`;
+            allMenüs += `│ ${categoryEmojis['all']} Alle Befehle - sortiert nach Kategorien\n`;
             allMenüs += `│ ☠️ = Limitierte Funktion | ⭐ = Premium Funktion\n`;
             allMenüs += `╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯\n\n`;
-            
-            // Process each category
+
             for (let tag of allOrderedTags) {
                 let categoryCommands = help.filter(Menü => Menü.tags.includes(tag));
                 if (categoryCommands.length > 0) {
-                    // Add a divider before each category (except the first one)
                     if (tag !== allOrderedTags[0]) {
-                        allMenüs += `┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n\n`;
+                        allMenüs += `┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n\n`;
                     }
-                    
-                    // Add category header with emoji
                     allMenüs += `${defaultMenü.header.replace(/%category/g, allTags[tag])}\n`;
-                    
-                    // Add category description if available
+                    // Beschreibung für Kategorie hinzufügen
                     const categoryDescriptions = {
                         'ai': '🤖 Befehle für künstliche Intelligenz und Chatbots',
-                        'spielen': '🎮 Spielbefehlselemente',
                         'database': '🗄️ Datenbankverwaltungsbefehle',
                         'herunterladener': '📥 Herunterladen von Inhalten',
                         'rpg': '⚔️ Rollenspielbefehle',
@@ -259,12 +245,10 @@ let handler = async (m, { conn, usedPrefix: _p, args = [], command }) => {
                         'xp': '✨ Erfahrung und Levelingbefehle',
                         'nsfw': '🔞 Alterseingeschränkte Inhalte',
                     };
-                    
                     if (categoryDescriptions[tag]) {
                         allMenüs += `│ ${categoryDescriptions[tag]}\n│\n`;
                     }
-                    
-                    // Organize commands alphabetically for this category
+                    // Commands alphabetisch sortieren
                     let commandList = [];
                     for (let Menü of categoryCommands) {
                         for (let helpItem of Menü.help) {
@@ -277,62 +261,51 @@ let handler = async (m, { conn, usedPrefix: _p, args = [], command }) => {
                             }
                         }
                     }
-                    
-                    // Sort commands alphabetically
                     commandList.sort((a, b) => a.cmd.localeCompare(b.cmd));
-                    
-                    // Count commands for this category
                     const categoryCommandCount = commandList.length;
                     totalCommandCount += categoryCommandCount;
-                    
-                    // Display all commands in vertical list format
+
                     for (let item of commandList) {
                         const limitIcon = item.limit ? ' ☠️' : '';
                         const premiumIcon = item.premium ? ' ⭐' : '';
-                        
-                        // Format each command in a consistent vertical style
                         allMenüs += `│ ${_p}${item.cmd}${limitIcon}${premiumIcon}\n`;
                     }
-                    
-                    // Add command count for this category
                     allMenüs += `│\n│ Total: ${categoryCommandCount} Befehle\n`;
                     allMenüs += `${defaultMenü.footer}\n\n`;
                 }
             }
-            
-            // Add a summary at the end
+
+            // Zusammenfassung
             allMenüs += `╭━━━⟮ 📊 ZUSAMMENFASSUNG ⟯━━━╮\n`;
-            allMenüs += `│ Gesamtanzahl der Befehle: ${totalCommandCount}\n`;
+            allMenüs += `│ Gesamtzahl der Befehle: ${totalCommandCount}\n`;
             allMenüs += `│ Kategorien: ${allOrderedTags.length}\n`;
             allMenüs += `│ Präfix: ${_p}\n`;
             allMenüs += `╰━━━━━━━━━━━━━━━━╯\n\n`;
-            
+
             allMenüs += defaultMenü.after;
             return sendMenü(m, conn, allMenüs, { name, uptime, date, time, _p });
         }
-        
+
         if (!allTags[teks]) return m.reply(`❌ Menü "${teks}" ist nicht verfügbar.\n📋 Bitte tippe ${_p}menu, um die vollständige Liste zu sehen.`);
-        
+
         let menuCategory = `${defaultMenü.before}\n\n${defaultMenü.header.replace(/%category/g, allTags[teks])}\n`;
         let categoryCommands = help.filter(Menü => Menü.tags.includes(teks));
-        
-        // Add category description based on tag
+
+        // Kategorie Beschreibung hinzufügen
         const categoryDescriptions = {
             'ai': '🤖 Befehle für künstliche Intelligenz und Chatbots',
-            'spielen': '🎮 Spielbefehlselemente',
             'database': '🗄️ Datenbankverwaltungsbefehle',
             'herunterladener': '📥 Herunterladen von Inhalten',
             'rpg': '⚔️ Rollenspielbefehle',
             'sticker': '🎨 Sticker und Bildbearbeitung',
             'tools': '🔧 Nützliche Werkzeuge und Dienstprogramme',
-            // Add descriptions for other categories as needed
+            // Weitere Beschreibungen bei Bedarf hinzufügen
         };
-        
         if (categoryDescriptions[teks]) {
             menuCategory += `│ ${categoryDescriptions[teks]}\n│\n`;
         }
-        
-        // Organize commands alphabetically
+
+        // Commands alphabetisch sortieren
         let commandItems = [];
         for (let Menü of categoryCommands) {
             for (let help of Menü.help) {
@@ -343,28 +316,26 @@ let handler = async (m, { conn, usedPrefix: _p, args = [], command }) => {
                 });
             }
         }
-        
-        // Sort commands alphabetically
         commandItems.sort((a, b) => a.cmd.localeCompare(b.cmd));
-        
+
         for (let item of commandItems) {
             const limitIcon = item.limit ? '☠️' : '';
             const premiumIcon = item.Premium ? '⭐' : '';
             const combinedCmd = `${_p}${item.cmd}`;
-            
+
             menuCategory += defaultMenü.body
                 .replace(/%cmd/g, combinedCmd)
-                .replace(/%islimit/g, item.limit ? ' ☠️' : '') // Replace with icon
-                .replace(/%isPremium/g, item.Premium ? ' ⭐' : '') + '\n'; // Replace with icon
+                .replace(/%islimit/g, item.limit ? ' ☠️' : '') // Icon ersetzen
+                .replace(/%isPremium/g, item.Premium ? '⭐' : '') + '\n'; // Icon ersetzen
         }
-        
+
         menuCategory += `${defaultMenü.footer}\n\n${defaultMenü.after}`;
         return sendMenü(m, conn, menuCategory, { name, uptime, date, time, _p });
     } catch (e) {
         console.error(e);
         conn.reply(m.chat, 'Entschuldigung, im Menü ist ein Fehler aufgetreten.', m);
     }
-};
+}
 
 handler.help = ['menu', 'info'];
 handler.tags = ['spielen'];
@@ -374,23 +345,23 @@ handler.exp = 3;
 module.exports = handler;
 
 function sendMenü(m, conn, text, replace) {
-    // Format template placeholders
+    // Platzhalter im Text ersetzen
     text = text.replace(/%\w+/g, match => replace[match.slice(1)] || match);
     
-    // Add some random design elements for visual enhancement
+    // Zufällige Emojis für visuelles Design
     const randomEmojis = ['✨', '🌟', '💫', '⚡', '🔥', '💎', '🌈', '🎯'];
     const randomEmoji = () => randomEmojis[Math.floor(Math.random() * randomEmojis.length)];
     
-    // Add footer with version information and credits
+    // Footer mit Version und Credits
     const footer = `\n\n╭━━━⟮ ${randomEmoji()} INFO ⟯━━━╮
 │ 
-│ • BLACKSKY-MD Bot v1.5.0
-│ • © 2023-2025 BLACKSKY
-│ • .help für weitere Hilfe
+│ • *BLACKSKY-MD Bot V2*
+│ • *© 2023-2025 BLACKSKY*
+│ • *.help für weitere Hilfe*
 │
 ╰━━━━━━━━━━━━━━━━╯`;
     
-    // Send the menu message with enhanced presentation
+    // Senden der Menü-Nachricht mit Design-Elementen
     conn.sendMessage(m.chat, {
         image: { url: './src/BLACKSKY-MD.png' },
         caption: text + footer,
@@ -402,5 +373,5 @@ function clockString(ms) {
     let h = Math.floor(ms / 3600000);
     let m = Math.floor(ms / 60000) % 60;
     let s = Math.floor(ms / 1000) % 60;
-    return [h, m, s].map(v => v.toString().padStart(2, 0)).join(':');
+    return [h, m, s].map(v => v.toString().padStart(2, '0')).join(':');
 }

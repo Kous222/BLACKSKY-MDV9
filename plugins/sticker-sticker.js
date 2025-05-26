@@ -1,186 +1,95 @@
 const fs = require('fs');
 const path = require('path');
-const { exec } = require('child_process');
+const os = require('os');
 const sharp = require('sharp');
-const { tmpdir } = require('os');
-const { promisify } = require('util');
-const fetch = require('node-fetch');
-const uploadImage = require('../lib/uploadImage');
+const ffmpeg = require('fluent-ffmpeg');
 
-const execAsync = promisify(exec);
-const lann = global.lann || 'Btz-jdyXQ';
+const tmpdir = os.tmpdir();
 
-const TMP_DIR = path.join(tmpdir(), 'wa_stickers');
-if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR, { recursive: true });
-
-const STICKER_CACHE_SIZE = 30;
-const stickerCache = new Map();
-
-function calculateHash(buffer) {
-    let hash = 0;
-    const samples = 20;
-    const step = Math.max(1, Math.floor(buffer.length / samples));
-    for (let i = 0; i < buffer.length; i += step) {
-        hash = ((hash << 5) - hash) + buffer[i];
-        hash = hash & hash;
-    }
-    return hash.toString(16);
+function tmpFilePath(ext) {
+  return path.join(tmpdir, `temp_${Date.now()}${ext}`);
 }
 
-const stickerAPIs = [
-    async (buffer, conn, m, options) => {
-        return await conn.sendImageAsSticker(m.chat, buffer, m, options);
-    },
-    async (buffer, conn, m, options) => {
-        const url = await uploadImage(buffer);
-        const apiUrl = `https://api.betabotz.eu.org/api/maker/sticker?url=${encodeURIComponent(url)}&apikey=${lann}`;
-        const response = await fetch(apiUrl);
-        if (!response.ok) throw new Error(`API responded with status: ${response.status}`);
-        const stickerBuffer = await response.buffer();
-        return await conn.sendMessage(m.chat, { sticker: stickerBuffer }, { quoted: m });
-    },
-    async (buffer, conn, m, options) => {
-        try {
-            const { default: WSF } = await import('wa-sticker-formatter');
-            const wsf = new WSF.Sticker(buffer, {
-                pack: options.packname || global.packname,
-                author: options.author || global.author,
-                type: WSF.StickerTypes.CROPPED,
-                categories: ['🤩', '🎉'],
-                quality: 100,
-                id: options.id || Math.random().toString(36).substring(2)
-            });
-            const stickerBuffer = await wsf.toBuffer();
-            return await conn.sendMessage(m.chat, { sticker: stickerBuffer }, { quoted: m });
-        } catch (e) {
-            throw new Error('wa-sticker-formatter not available: ' + e.message);
-        }
-    }
-];
+async function prepareImage(buffer) {
+  // Bild auf 512x512, quadratisch, transparenten Hintergrund skalieren
+  return await sharp(buffer)
+    .resize(512, 512, {
+      fit: 'contain',
+      background: { r: 0, g: 0, b: 0, alpha: 0 }
+    })
+    .webp()
+    .toBuffer();
+}
+
+async function videoBufferToWebp(buffer) {
+  return new Promise((resolve, reject) => {
+    const input = tmpFilePath('.mp4');
+    const output = tmpFilePath('.webp');
+
+    fs.writeFileSync(input, buffer);
+
+    ffmpeg(input)
+      .inputOptions(['-t', '6']) // max 6 Sekunden
+      .outputOptions([
+        '-vf', 'scale=512:512:force_original_aspect_ratio=decrease,fps=15',
+        '-vcodec', 'libwebp',
+        '-lossless', '0',
+        '-q:v', '50',
+        '-preset', 'default',
+        '-an',
+        '-loop', '0',
+        '-ss', '0',
+        '-t', '6',
+        '-fps_mode', 'cfr'
+      ])
+      .toFormat('webp')
+      .save(output)
+      .on('end', () => {
+        const data = fs.readFileSync(output);
+        fs.unlinkSync(input);
+        fs.unlinkSync(output);
+        resolve(data);
+      })
+      .on('error', (err) => {
+        if (fs.existsSync(input)) fs.unlinkSync(input);
+        if (fs.existsSync(output)) fs.unlinkSync(output);
+        reject(err);
+      });
+  });
+}
 
 let handler = async (m, { conn, command, usedPrefix }) => {
-    let q = m.quoted || m;
-    let mime = (q.msg || q).mimetype || '';
+  const q = m.quoted ? m.quoted : m;
+  const mime = (q.msg || q).mimetype || '';
 
-    if (/image|bild/i.test(mime)) {
-        m.reply('Sticker wird verarbeitet...');
-        const startTime = Date.now();
-        let media = await q.download();
-
-        try {
-            const mediaHash = calculateHash(media);
-            if (stickerCache.has(mediaHash)) {
-                console.log(`Sticker aus Cache (${mediaHash})`);
-                await conn.sendMessage(m.chat, { sticker: stickerCache.get(mediaHash) }, { quoted: m });
-                return;
-            }
-
-            const metadata = await sharp(media).metadata();
-            const scale = Math.min(700 / metadata.width, 700 / metadata.height, 2);
-            const resized = await sharp(media)
-                .resize({
-                    width: Math.round(metadata.width * scale),
-                    height: Math.round(metadata.height * scale),
-                    fit: 'inside'
-                })
-                .toBuffer();
-
-            const processed = await sharp({
-                create: {
-                    width: 700,
-                    height: 700,
-                    channels: 4,
-                    background: { r: 0, g: 0, b: 0, alpha: 0 }
-                }
-            })
-                .composite([{ input: resized, gravity: 'center' }])
-                .png()
-                .toBuffer();
-
-            let success = false, finalStickerBuffer = null;
-
-            for (const method of stickerAPIs) {
-                try {
-                    if (stickerAPIs.indexOf(method) === 0) {
-                        const result = await conn.prepareImageSticker(processed, {
-                            packname: global.packname || "WhatsApp Bot",
-                            author: global.author || "Created with ❤️"
-                        });
-                        finalStickerBuffer = result;
-                        await conn.sendMessage(m.chat, { sticker: result }, { quoted: m });
-                    } else {
-                        await method(processed, conn, m, {
-                            packname: global.packname || "WhatsApp Bot",
-                            author: global.author || "Created with ❤️"
-                        });
-                    }
-
-                    success = true;
-                    if (finalStickerBuffer) {
-                        if (stickerCache.size >= STICKER_CACHE_SIZE) {
-                            stickerCache.delete(stickerCache.keys().next().value);
-                        }
-                        stickerCache.set(mediaHash, finalStickerBuffer);
-                    }
-                    break;
-                } catch (e) {
-                    console.error('Methode fehlgeschlagen:', e);
-                }
-            }
-
-            if (!success) throw new Error('Alle Methoden zur Stickererstellung sind fehlgeschlagen.');
-
-        } catch (e) {
-            console.error('Fehler:', e);
-            m.reply('Fehler beim Erstellen des Stickers: ' + e.message);
-        }
-
-    } else if (/video|vid/i.test(mime)) {
-        if ((q.msg || q).seconds > 7) return m.reply('Maximale Videodauer ist 6 Sekunden.');
-
-        m.reply('Video wird verarbeitet...');
-        let media = await q.download();
-
-        try {
-            const mediaHash = calculateHash(media);
-            if (stickerCache.has(`video_${mediaHash}`)) {
-                await conn.sendMessage(m.chat, { sticker: stickerCache.get(`video_${mediaHash}`) }, { quoted: m });
-                return;
-            }
-
-            await conn.sendVideoAsSticker(m.chat, media, m, {
-                packname: global.packname || "WhatsApp Bot",
-                author: global.author || "Created with ❤️"
-            });
-
-        } catch (e) {
-            try {
-                const tempFile = path.join(TMP_DIR, `video_${Date.now()}.mp4`);
-                fs.writeFileSync(tempFile, media);
-
-                const url = await uploadImage(media);
-                const apiUrl = `https://api.betabotz.eu.org/api/maker/stickergif?url=${encodeURIComponent(url)}&apikey=${lann}`;
-                const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error(`API responded with status: ${response.status}`);
-
-                const stickerBuffer = await response.buffer();
-                await conn.sendMessage(m.chat, { sticker: stickerBuffer }, { quoted: m });
-
-                const mediaHash = calculateHash(media);
-                if (stickerCache.size >= STICKER_CACHE_SIZE) {
-                    stickerCache.delete(stickerCache.keys().next().value);
-                }
-                stickerCache.set(`video_${mediaHash}`, stickerBuffer);
-
-                fs.existsSync(tempFile) && fs.unlinkSync(tempFile);
-            } catch (fallbackError) {
-                m.reply('Fehler beim Video. Nutze ein kürzeres Video oder ein Bild.');
-            }
-        }
-
-    } else {
-        throw `Sende ein Bild oder Video mit dem Befehl ${usedPrefix + command}\nMax. Videodauer: 6 Sekunden.`;
+  if (/image|picture|photo/i.test(mime)) {
+    // Bild → Sticker
+    m.reply('Erstelle Sticker aus Bild...');
+    try {
+      const buffer = await q.download();
+      const prepared = await prepareImage(buffer);
+      await conn.sendMessage(m.chat, { sticker: prepared }, { quoted: m });
+    } catch (e) {
+      console.error(e);
+      m.reply('Fehler beim Erstellen des Stickers aus Bild.');
     }
+  } else if (/video|gif/i.test(mime)) {
+    // Video/GIF → Sticker
+    const duration = (q.msg || q).seconds || 0;
+    if (duration > 6) return m.reply('Video/GIF darf maximal 6 Sekunden lang sein.');
+
+    m.reply('Verarbeite Video/GIF zu Sticker...');
+    try {
+      const buffer = await q.download();
+      const webpBuffer = await videoBufferToWebp(buffer);
+      await conn.sendMessage(m.chat, { sticker: webpBuffer }, { quoted: m });
+    } catch (e) {
+      console.error(e);
+      m.reply('Fehler beim Erstellen des Stickers aus Video/GIF.');
+    }
+  } else {
+    return m.reply(`Bitte sende ein Bild, Video oder GIF mit dem Befehl ${usedPrefix + command}`);
+  }
 };
 
 handler.help = ['sticker', 'aufkleber', 's'];

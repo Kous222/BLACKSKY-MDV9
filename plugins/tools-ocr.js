@@ -1,20 +1,33 @@
-const hochladenImage = require('../lib/hochladenImage')
-const ocrapi = require("ocr-space-api-wrapper")
-const { MessageType } = require('@adiwajshing/baileys')
-let handler = async (m, { conn, Text }) => {
-      let q = m.quoted ? m.quoted : m
-    let mime = (q.msg || q).mimetype || ''
-    if (!mime) throw `Antworten Bild mit Befehl .ocr`
-    if (!/Bild\/(jpe?g|png)/.test(mime)) throw `_*jenis ${mime} nicht didukung!*_`
-    let img = await q.Herunterladen()
-    let url = await hochladenImage(img)
-    let result = await ocrapi.ocrSpace(url)
- await m.Antworten(result.ParsedResults[0].ParsedText)    
-}
+const hochladenImage = require('../lib/hochladenImage');
+const ocrapi = require('ocr-space-api-wrapper');
 
-handler.help = ['ocr', 'texterkennung', 'textlesen', 'totext']
-handler.tags = ['tools']
-handler.command = /^(((ocr|totext)$|texterkennung|textlesen)|texterkennung|textlesen)/i
-handler.limit = true
+let handler = async (m, { conn }) => {
+  let q = m.quoted ? m.quoted : m;
+  let mime = (q.msg || q).mimetype || '';
 
-module.exports = handler
+  if (!mime) throw `❗ *Bitte antworte auf ein Bild mit dem Befehl .ocr*`;
+  if (!/^image\/(jpe?g|png)$/i.test(mime)) throw `⚠️ *Bildformat ${mime} wird nicht unterstützt!*\nUnterstützt: JPEG oder PNG`;
+
+  try {
+    let img = await q.download?.();
+    if (!img) throw 'Bild konnte nicht heruntergeladen werden.';
+
+    let url = await hochladenImage(img);
+    let result = await ocrapi.ocrSpace(url);
+
+    let text = result?.ParsedResults?.[0]?.ParsedText?.trim();
+    if (!text) throw 'Kein Text im Bild erkannt.';
+
+    await m.reply(`📝 *Erkannter Text:*\n\n${text}`);
+  } catch (e) {
+    console.error('[OCR FEHLER]', e);
+    await m.reply('❌ *Fehler bei der Texterkennung. Stelle sicher, dass du ein klares Bild gesendet hast.*');
+  }
+};
+
+handler.help = ['ocr', 'texterkennung', 'textlesen', 'totext'];
+handler.tags = ['tools'];
+handler.command = /^ocr|texterkennung|textlesen|totext$/i;
+handler.limit = true;
+
+module.exports = handler;

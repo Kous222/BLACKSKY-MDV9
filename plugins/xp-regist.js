@@ -1,8 +1,5 @@
 const { createHash } = require('crypto')
-
-// Regex to capture: Name.Age
-// Name = any text except dot, Age = number after dot
-let Reg = /^([^.\s]+)\.([0-9]{1,3})$/i
+let Reg = /\|?(.*)([.|] *?)([0-9]*)$/i
 
 let handler = async function (m, { text, usedPrefix }) {
   let user = global.db.data.users[m.sender]
@@ -11,16 +8,16 @@ let handler = async function (m, { text, usedPrefix }) {
     throw `❌ Du bist bereits registriert.\nMöchtest du dich abmelden und neu registrieren? Verwende: *${usedPrefix}unreg <Seriennummer>*`
   }
 
-  if (!text || !Reg.test(text.trim())) {
-    throw `❌ Falsches Format!\nVerwende: *${usedPrefix}reg Name.Alter*\nBeispiel: *${usedPrefix}reg Martin.20*`
+  if (!Reg.test(text)) {
+    throw `❌ Falsches Format!\nVerwende: *${usedPrefix}register Name.Alter*\nBeispiel: *${usedPrefix}register Martin.20*`
   }
 
-  let [, name, ageStr] = text.trim().match(Reg)
+  let [_, name, splitter, age] = text.match(Reg)
 
   if (!name) throw '❌ Der Name darf nicht leer sein.'
+  if (!age) throw '❌ Das Alter darf nicht leer sein.'
 
-  let age = parseInt(ageStr)
-  if (isNaN(age)) throw '❌ Das Alter muss eine Zahl sein.'
+  age = parseInt(age)
   if (age > 120) throw '❌ Das Alter ist zu hoch, bist du ein Vampir? 🧛‍♂️'
   if (age < 5) throw '❌ Du bist zu jung, um diesen Bot zu verwenden!'
 
@@ -44,8 +41,8 @@ ${sn}
 `.trim())
 }
 
-handler.help = ['reg <Name.Alter>', 'register <Name.Alter>']
+handler.help = ['liste', 'reg', 'register'].map(v => v + ' <Name.Alter>')
 handler.tags = ['xp']
-handler.command = /^reg(ister)?$/i
+handler.command = /^(liste|reg(ister)?)$/i
 
 module.exports = handler
