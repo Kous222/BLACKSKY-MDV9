@@ -1,7 +1,7 @@
 let handler = async (m, { conn, participants, groupMetadata, text }) => {
 
     const getGroupAdmins = (participants) => {
-        admins = []
+        let admins = []
         for (let i of participants) {
             i.isAdmin ? admins.push(i.jid) : ''
         }
@@ -11,64 +11,54 @@ let handler = async (m, { conn, participants, groupMetadata, text }) => {
     let pp = 'https://telegra.ph/file/3c1ea5866a11088685413.jpg'
     try {
         pp = await conn.getProfilePicture(m.chat)
-    } catch (e) {
-    } finally {
-        let { isBanned, welcome, detect, sWelcome, sBye, sPromote, sDemote, antiLink, expired, descUpdate, Sticker } = global.db.data.chats[m.chat]
-        const groupAdmins = getGroupAdmins(participants)
-        let listAdmin = groupAdmins.map((v, i) => `${i + 1}. @${v.split`@`[0]}`).join('\n')
+    } catch (e) { }
 
-        if (text) return m.reply(msToDate(expired - new Date() * 1))
+    let { isBanned, welcome, detect, sWelcome, sBye, sPromote, sDemote, antiLink, expired, descUpdate, Sticker } = global.db.data.chats[m.chat]
+    const groupAdmins = getGroupAdmins(participants)
+    let listAdmin = groupAdmins.map((v, i) => `👑 ${i + 1}. @${v.split('@')[0]}`).join('\n')
 
-        let caption = `*Gruppeninformationen*\n
-*id:* 
-${groupMetadata.id}
-*name:* 
-${groupMetadata.subject}
-*Beschreibung:* 
-${groupMetadata.desc}
-*Gesamtmitglieder:*
-${participants.length} Mitglieder
-*Gruppenersteller:* 
-@${m.chat.split`-`[0]}
-*Gruppenadmins:*
-${listAdmin}
-*Bot-Einstellungen:*
-${antiLink ? '✅' : '❌'} Anti-Link
-${global.db.data.chats[m.chat].delete ? '❌' : '✅'} Anti-Delete
-${isBanned ? '✅' : '❌'} Gebannt
-${descUpdate ? '✅' : '❌'} Beschreibung
-${detect ? '✅' : '❌'} Erkennung
-${Sticker ? '✅' : '❌'} Sticker
-${welcome ? '✅' : '❌'} Willkommensnachricht
-*Bot-Nachrichteneinstellungen:*
-Willkommen: ${sWelcome}
-Abschied: ${sBye}
-Beförderung: ${sPromote}
-Herabstufung: ${sDemote}
-*Verbleibende Zeit:*
-${msToDate(expired - new Date() * 1)}
+    if (text) return m.reply(`🕰️ *Verbleibende Zeit bis Ablauf:*\n${msToDate(expired - new Date())}`)
+
+    let caption = `
+💬 *📢 Gruppeninfo für ${groupMetadata.subject}*
+
+📌 *ID:* ${groupMetadata.id}
+📝 *Beschreibung:* ${groupMetadata.desc || 'Keine Beschreibung'}
+👥 *Mitglieder:* ${participants.length}
+👑 *Ersteller:* @${m.chat.split('-')[0]}
+🔐 *Admins:*\n${listAdmin}
+
+🛠️ *Bot-Einstellungen:*
+🔗 Anti-Link: ${antiLink ? '✅ Aktiviert' : '❌ Deaktiviert'}
+❌ Anti-Delete: ${global.db.data.chats[m.chat].delete ? '❌ Deaktiviert' : '✅ Aktiviert'}
+🚫 Gebannt: ${isBanned ? '✅ Ja' : '❌ Nein'}
+📝 Beschreibung-Update: ${descUpdate ? '✅ Aktiviert' : '❌ Deaktiviert'}
+🕵️‍♂️ Erkennung: ${detect ? '✅ Aktiviert' : '❌ Deaktiviert'}
+🎨 Sticker: ${Sticker ? '✅ Aktiviert' : '❌ Deaktiviert'}
+👋 Willkommen: ${welcome ? '✅ Aktiviert' : '❌ Deaktiviert'}
+
+💬 *Nachrichten:*
+👋 Willkommen: ${sWelcome || 'Keine Nachricht eingestellt'}
+👋 Abschied: ${sBye || 'Keine Nachricht eingestellt'}
+📈 Beförderung: ${sPromote || 'Keine Nachricht eingestellt'}
+📉 Herabstufung: ${sDemote || 'Keine Nachricht eingestellt'}
+
+⏳ *Bot bleibt noch für:* ${msToDate(expired - new Date())}
 `.trim()
-        let mentionedJid = groupAdmins.concat([`${m.chat.split`-`[0]}@s.whatsapp.net`])
-        conn.sendFile(m.key.remoteJid, pp, 'pp.jpg', caption, m, 0, { contextInfo: { mentionedJid } })
-    }
+
+    let mentionedJid = groupAdmins.concat([`${m.chat.split('-')[0]}@s.whatsapp.net`])
+    conn.sendFile(m.chat, pp, 'pp.jpg', caption, m, 0, { contextInfo: { mentionedJid } })
 }
+
 handler.help = ['infogruppe']
 handler.tags = ['group']
 handler.command = /^(gro?upinfo|info(gro?up|gc))$/i
-
 handler.group = true
-
 module.exports = handler
 
 function msToDate(ms) {
-    temp = ms
-    days = Math.floor(ms / (24 * 60 * 60 * 1000));
-    daysms = ms % (24 * 60 * 60 * 1000);
-    hours = Math.floor((daysms) / (60 * 60 * 1000));
-    hoursms = ms % (60 * 60 * 1000);
-    minutes = Math.floor((hoursms) / (60 * 1000));
-    minutesms = ms % (60 * 1000);
-    sec = Math.floor((minutesms) / (1000));
-    return days + " Tage " + hours + " Stunden " + minutes + " Minuten";
-    // +minutes+":"+sec;
+    let days = Math.floor(ms / (24 * 60 * 60 * 1000))
+    let hours = Math.floor((ms % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000))
+    let minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000))
+    return `${days} Tage, ${hours} Stunden, ${minutes} Minuten`
 }

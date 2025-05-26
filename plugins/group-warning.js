@@ -1,77 +1,48 @@
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+let handler = async (m, { conn, text, participants, isOwner, usedPrefix, command, isAdmin }) => {
+    if (!m.isGroup) throw '❗ Dieser Befehl funktioniert nur in Gruppen!';
 
-let war = global.maxwarn || 3;
-
-let handler = async (m, { conn, text, args, groupMetadata, usedPrefix, command, isAdmin, isOwner }) => {
-    if (!m.isGroup) throw '❌ Dieser Befehl funktioniert nur in Gruppen.';
-    if (!isAdmin && !isOwner) return m.reply('❌ Nur Gruppen-Admins dürfen diesen Befehl verwenden.');
-
-    const group = await conn.groupMetadata(m.chat);
     let who = m.mentionedJid?.[0] || (m.quoted ? m.quoted.sender : null);
-    if (!who) throw `✳️ Bitte gib den Nutzer an, den du verwarnen möchtest.\n\n📌 Beispiel: ${usedPrefix + command} @user`;
-    if (!(who in global.db.data.users)) throw `✳️ Nutzer nicht in der Datenbank gefunden.`;
+    if (!who) throw `🔎 Bitte markiere den Nutzer, den du verwarnen möchtest.\n\n💡 Beispiel: ${usedPrefix + command} @nutzer`;
 
-    if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {};
-    if (!global.db.data.chats[m.chat].memgc) global.db.data.chats[m.chat].memgc = {};
-    if (!global.db.data.chats[m.chat].memgc[who]) {
-        global.db.data.chats[m.chat].memgc[who] = {
-            warn: 0,
-            banned: false,
-            bannedTime: 0
-        };
-    }
+    if (!(isAdmin || isOwner)) return m.reply('🚫 Nur Gruppen-Admins dürfen diesen Befehl verwenden!');
+    if (!global.db.data.users[who]) global.db.data.users[who] = {};
 
-    let userData = global.db.data.chats[m.chat].memgc[who];
+    const chat = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {});
+    const memgc = chat.memgc || (chat.memgc = {});
+    const userData = memgc[who] || (memgc[who] = { warn: 0, banned: false, bannedTime: 0 });
 
-    // Automatisch entbannen, wenn Bannzeit vorbei
-    if (userData.banned && Date.now() >= userData.bannedTime) {
-        userData.banned = false;
-        userData.bannedTime = 0;
-        m.reply(`✅ Nutzer @${who.split('@')[0]} wurde automatisch entbannt.`, null, { mentions: [who] });
-    }
+    let globalWarn = global.db.data.users[who].warn || 0;
+    let groupWarn = userData.warn || 0;
+    let maxwarn = global.maxwarn || 3;
 
-    if (userData.banned) {
-        return m.reply(`⛔ Nutzer @${who.split('@')[0]} ist aktuell gebannt und kann nicht erneut verwarnt werden.`, null, { mentions: [who] });
-    }
+    globalWarn++;
+    groupWarn++;
+    global.db.data.users[who].warn = globalWarn;
+    userData.warn = groupWarn;
 
-    let reason = text ? text.trim() : 'Kein Grund angegeben';
-    let groupWarn = userData.warn;
+    const userTag = '@' + who.split('@')[0];
+    const adminTag = '@' + m.sender.split('@')[0];
 
-    if (groupWarn < war) {
-        global.db.data.users[who].warn = (global.db.data.users[who].warn || 0) + 1;
-        userData.warn += 1;
-
-        await conn.sendMessage(m.chat, {
-            text: `⚠️ *Verwarnung*\n\n▢ *Admin:* @${m.sender.split('@')[0]}\n▢ *Nutzer:* @${who.split('@')[0]}\n▢ *Warnung:* ${userData.warn}/${war}\n▢ *Grund:* ${reason}`,
-            mentions: [who, m.sender]
-        }, { quoted: m });
-
-        await conn.sendMessage(who, {
-            text: `⚠️ *Du hast eine Verwarnung erhalten!*\n\n▢ *Grund:* ${reason}\n▢ *Status:* ${userData.warn}/${war}\n▢ *Gruppe:* ${group.subject}\n\nBei *${war}* Warnungen wirst du automatisch aus der Gruppe entfernt.`
-        });
-    } else {
-        global.db.data.users[who].warn = 0;
-        userData.warn = 0;
+    if (groupWarn >= maxwarn) {
         userData.banned = true;
-        userData.bannedTime = Date.now() + (24 * 60 * 60 * 1000); // 24h Bann
-
-        await conn.sendMessage(m.chat, { 
-            text: `⛔ *Maximale Anzahl an Warnungen erreicht!*\n@${who.split('@')[0]} wird entfernt und für 24 Stunden gebannt...`, 
-            mentions: [who] 
-        }, { quoted: m });
-
-        await delay(3000);
+        userData.bannedTime = Date.now();
         await conn.groupParticipantsUpdate(m.chat, [who], 'remove');
-
-        await conn.sendMessage(who, {
-            text: `❌ Du wurdest aus der Gruppe *${group.subject}* entfernt, da du *${war}* Verwarnungen erhalten hast. Du bist für 24 Stunden gebannt.`
-        });
+        await conn.sendMessage(m.chat, {
+            text: `⛔ *${userTag} wurde wegen zu vieler Verwarnungen entfernt!*\n\n📌 *Erreichte Warnstufe:* ${groupWarn}/${maxwarn}`,
+            mentions: [who]
+        }, { quoted: m });
+        return;
     }
+
+    await conn.sendMessage(m.chat, {
+        text: `⚠️ *Verwarnung erhalten!*\n─────────────────────\n👤 *Admin:* ${adminTag}\n🙎‍♂️ *Nutzer:* ${userTag}\n📌 *Warnstufe:* ${groupWarn}/${maxwarn}`,
+        mentions: [who, m.sender]
+    }, { quoted: m });
 };
 
-handler.help = ['warn @user'];
+handler.help = ['warn @nutzer'];
 handler.tags = ['group'];
-handler.command = ['warn'];
+handler.command = /^warn$/i;
 handler.group = true;
 handler.admin = true;
 handler.botAdmin = true;

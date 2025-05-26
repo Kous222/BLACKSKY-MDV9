@@ -1,37 +1,36 @@
- /* 
-Script By Reelly XD
-  � YT: 
-  � IG: 
-Buy Script? 
-  � WA: +62 857-0436-85323
-  � TELE: t.me/rely_xd
-  � Github: github.com/ReellyXD
-*/
-
+/**
+ * Skript von Reelly XD
+ * YT:
+ * IG:
+ * Skript kaufen?
+ * WA: +62 857-0436-85323
+ * TELE: t.me/rely_xd
+ * GitHub: github.com/ReellyXD
+ */
 
 const { MessageType } = require('@adiwajshing/baileys');
 
 let handler = async (m, { conn, text }) => {
   if (!text) {
-    throw 'Anmeldenkan Anzahl limit das/der/die ingin ditambahkan auf Nutzer. Beispiel: .addlimit @user 10';
+    throw 'Bitte gib die Anzahl an Limits an, die du einem Nutzer hinzufügen möchtest.\nBeispiel: *.addlimit @user 10*';
   }
-    
- 	conn.chatRead(m.chat)
-	conn.sendMessage(m.chat, {
-		react: {
-			text: '🕒',
-			key: m.key,
-		}
-	})
+
+  conn.chatRead(m.chat);
+  conn.sendMessage(m.chat, {
+    react: {
+      text: '🕒',
+      key: m.key,
+    }
+  });
 
   let mentionedJid = m.mentionedJid[0];
   if (!mentionedJid) {
-    throw 'Tag Nutzer das/der/die ingin ditambahkan limitnya. Beispiel: .addlimit @user 10';
+    throw 'Bitte markiere den Nutzer, dem du Limits hinzufügen möchtest.\nBeispiel: *.addlimit @user 10*';
   }
 
   let pointsToAdd = parseInt(text.split(' ')[1]);
   if (isNaN(pointsToAdd)) {
-    throw 'anzahl limit das/der/die dieingeben müssen berupa angka. Beispiel: .addlimit @user 10';
+    throw 'Die Anzahl der Limits muss eine gültige Zahl sein.\nBeispiel: *.addlimit @user 10*';
   }
 
   let users = global.db.data.users;
@@ -45,12 +44,12 @@ let handler = async (m, { conn, text }) => {
 
   users[mentionedJid].limit += pointsToAdd;
 
-  conn.reply(m.chat, `erfolgreich hinzufügen ${pointsToAdd} limit für @${mentionedJid.split('@')[0]}.`, m, {
+  conn.reply(m.chat, `Erfolgreich *${pointsToAdd}* Limit zu @${mentionedJid.split('@')[0]} hinzugefügt.`, m, {
     mentions: [mentionedJid]
   });
 };
 
-handler.help = ['addlimit @user <Anzahl limit>'];
+handler.help = ['addlimit @user <Anzahl>'];
 handler.tags = ['xp'];
 handler.command = /^addlimit$/i;
 handler.owner = true;

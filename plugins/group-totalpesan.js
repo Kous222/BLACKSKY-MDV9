@@ -1,29 +1,39 @@
-let handler = async (m, { conn, groupMetadata }) => {
-    let user = global.db.data.chats[m.chat].memgc;
-    let memgc = Object.keys(user).filter(v => v != conn.user.jid).sort((a, b) => {
-        const totalA = user[a].chat;
-        const totalB = user[b].chat;
-        return totalB - totalA;
-    });
-    let nomor = 1;
-    let chatToday = 0;
-    let chatTotal = 0;
-    for (let number of memgc) {
-        chatToday += user[number].chat;
-        chatTotal += user[number].chatTotal;
+let handler = async (m, { conn }) => {
+  let user = global.db.data.chats[m.chat].memgc || {};
+  let memgc = Object.keys(user).filter(v => v !== conn.user.jid).sort((a, b) => user[b].chat - user[a].chat);
+
+  let chatToday = 0;
+  let chatTotal = 0;
+  for (let uid of memgc) {
+    chatToday += user[uid].chat || 0;
+    chatTotal += user[uid].chatTotal || 0;
+  }
+
+  let head = `📊 *Chat Statistik für heute und insgesamt*\n\n` +
+             `🗓️ Heute gesamt: *${formatNumber(chatToday)}*\n` +
+             `📈 Insgesamt: *${formatNumber(chatTotal)}*\n\n`;
+
+  let caption = '';
+  let maxDisplay = 20;
+  let nomor = 1;
+
+  for (let i = 0; i < memgc.length && nomor <= maxDisplay; i++) {
+    let uid = memgc[i];
+    if (user[uid]) {
+      let name = await conn.getName(uid);
+      caption += `*${nomor++}. ${name}*\n`;
+      caption += ` 💬 Heute: ${formatNumber(user[uid].chat)}\n`;
+      caption += ` 🕰️ Insgesamt: ${formatNumber(user[uid].chatTotal)}\n`;
+      caption += ` ⏳ Letzter Chat: ${timeAgo(user[uid].lastseen)}\n\n`;
     }
-    let head = `Total chat group Tag dies: ${toRupiah(chatToday)} \nTotal alle chat: ${toRupiah(chatTotal)} \n\n`;
-    let caption = '';
-    for (let i = 0; i < memgc.length; i++) {
-        if (typeof user[memgc[i]] != 'undefined' && nomor != 21) {
-            caption += `*${nomor++}.* ${conn.getName(memgc[i])}\n`;
-            caption += `Chat Today : ${toRupiah(user[memgc[i]].chat)}\n`;
-            caption += `Total Chat : ${toRupiah(user[memgc[i]].chatTotal)} \n`;
-            caption += `Last Chat : ${getTime(user[memgc[i]].lastseen)}\n\n`;
-        }
-    }
-    await m.reply(head + caption.trim());
-}
+  }
+
+  if (memgc.length > maxDisplay) {
+    caption += `...und noch ${memgc.length - maxDisplay} weitere Mitglieder\n`;
+  }
+
+  await m.reply(head + caption.trim());
+};
 
 handler.help = ['totalchatgc'];
 handler.tags = ['group'];
@@ -33,25 +43,15 @@ handler.group = true;
 
 module.exports = handler;
 
-function parseMs(ms) {
-    if (typeof ms !== 'number') throw 'parameter must be filled with number';
-    return {
-        days: Math.trunc(ms / 86400000),
-        hours: Math.trunc(ms / 3600000) % 24,
-        minutes: Math.trunc(ms / 60000) % 60,
-        seconds: Math.trunc(ms / 1000) % 60,
-        milliseconds: Math.trunc(ms) % 1000,
-        microseconds: Math.trunc(ms * 1000) % 1000,
-        nanoseconds: Math.trunc(ms * 1e6) % 1000
-    };
+function formatNumber(number) {
+  return Number(number).toLocaleString('de-DE'); // z.B. 1.000 statt 1000
 }
 
-function getTime(ms) {
-    let now = parseMs(+new Date() - ms);
-    if (now.days) return `${now.days} days ago`;
-    else if (now.hours) return `${now.hours} hours ago`;
-    else if (now.minutes) return `${now.minutes} minutes ago`;
-    else return `a few seconds ago`;
+function timeAgo(timestamp) {
+  if (!timestamp) return 'Unbekannt';
+  let diff = Date.now() - timestamp;
+  if (diff < 60000) return 'Vor ein paar Sekunden';
+  if (diff < 3600000) return `Vor ${Math.floor(diff / 60000)} Minuten`;
+  if (diff < 86400000) return `Vor ${Math.floor(diff / 3600000)} Stunden`;
+  return `Vor ${Math.floor(diff / 86400000)} Tagen`;
 }
-
-const toRupiah = number => parseInt(number).toLocaleString().replace(/,/gi, ".");

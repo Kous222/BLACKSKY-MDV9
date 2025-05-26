@@ -1,15 +1,16 @@
+
 let handler = async (m, { conn, text }) => {
 
-let person = (await conn.groupMetadata(m.chat)).participants.map(u => u.jid)
-let tag = `@${m.sender.replace(/@.+/, '')}`
-let mentionedJid = [m.sender]
+  let tag = `👋 Hey, schau mal her! ${'@' + m.sender.replace(/@.+/, '')} ist hier! 🔥`;
+  let mentionedJid = [m.sender];
 
-  conn.reply(m.chat, tag, m, { contextInfo: { mentionedJid }})
+  conn.reply(m.chat, tag, m, { contextInfo: { mentionedJid } });
 }
-handler.help = ['tagme']
-handler.tags = ['group']
-handler.command = /^tagme$/i
 
-handler.group = true
+handler.help = ['tagme'];
+handler.tags = ['group'];
+handler.command = /^tagme$/i;
 
-module.exports = handler
+handler.group = true;
+
+module.exports = handler;

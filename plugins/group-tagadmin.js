@@ -1,41 +1,48 @@
-let handler = async (m, { conn, participants, groupMetadata }) => {
+let handler = async (m, { conn }) => {
+  let groupMetadata = await conn.groupMetadata(m.chat)
+  let participants = groupMetadata.participants
 
-    const getGroupAdmins = (participants) => {
-        admins = []
-        for (let i of participants) {
-            i.Admin === "Admin" ? admins.push(i.id) : ''
-        }
-        return admins
+  // Debug: Teilnehmer-Daten ausgeben (nur die ersten 3, um nicht zu viel zu zeigen)
+  console.log('Teilnehmer Beispiel:', participants.slice(0, 3))
+
+  const getGroupAdmins = (participants) => {
+    let admins = []
+    for (let participant of participants) {
+      // Protokolliere jedes participant-Objekt hier
+      console.log(participant.id, participant.admin) 
+      // Mögliche Admin-Felder ausprobieren
+      if (participant.isAdmin || participant.isSuperAdmin || participant.admin === 'admin' || participant.admin === 'superadmin') {
+        admins.push(participant.id)
+      }
     }
+    return admins
+  }
 
-    let pp = './src/avatar_contact.png'
-    try {
-        pp = await conn.profilePictureUrl(m.chat, 'image')
-    } catch (e) {
-    } finally {
-        let { isBanned, welcome, detect, sWelcome, sBye, sPromote, sDemote, antiLink } = global.db.data.chats[m.chat]
-        const groupAdmins = getGroupAdmins(participants)
-        let listAdmin = groupAdmins.map((v, i) => `${i + 1}. @${v.split('@')[0]}`).join('\n')
-        let text = `*「 TAG ADMIN 」*\n
+  const groupAdmins = getGroupAdmins(participants)
+  let listAdmin = groupAdmins.map((v, i) => `🔥 ${i + 1}. @${v.split('@')[0]}`).join('\n')
 
-*name:* 
+  let text = `👑 *「 TAG ADMIN 」* 👑\n
+📛 *Gruppenname:* 
 ${groupMetadata.subject}
 
-*Group Owner:* 
+🎖️ *Owner:* 
 @${m.chat.split`-`[0]}
 
-*Group Admins:*
-${listAdmin}
+🛡️ *Admins:*
+${listAdmin.length ? listAdmin : 'Keine Admins gefunden.'}
+
+💬 *Lass die Admins wissen, dass du sie brauchst!* 🚀
 `.trim()
-        ownernya = [`${m.chat.split`-`[0]}@s.whatsapp.net`]
-        let mentionedJid = groupAdmins.concat(ownernya)
-        conn.sendFile(m.key.remoteJid, pp, 'pp.jpg', text, m, false, { contextInfo: { mentionedJid } })
-    }
+
+  let ownernya = [`${m.chat.split`-`[0]}@s.whatsapp.net`]
+  let mentionedJid = groupAdmins.concat(ownernya)
+
+  await conn.reply(m.chat, text, m, { mentions: mentionedJid })
 }
+
 handler.help = ['tagadmin']
 handler.tags = ['group']
 handler.command = /^(tagadmin)$/i
-
 handler.group = true
 
 module.exports = handler

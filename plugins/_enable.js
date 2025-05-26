@@ -1,353 +1,113 @@
 let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isROwner }) => {
-  let isEnable = /true|enable|(turn)?on|1/i.test(command)
-  let chat = global.db.data.chats[m.chat]
-  let user = global.db.data.users[m.sender]
-  let type = (args[0] || '').toLowerCase()
-  let isAll = false
-  let isUser = false
+  const isEnable = /true|enable|(turn)?on|1/i.test(command)
+  const chat = global.db.data.chats[m.chat]
+  const type = (args[0] || '').toLowerCase()
 
-  // Function to update the chat settings in Atlas
-  async function saveChatSettings() {
+  // Funktion, um den aktuellen Status zu melden
+  function replyStatus(settingName, currentStatus) {
+    const statusText = currentStatus ? 'bereits aktiviert' : 'bereits deaktiviert'
+    conn.sendMessage(m.chat, {
+      text: `ℹ️ ${settingName} ist ${statusText}.`,
+    })
+  }
+
+  // Funktion zum Speichern der Settings
+  async function saveChat() {
     try {
-      // Assuming you have an Atlas collection or database setup for chats
       await atlasDb.collection('chats').updateOne(
-        { chatId: m.chat }, // Query based on chat ID
-        { $set: chat }, // Update with the new settings
-        { upsert: true } // Create the entry if it doesn't exist
-      );
-    } catch (error) {
-      console.error('Error saving chat settings:', error);
+        { chatId: m.chat },
+        { $set: chat },
+        { upsert: true }
+      )
+    } catch (e) {
+      console.error('Fehler beim Speichern:', e)
     }
   }
-  
+
+  // Funktion, um die Statusmeldung bei bereits aktivierter Einstellung zu senden
+  function handleAlreadyActive(settingName, currentStatus) {
+    replyStatus(settingName, currentStatus)
+    return true
+  }
+
   switch (type) {
-    case 'notifgempa':
-      if (m.isGroup) {
-          if (!(isAdmin || isOwner)) {
-              global.dfail('admin', m, conn)
-              return false
-          }
-          chat.notifgempa = isEnable
-      } else return global.dfail('group', m, conn)
-      break
-    case 'notifcuaca':
-      if (m.isGroup) {
-          if (!(isAdmin || isOwner)) {
-              global.dfail('admin', m, conn)
-              return false
-          }
-          chat.notifcuaca = isEnable
-      } else return global.dfail('group', m, conn)
-      break
-    case 'notifsholat':
-      if (m.isGroup) {
-          if (!(isAdmin || isOwner)) {
-              global.dfail('admin', m, conn)
-              return false
-          }
-          chat.notifsholat = isEnable
-      } else return global.dfail('group', m, conn)
-      break
-    case 'welcome':
-      if (!m.isGroup) {
-        if (!isOwner) {
-          global.dfail('group', m, conn)
-          throw false
-        }
-      } else if (!isAdmin) {
-        global.dfail('admin', m, conn)
-        throw false
-      }
-      chat.welcome = isEnable
-      break
-    case 'detect':
-      if (!m.isGroup) {
-        if (!isOwner) {
-          global.dfail('group', m, conn)
-          throw false
-        }
-      } else if (!isAdmin) {
-        global.dfail('admin', m, conn)
-        throw false
-      }
-      chat.detect = isEnable
-      break
-    case 'delete':
-      if (m.isGroup) {
-        if (!(isAdmin || isOwner)) {
-          global.dfail('admin', m, conn)
-          throw false
-        }
-      }
-      chat.delete = isEnable
-      break
-    case 'antidelete':
-      if (m.isGroup) {
-        if (!(isAdmin || isOwner)) {
-          global.dfail('admin', m, conn)
-          throw false
-        }
-      }
-      chat.delete = !isEnable
-      break
-    case 'autodelvn':
-      if (m.isGroup) {
-        if (!(isAdmin || isOwner)) {
-          global.dfail('admin', m, conn)
-          throw false
-        }
-      }
-      chat.autodelvn = isEnable
-      break
-    case 'document':
-      chat.useDocument = isEnable
-      break
-    case 'public':
-      isAll = true
-      if (!isROwner) {
-        global.dfail('rowner', m, conn)
-        throw false
-      }
-      global.opts['self'] = !isEnable
-      break
     case 'antilink':
       if (m.isGroup) {
         if (!(isAdmin || isOwner)) {
           global.dfail('admin', m, conn)
-          throw false
+          return false
         }
+        if (chat.antiLink === isEnable) {
+          return handleAlreadyActive('Anti-Link', chat.antiLink)
+        }
+        chat.antiLink = isEnable
+        break
+      } else {
+        return global.dfail('group', m, conn)
       }
-      chat.antiLink = isEnable
-      break 
-    case 'autosticker':
+
+    case 'nsfw':
       if (m.isGroup) {
         if (!(isAdmin || isOwner)) {
           global.dfail('admin', m, conn)
-          throw false
+          return false
         }
+        if (chat.nsfw === isEnable) {
+          return handleAlreadyActive('NSFW', chat.nsfw)
+        }
+        chat.nsfw = isEnable
+        if (isEnable) {
+          m.reply(`⚠️ *NSFW wurde aktiviert*\n\nDiese Gruppe kann nun Inhalte für Erwachsene anzeigen.\nNutze ${usedPrefix}menu nsfw, um verfügbare Befehle zu sehen.\n\nHinweis: NSFW-Inhalte sind nur für Personen ab 18 Jahren geeignet.`)
+        } else {
+          m.reply(`✅ *NSFW wurde deaktiviert*\n\nDiese Gruppe kann keine Inhalte für Erwachsene mehr anzeigen.`)
+        }
+        break
+      } else {
+        return global.dfail('group', m, conn)
       }
-      chat.autosticker = isEnable
-      break
-    case 'antibot':
+
+    case 'antiporn':
+    case 'antiporno':
       if (m.isGroup) {
         if (!(isAdmin || isOwner)) {
           global.dfail('admin', m, conn)
-          throw false
+          return false
         }
-      }
-      chat.antiBot = isEnable
-      break
-    case 'toxic':
-      if (m.isGroup) {
-        if (!(isAdmin || isOwner)) {
-          global.dfail('admin', m, conn)
-          throw false
+        if (chat.antiporn === isEnable) {
+          return handleAlreadyActive('Anti-Porn', chat.antiporn)
         }
-      }
-      chat.antiToxic = !isEnable
-      break
-    case 'antitoxic':
-      if (m.isGroup) {
-        if (!(isAdmin || isOwner)) {
-          global.dfail('admin', m, conn)
-          throw false
+        chat.antiporn = isEnable
+        if (isEnable) {
+          m.reply(`⚠️ *Anti-Porn wurde aktiviert*\n\nDiese Gruppe filtert pornografische Inhalte.`)
+        } else {
+          m.reply(`✅ *Anti-Porn wurde deaktiviert*\n\nDiese Gruppe zeigt keine pornografischen Inhalte mehr an.`)
         }
+        break
+      } else {
+        return global.dfail('group', m, conn)
       }
-      chat.antiToxic = isEnable
-      break
-    case 'autolevelup':
-      isUser = true
-      user.autolevelup = isEnable
-      break
-    case 'mycontact':
-    case 'mycontacts':
-    case 'whitelistcontact':
-    case 'whitelistcontacts':
-    case 'whitelistmycontact':
-    case 'whitelistmycontacts':
-      if (!isOwner) {
-        global.dfail('owner', m, conn)
-        throw false
-      }
-      conn.callWhitelistMode = isEnable
-      break
-    case 'restrict':
-      isAll = true
-      if (!isROwner) {
-        global.dfail('rowner', m, conn)
-        throw false
-      }
-      global.opts['restrict'] = isEnable
-      break
-    case 'nyimak':
-      isAll = true
-      if (!isROwner) {
-        global.dfail('rowner', m, conn)
-        throw false
-      }
-      global.opts['nyimak'] = isEnable
-      break
-    case 'autoread':
-      isAll = true
-      if (!isROwner) {
-        global.dfail('rowner', m, conn)
-        throw false
-      }
-      global.opts['autoread'] = isEnable
-      break
-    case 'pconly':
-    case 'privateonly':
-      isAll = true
-      if (!isROwner) {
-        global.dfail('rowner', m, conn)
-        throw false
-      }
-      global.opts['pconly'] = isEnable
-      break
-    case 'gconly':
-    case 'grouponly':
-      isAll = true
-      if (!isROwner) {
-        global.dfail('rowner', m, conn)
-        throw false
-      }
-      global.opts['gconly'] = isEnable
-      break
-    case 'swonly':
-    case 'statusonly':
-      isAll = true
-      if (!isROwner) {
-        global.dfail('rowner', m, conn)
-        throw false
-      }
-      global.opts['swonly'] = isEnable
-      break
-    case 'antifoto':
-      if (m.isGroup) {
-      if (!(isAdmin || isOwner)) {
-        global.dfail('admin', m, conn)
-        throw false
-      }
-    }
-      chat.antiFoto = isEnable
-      break
-    case 'antisticker':
-    if (m.isGroup) {
-      if (!(isAdmin || isOwner)) {
-        global.dfail('admin', m, conn)
-        throw false
-      }
-    }
-    chat.antiSticker = isEnable
-    break
-    case 'viewonce':
-      if (m.isGroup) {
-        if (!(isAdmin || isOwner)) {
-          global.dfail('admin', m, conn)
-          throw false
-        }
-      }
-      chat.viewonce = isEnable
-    break
-    case 'antifile':
-      if (m.isGroup) {
-        if (!(isAdmin || isOwner)) {
-          global.dfail('admin', m, conn)
-          throw false
-        }
-      }
-      chat.antifile = isEnable
-    break
-  case 'autobackup':
-      if (!isROwner) {
-          global.dfail('rowner', m, conn)
-          throw false
-        }
-        chat.autobackup = isEnable
-      break 
-    case 'antivideo':
-      if (m.isGroup) {
-        if (!(isAdmin || isOwner)) {
-          global.dfail('admin', m, conn)
-          throw false
-        }
-      }
-      chat.antivideo = isEnable
-      break
-      case 'antiporn':
+
+    // Beispiel für andere Einstellungen:
+    case 'welcome':
       if (!m.isGroup) {
         if (!isOwner) {
           global.dfail('group', m, conn)
-          throw false
+          return false
         }
       } else if (!isAdmin) {
         global.dfail('admin', m, conn)
-        throw false
+        return false
       }
-      chat.antiporn = isEnable
-      break
-      case 'autohd':
-        if (m.isGroup) {
-          if (!(isAdmin || isOwner)) {
-            global.dfail('admin', m, conn)
-            throw false
-          }
-        }
-        chat.autohd = isEnable
-        break
-        case 'autobio':
-      if (m.isGroup) {
-          if (!(isAdmin || isOwner)) {
-              global.dfail('admin', m, conn)
-              return false
-          }
-          chat.autobio = isEnable
-      } else return global.dfail('group', m, conn)
-      break
-      case 'rpg':
-        if (m.isGroup) {
-          if (!(isAdmin || isOwner)) {
-            global.dfail('admin', m, conn)
-            throw false
-          }
-        }
-        chat.rpg = isEnable
-        break
-    case 'autodl':
-      if (m.isGroup) {
-        if (!(isAdmin || isOwner)) {
-          global.dfail('admin', m, conn)
-          throw false
-        }
+      if (chat.welcome === isEnable) {
+        return handleAlreadyActive('Willkommensnachricht', chat.welcome)
       }
-      chat.autodl = isEnable
+      chat.welcome = isEnable
       break
-    case 'autotranslate':
-      if (m.isGroup) {
-          if (!(isAdmin || isOwner)) {
-              global.dfail('admin', m, conn)
-              return false
-          }
-          chat.autotranslate = isEnable
-      } else return global.dfail('group', m, conn)
-      break
-    case 'nsfw':
-      if (m.isGroup) {
-          if (!(isAdmin || isOwner)) {
-              global.dfail('admin', m, conn)
-              return false
-          }
-          chat.nsfw = isEnable
-          if (isEnable) {
-            m.reply(`⚠️ *WARNUNG*: NSFW-Inhalte wurden für diesen Chat aktiviert. Diese Funktion ist nur für Erwachsene geeignet!`) 
-          } else {
-            m.reply(`✅ NSFW-Inhalte wurden deaktiviert.`)
-          }
-      } else return global.dfail('group', m, conn)
-      break
+
+    // Standardmäßige Rückmeldung für sonstige Einstellungen
     default:
-      if (!/[01]/.test(command)) return m.reply(`
-List option:
+      if (!/[01]/.test(command)) {
+        return m.reply(`Liste der Optionen:\n
 | autodl
 | autobackup
 | rpg
@@ -379,33 +139,73 @@ List option:
 | nsfw
 | autodatabase
 | autotranslate
-Contoh:
-${usedPrefix}enable welcome
-${usedPrefix}disable welcome
-`.trim())
-      throw 'error'
-  }
-  // Send a German message for all types
-  if (type === 'nsfw' && isEnable) {
-    // Special message for enabling NSFW
-    m.reply(`⚠️ *NSFW wurde aktiviert* ⚠️
-    
-Diese Gruppe kann nun Inhalte für Erwachsene anzeigen.
-Nutze .menu nsfw um verfügbare Befehle zu sehen.
 
-Hinweis: NSFW-Inhalte sind nur für Personen ab 18 Jahren geeignet.`.trim())
-  } else if (type === 'nsfw' && !isEnable) {
-    // Special message for disabling NSFW
-    m.reply(`✅ *NSFW wurde deaktiviert*
-    
-Diese Gruppe kann keine Inhalte für Erwachsene mehr anzeigen.`.trim())
-  } else {
-    // Standard message for other types
-    m.reply(`
-*${type}* wurde erfolgreich *${isEnable ? 'aktiviert' : 'deaktiviert'}* ${isAll ? 'für diesen Bot' : isUser ? '' : 'für diesen Chat'}
-`.trim())
+Beispiel:
+${usedPrefix}enable welcome
+${usedPrefix}disable welcome`)
+        throw 'Unbekannte Option'
+      }
+  }
+
+  // Spezielle Nachrichten für NSFW
+  if (type === 'nsfw') {
+    if (isEnable) {
+      if (chat.nsfw === true) {
+        return handleAlreadyActive('NSFW', true)
+      }
+      chat.nsfw = true
+      return m.reply(`⚠️ *NSFW wurde aktiviert*\n\nDiese Gruppe kann nun Inhalte für Erwachsene anzeigen.\nNutze ${usedPrefix}menu nsfw, um verfügbare Befehle zu sehen.\n\nHinweis: NSFW-Inhalte sind nur für Personen ab 18 Jahren geeignet.`)
+    } else {
+      if (chat.nsfw === false) {
+        return handleAlreadyActive('NSFW', false)
+      }
+      chat.nsfw = false
+      return m.reply(`✅ *NSFW wurde deaktiviert*\n\nDiese Gruppe kann keine Inhalte für Erwachsene mehr anzeigen.`)
+    }
+  }
+
+  // Nach Änderung eine Erfolgsmeldung schicken
+  if (chat) {
+    const nameMap = {
+      'antilink': 'Anti-Link',
+      'welcome': 'Willkommensnachricht',
+      'detect': 'Detect',
+      'delete': 'Delete',
+      'autodelvn': 'Auto Delete VN',
+      'autosticker': 'Auto Sticker',
+      'antibot': 'Anti-Bot',
+      'toxic': 'Toxisch',
+      'antitoxic': 'Anti-Toxisch',
+      'autolevelup': 'Auto Level Up',
+      'mycontact': 'Meine Kontakte',
+      'restrict': 'Restrict',
+      'nyimak': 'Nyimak',
+      'autoread': 'Auto Read',
+      'pconly': 'Private Only',
+      'gconly': 'Group Only',
+      'swonly': 'Status Only',
+      'autohd': 'Auto HD',
+      'autobio': 'Auto Bio',
+      'rpg': 'RPG',
+      'autodl': 'Auto Download',
+      'autobackup': 'Auto Backup',
+      'viewonce': 'View Once',
+      'antifile': 'Anti File',
+      'autotranslate': 'Auto Translate',
+      'nsfw': 'NSFW'
+    }
+    const name = nameMap[type] || type
+    const currentStatus = chat[type]
+    if (currentStatus === isEnable) {
+      return handleAlreadyActive(name, currentStatus)
+    }
+    chat[type] = isEnable
+    conn.sendMessage(m.chat, {
+      text: `✅ ${name} wurde erfolgreich ${isEnable ? 'aktiviert' : 'deaktiviert'}.`
+    })
   }
 }
+
 handler.help = ['en', 'dis'].map(v => v + 'able <option>')
 handler.tags = ['group', 'owner']
 handler.command = /^((en|dis)able|(tru|fals)e|(turn)?o(n|ff)|[01])$/i

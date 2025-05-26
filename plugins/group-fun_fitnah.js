@@ -1,71 +1,56 @@
-let PhoneNumber = require('awesome-phonenumber')
-const { createHash } = require('crypto')
+
+const PhoneNumber = require('awesome-phonenumber');
 
 let handler = async (m, { conn, text }) => {
-  function getRandomElement(arr) {
-    return arr[Math.floor(Math.random() * arr.length)]
-  }
-
-  const fitnahMessages = [
-    "ati ati bro @user suka coli",
-    "eh, tau nggak? @user oft Schulden macht nggak bayar",
-    "oh, @user katanya ketahuan ngintip kamar mandi tetangga",
-    "bro, hati-hati gleich @user, er/sie mag essen nggak bayar",
-    "@user, katanya du jago joget TikTok ya?",
-    "anjay, @user hobinya schlafen in klasse",
-    "dein Gesicht @user sieht aus wie ein Trottel",
-    "tau nggak? @user kemarin ketahuan curhat zu kucing.",
-    "@user, katanya kemarin dipanggil guru weil schlafen in meja",
-    "eh, nicht-nicht @user oft stiehlt Wifi tetangga?",
-    "verrückt, @user hat anscheinend tausende Memes gesammelt",
-    "@user pernah essen bakso bayar verwenden daun",
-    "oh, katanya @user ketahuan nge-stalk mantan semalaman",
-    "@user, kemarin disuruh nyanyi stattdessen singt lagu iklan",
-    "anjir, @user hobi banget rebutan colokan in klasse",
-    "tau nggak? @user falls in kantin suka ngambil gorengan früher neu bayar 3 Tag kemudian",
-    "gokil, @user ternyata haben akun fake erstellen stalking gebetan",
-    "bro, katanya @user pernah ketahuan nangis gara-gara verlieren spielen spiel",
-    "parah, @user kemarin ngaku-ngaku also selebgram obwohl es nur Follower 10",
-    "woy @user, nicht suka mandi nur wenn wiederholt Jahr aja dong",
-    "eh, katanya @user suka schlafen sambil ngorok keras banget bis tetangga kebangun",
-    "tau nggak? @user ternyata oft Status erstellt galau jeden malem",
-    "oh, @user falls ditagih utang suka pura-pura lupa",
-    "gila, @user hobinya ngakak selbst pas baca chat",
-    "@user, kemarin ngaku-ngaku haben mobil, pas dicek nur Spielzeug remote control",
-    "bro, hati-hati gleich @user, er/sie leiht gerne artikel terus lupa balikin",
-    "@user suka banget ngedraft chat lang, aber nggak pernah disenden",
-    "anjay, @user ternyata suka karaoke lagu anak-anak in kamar mandi",
-    "oh, katanya @user pernah nulis surat cinta terus malu selbst",
-    "tau nggak? @user kemarin zu warung stattdessen vergisst bawa Geld",
-    "@user oft banget hochladen story essen obwohl das Essen person andere"
-  ]
-
-  if (!m.isGroup) return conn.reply(m.chat, 'Funktion dies nur kann benutzt in in Gruppe!', m)
-
-  const participants = (await conn.groupMetadata(m.chat)).participants
-
-  let randomUser = null;
-
-  if (!text) {
-    randomUser = getRandomElement(participants).id
-  } else {
-    const mentionedUser = text.match(/@([0-9]{7,16})/);  // Regex für menangkap mention id
-    if (mentionedUser) {
-      const mentionedUserId = mentionedUser[1]
-      randomUser = participants.find(user => user.id.includes(mentionedUserId))?.id
+    function getRandomElement(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
     }
-  }
 
-  if (!randomUser) return conn.reply(m.chat, 'Der erwähnte Nutzer wurde nicht gefunden!', m)
+    const fitnahMessages = [
+        "😱 *Breaking News!* @user wurde gestern gesichtet, wie er/sie mit dem Hamster um die Wette gelaufen ist!",
+        "😂 @user hat wohl letzte Nacht das WLAN der ganzen Nachbarschaft leer gesaugt – krasser Move!",
+        "🤭 Oha, @user wurde dabei erwischt, wie er/sie heimlich TikTok-Tänze vor dem Spiegel geübt hat!",
+        "😴 @user liebt es, während des Unterrichts zu schlafen und dabei leise vor sich hin zu schnarchen. Multitasking-Profi!",
+        "🍜 @user isst am liebsten in der Kantine... und vergisst dann, die Rechnung zu bezahlen. Klassiker!",
+        "🎤 Gerüchten zufolge hat @user beim Duschen das ganze Haus mit einer privaten Karaoke-Show unterhalten. Standing Ovations von der Nachbarschaft!",
+        "📷 Wow, @user lädt täglich Essensfotos hoch – aber das Essen gehört meistens jemand anderem. #FoodieLife",
+        "💡 Wusstet ihr schon? @user hat einen Fake-Account erstellt, um den Crush heimlich zu stalken... #NinjaMoves",
+        "🚗 Haha, @user hat mit einem Spielzeugauto angegeben, als wäre es ein Ferrari. Täuschend echt!",
+        "📚 @user wurde letzte Woche dabei erwischt, wie er/sie den Unterricht geschwänzt hat, um Memes zu sammeln!",
+        "💬 @user hat einen Chat-Draft mit 300 Nachrichten… und keiner davon wurde jemals gesendet. Schreibfaul deluxe!",
+        "💸 Achtung, Leute! @user hat es geschafft, in der Kantine alle Snacks auf einmal zu klauen – und dann drei Tage später zu bezahlen!",
+        "😎 Gerüchte sagen, @user hat beim Karaoke versehentlich ein Kinderlied gesungen. Aber hey, Stimmung war top!",
+        "🧼 @user geht angeblich nur einmal im Jahr duschen – und das ist heute. Glück gehabt, Leute!",
+        "🕺 Gerüchten zufolge ist @user der geheime Star bei TikTok. Man munkelt, die Moves sind legendär!",
+        "🎉 @user feiert sogar beim Verlieren beim Spiel. Optimismus-Level: 1000!"
+    ];
 
-  const selectedMessage = getRandomElement(fitnahMessages).replace(/@user/g, `@${randomUser.split('@')[0]}`)
+    if (!m.isGroup) return conn.reply(m.chat, '❌ Dieser Befehl funktioniert nur in Gruppen!', m);
 
-  conn.reply(m.chat, selectedMessage, m, { mentions: [randomUser] })
-}
+    const participants = (await conn.groupMetadata(m.chat)).participants;
 
-handler.help = ['fitnah']
-handler.tags = ['fun']
-handler.command = /^fitnah$/i
-handler.group = true
+    let randomUser = null;
 
-module.exports = handler
+    if (!text) {
+        randomUser = getRandomElement(participants).id;
+    } else {
+        const mentionedUser = text.match(/@([0-9]{7,16})/);
+        if (mentionedUser) {
+            const mentionedUserId = mentionedUser[1];
+            randomUser = participants.find(user => user.id.includes(mentionedUserId))?.id;
+        }
+    }
+
+    if (!randomUser) return conn.reply(m.chat, '❗ Der erwähnte Nutzer wurde nicht gefunden!', m);
+
+    const selectedMessage = getRandomElement(fitnahMessages).replace(/@user/g, `@${randomUser.split('@')[0]}`);
+
+    conn.reply(m.chat, `🎉 *Fun Gerücht!*\n\n${selectedMessage}`, m, { mentions: [randomUser] });
+};
+
+handler.help = ['fitnah'];
+handler.tags = ['fun'];
+handler.command = /^fitnah$/i;
+handler.group = true;
+
+module.exports = handler;

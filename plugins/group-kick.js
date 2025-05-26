@@ -9,19 +9,30 @@ let handler = async (m, { teks, conn, isOwner, isAdmin, args }) => {
   if (m.quoted) {
     if (m.quoted.sender === ownerGroup || m.quoted.sender === conn.user.jid) return;
     let usr = m.quoted.sender;
-    await conn.groupParticipantsUpdate(m.chat, [usr], "remove"); 
+    try {
+      await conn.groupParticipantsUpdate(m.chat, [usr], "remove");
+      m.reply(`👢 Boom! @${usr.split('@')[0]} wurde erfolgreich rausgeschmissen!`, null, { mentions: [usr] });
+    } catch (e) {
+      m.reply(`⚠️ Ups, konnte @${usr.split('@')[0]} nicht entfernen: ${e.message}`);
+    }
     return;
   }
 
-  if (!m.mentionedJid[0]) throw `Bitte markiere den Nutzer, den du aus der Gruppe entfernen möchtest.`;
+  if (!m.mentionedJid[0]) throw `🤔 Hey, markier doch bitte jemanden, den du rausschmeißen willst!`;
 
   let users = m.mentionedJid.filter(
     (u) => !(u == ownerGroup || u.includes(conn.user.jid))
   );
 
   for (let user of users) {
-    if (user.endsWith("@s.whatsapp.net"))
-      await conn.groupParticipantsUpdate(m.chat, [user], "remove");
+    if (user.endsWith("@s.whatsapp.net")) {
+      try {
+        await conn.groupParticipantsUpdate(m.chat, [user], "remove");
+        m.reply(`👢 Boom! @${user.split('@')[0]} wurde erfolgreich rausgeschmissen!`, null, { mentions: [user] });
+      } catch (e) {
+        m.reply(`⚠️ Ups, konnte @${user.split('@')[0]} nicht entfernen: ${e.message}`);
+      }
+    }
   }
 };
 

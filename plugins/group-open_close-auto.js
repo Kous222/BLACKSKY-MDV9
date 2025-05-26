@@ -1,28 +1,37 @@
-// autogc.js – Automatisches Öffnen & Schließen von Gruppen
 
 const moment = require('moment-timezone');
 const schedule = require('node-schedule');
 
-const timeZone = 'Europe/Berlin';
+const TIMEZONE = 'Europe/Berlin';
 
-let handler = async (m, { conn, command, args, isOwner, isAdmin }) => {
-  let chat = global.db.data.chats[m.chat];
-  if (!m.isGroup) throw 'Dieser Befehl kann nur in Gruppen verwendet werden!';
-  if (!(isAdmin || isOwner)) throw 'Nur Gruppen-Admins dürfen diesen Befehl benutzen!';
+let connGlobal;
+
+const handler = async (m, { conn, command, args, isOwner, isAdmin }) => {
+  if (!m.isGroup) return m.reply('❌ Dieser Befehl ist nur in Gruppen erlaubt!');
+  if (!(isAdmin || isOwner)) return m.reply('❌ Nur Gruppenadmins dürfen das steuern!');
+
+  const chat = global.db.data.chats[m.chat];
 
   if (command === 'aktivieren' && args[0] === 'autogc') {
-    if (args.length < 2) throw '⚠️ Falsches Format!\nBenutze: *.aktivieren autogc Schließzeit|Öffnungszeit*\nBeispiel: *.aktivieren autogc 22|6*';
-    let [schließen, öffnen] = args[1].split('|').map(Number);
-    if (isNaN(schließen) || isNaN(öffnen)) throw '⚠️ Die Zeiten müssen Zahlen zwischen 0–23 sein!';
-    if (schließen < 0 || schließen > 23 || öffnen < 0 || öffnen > 23) throw '⚠️ Uhrzeiten müssen zwischen 0 und 23 liegen!';
+    if (args.length < 2) return m.reply(`⚠️ Bitte Uhrzeiten angeben!\nBeispiel:\n*${usedPrefix}aktivieren autogc 22|6*`);
+    const [closeHour, openHour] = args[1].split('|').map(Number);
 
-    chat.autoGc = { schließen, öffnen };
-    chat.groupStatus = 'opened'; // Initialstatus
-    m.reply(`✅ Automatisches Gruppen-Management aktiviert.\n\n• Gruppe wird täglich um ${schließen}:00 Uhr *geschlossen*\n• und um ${öffnen}:00 Uhr *geöffnet* (deutsche Zeit).`);
-  } else if (command === 'deaktivieren' && args[0] === 'autogc') {
-    delete chat.autoGc;
-    m.reply('⛔ Automatisches Gruppen-Management wurde deaktiviert.');
+    if ([closeHour, openHour].some(h => isNaN(h) || h < 0 || h > 23))
+      return m.reply('⚠️ Die Stunden müssen gültige Zahlen zwischen 0 und 23 sein!');
+
+    chat.autoGc = { closeHour, openHour };
+    chat.groupStatus = 'opened';
+
+    return m.reply(`✅ Automatisches Gruppen-Management aktiviert!\n\n🔒 Schließt täglich um ${closeHour}:00 Uhr\n🔓 Öffnet täglich um ${openHour}:00 Uhr\n(TZ: ${TIMEZONE})`);
   }
+
+  if (command === 'deaktivieren' && args[0] === 'autogc') {
+    delete chat.autoGc;
+    delete chat.groupStatus;
+    return m.reply('⛔ Automatisches Gruppen-Management deaktiviert.');
+  }
+
+  return m.reply('❓ Unbekannter Befehl oder Argumente.');
 };
 
 handler.command = /^(aktivieren|deaktivieren)$/i;
@@ -33,44 +42,43 @@ handler.group = true;
 
 module.exports = handler;
 
-// Automatischer Zeitprüfer
-let connGlobal;
 const checkGroupStatus = async () => {
-  const now = moment().tz(timeZone);
-  const aktuelleStunde = now.hour();
+  const now = moment().tz(TIMEZONE);
+  const currentHour = now.hour();
 
   for (const chatId of Object.keys(global.db.data.chats)) {
     const chat = global.db.data.chats[chatId];
     if (!chat.autoGc) continue;
 
-    const { schließen, öffnen } = chat.autoGc;
+    const { closeHour, openHour } = chat.autoGc;
 
     try {
-      if (aktuelleStunde === schließen && chat.groupStatus !== 'closed') {
+      if (currentHour === closeHour && chat.groupStatus !== 'closed') {
         await connGlobal.groupSettingUpdate(chatId, 'announcement');
         await connGlobal.sendMessage(chatId, {
-          text: `🔒 *[AUTOMATISCH]* Die Gruppe wurde geschlossen.\nWird um ${öffnen}:00 Uhr wieder geöffnet.`
+          text: `🔒 [AUTOMATISCH] Gruppe geschlossen.\nSie öffnet wieder um ${openHour}:00 Uhr.`
         });
         chat.groupStatus = 'closed';
-      } else if (aktuelleStunde === öffnen && chat.groupStatus !== 'opened') {
+        console.log(`[AUTOGC] Gruppe ${chatId} geschlossen um ${closeHour}:00`);
+      } else if (currentHour === openHour && chat.groupStatus !== 'opened') {
         await connGlobal.groupSettingUpdate(chatId, 'not_announcement');
         await connGlobal.sendMessage(chatId, {
-          text: `🔓 *[AUTOMATISCH]* Die Gruppe wurde geöffnet.\nWird um ${schließen}:00 Uhr wieder geschlossen.`
+          text: `🔓 [AUTOMATISCH] Gruppe geöffnet.\nSie schließt wieder um ${closeHour}:00 Uhr.`
         });
         chat.groupStatus = 'opened';
+        console.log(`[AUTOGC] Gruppe ${chatId} geöffnet um ${openHour}:00`);
       }
-    } catch (e) {
-      console.error('Fehler bei Gruppenstatus-Update:', e);
+    } catch (error) {
+      console.error(`[AUTOGC] Fehler bei Gruppe ${chatId}:`, error);
     }
   }
 };
 
-// Jede Minute ausführen
+// Jede Minute ausführen, falls connGlobal gesetzt
 schedule.scheduleJob('* * * * *', () => {
   if (connGlobal) checkGroupStatus();
 });
 
-// Methode, um die globale Verbindung zu setzen (muss im Bot-Start gesetzt werden)
 module.exports.setConnection = (conn) => {
   connGlobal = conn;
 };

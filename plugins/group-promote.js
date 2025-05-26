@@ -1,3 +1,4 @@
+
 let handler = async (m, { teks, conn, isOwner, isAdmin, args, command }) => {
     if (m.isBaileys) return;
     if (!(isAdmin || isOwner)) {
@@ -12,15 +13,15 @@ let handler = async (m, { teks, conn, isOwner, isAdmin, args, command }) => {
         if (m.quoted.sender === ownerGroup || m.quoted.sender === conn.user.jid) return;
         let usr = m.quoted.sender;
         try {
-            let nenen = await conn.groupParticipantsUpdate(m.chat, [usr], "promote");
-            if (nenen) m.reply(`Erfolgreich ${command} @${usr.split('@')[0]}!`, null, { mentions: [usr] });
+            let result = await conn.groupParticipantsUpdate(m.chat, [usr], "promote");
+            if (result) m.reply(`✅ Nutzer @${usr.split('@')[0]} wurde erfolgreich befördert!`, null, { mentions: [usr] });
         } catch (error) {
-            m.reply(`error beim Befördern von @${usr.split('@')[0]}: ${error.message}`);
+            m.reply(`❌ Fehler beim Befördern von @${usr.split('@')[0]}: ${error.message}`);
         }
         return;
     }
 
-    if (!m.mentionedJid[0]) throw `Bitte tagge den Nutzer, den du befördern möchtest.`;
+    if (!m.mentionedJid[0]) throw `⚠️ Bitte markiere den Nutzer, den du befördern möchtest.`;
 
     let users = m.mentionedJid.filter(
         (u) => !(u == ownerGroup || u.includes(conn.user.jid))
@@ -30,9 +31,9 @@ let handler = async (m, { teks, conn, isOwner, isAdmin, args, command }) => {
         if (user.endsWith("@s.whatsapp.net")) {
             try {
                 await conn.groupParticipantsUpdate(m.chat, [user], "promote");
-                m.reply(`Erfolgreich ${command} @${user.split('@')[0]}!`, null, { mentions: [user] });
+                m.reply(`✅ Nutzer @${user.split('@')[0]} wurde erfolgreich befördert!`, null, { mentions: [user] });
             } catch (error) {
-                m.reply(`error beim Befördern von @${user.split('@')[0]}: ${error.message}`);
+                m.reply(`❌ Fehler beim Befördern von @${user.split('@')[0]}: ${error.message}`);
             }
         }
     }

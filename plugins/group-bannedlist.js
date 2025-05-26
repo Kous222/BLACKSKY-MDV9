@@ -1,24 +1,22 @@
+
 /**
  * Group-specific banned users list command
  * Shows all users that are banned in the current group
  */
 
 let handler = async (m, { conn, isOwner, isAdmin, groupMetadata }) => {
-    if (!m.isGroup) return m.reply('⚠️ Dieser Befehl funktioniert nur in Gruppen.');
-    
-    // Check permissions - only owner or admin can use this
+    if (!m.isGroup) return m.reply('🚫 *Dieser Befehl funktioniert nur in Gruppen!*');
+
     const senderData = groupMetadata.participants.find(p => p.id === m.sender);
     const isGroupAdmin = senderData?.admin === 'admin' || senderData?.admin === 'superadmin';
-    
+
     if (!(isGroupAdmin || isOwner)) {
-        return m.reply('⚠️ Nur Gruppen-Admins und Besitzer können diesen Befehl verwenden.');
+        return m.reply('❌ *Nur Gruppen-Admins und Besitzer können diese Liste sehen.*');
     }
-    
-    // Ensure group data exists
+
     if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {};
     if (!global.db.data.chats[m.chat].memgc) global.db.data.chats[m.chat].memgc = {};
-    
-    // Get banned users in this group
+
     const bannedUsersInGroup = [];
     for (const [userId, userData] of Object.entries(global.db.data.chats[m.chat].memgc || {})) {
         if (userData && userData.banned) {
@@ -29,33 +27,30 @@ let handler = async (m, { conn, isOwner, isAdmin, groupMetadata }) => {
             });
         }
     }
-    
-    // Sort by bannedTime (most recent first)
+
     bannedUsersInGroup.sort((a, b) => b.bannedTime - a.bannedTime);
-    
+
     if (bannedUsersInGroup.length === 0) {
-        return m.reply('📊 *Gesperrte Nutzer in dieser Gruppe*\n\nEs gibt keine gesperrten Mitglieder in dieser Gruppe.');
+        return m.reply('✅ *Alles klar!*\nIn dieser Gruppe sind zurzeit keine Nutzer gesperrt.');
     }
-    
-    // Build the message
-    let message = '📊 *Gesperrte Nutzer in dieser Gruppe*\n\n';
-    
+
+    let message = '🚫 *Liste der gesperrten Nutzer in dieser Gruppe:*\n\n';
+
     for (let i = 0; i < bannedUsersInGroup.length; i++) {
         const user = bannedUsersInGroup[i];
         const userName = await conn.getName(user.userId);
         let tempBanInfo = '';
-        
-        // Add temporary ban info if applicable
+
         if (user.bannedTime && user.bannedTime > Date.now()) {
-            const remainingTime = Math.ceil((user.bannedTime - Date.now()) / 1000 / 60); // minutes
-            tempBanInfo = ` ⏳ (noch ${remainingTime} min)`;
+            const remainingTime = Math.ceil((user.bannedTime - Date.now()) / 1000 / 60);
+            tempBanInfo = ` ⏳ (*noch ${remainingTime} min*)`;
         }
-        
-        message += `${i+1}. @${user.userId.split('@')[0]} - ${user.warn || 0} Verwarnungen${tempBanInfo}\n`;
+
+        message += `🔸 *${i+1}. @${user.userId.split('@')[0]}*\n ⚠️ Verwarnungen: *${user.warn || 0}*${tempBanInfo}\n`;
     }
-    
-    message += `\nVerwende '.delwarn @nutzer' um Verwarnungen zurückzusetzen und Sperren aufzuheben.`;
-    
+
+    message += `\n📝 *Tipp:* Verwende *.delwarn @nutzer*, um Verwarnungen zurückzusetzen oder die Sperre aufzuheben.`;
+
     await conn.sendMessage(m.chat, {
         text: message,
         mentions: bannedUsersInGroup.map(u => u.userId)
