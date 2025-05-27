@@ -47,6 +47,7 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isR
     autosticker: { scope: 'global', check: ownerOnly },
     autodatabase: { scope: 'global', check: ownerOnly },
     autotranslate: { scope: 'global', check: ownerOnly },
+    antirechts: { scope: 'chat', check: groupOnly }, // NEW
   }
 
   if (!(type in options)) {
