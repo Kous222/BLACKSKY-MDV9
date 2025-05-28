@@ -347,7 +347,7 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isR
       break
     default:
       if (!/[01]/.test(command)) return m.reply(`
-List option:
+*List option:
 | autodl
 | autobackup
 | rpg
@@ -379,9 +379,9 @@ List option:
 | nsfw
 | autodatabase
 | autotranslate
-Contoh:
+Beispiel:
 ${usedPrefix}enable welcome
-${usedPrefix}disable welcome
+${usedPrefix}disable welcome*
 `.trim())
       throw 'error'
   }
