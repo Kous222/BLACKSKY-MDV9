@@ -402,7 +402,16 @@ Diese Gruppe kann keine Inhalte für Erwachsene mehr anzeigen.`.trim())
   } else {
     // Standard message for other types
     m.reply(`
-*${type}* wurde erfolgreich *${isEnable ? 'aktiviert' : 'deaktiviert'}* ${isAll ? 'für diesen Bot' : isUser ? '' : 'für diesen Chat'}
+✨ *${type.toUpperCase()}* wurde erfolgreich 
+
+${isEnable ? '✅ *AKTIVIERT*' : '❌ *DEAKTIVIERT*'} 
+
+${isAll 
+  ? '_für diesen Bot_' 
+  : isUser 
+    ? '' 
+    : '_für diesen Chat_'}
+
 `.trim())
   }
 }
