@@ -38,7 +38,7 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isR
     whitelistmycontacts: { scope: 'global', check: ownerOnly },
     autodl: { scope: 'global', check: ownerOnly },
     autobackup: { scope: 'global', check: ownerOnly },
-    rpg: { scope: 'global', check: ownerOnly },
+    rpg: { scope: 'chat', check: groupOnly },
     notifgempa: { scope: 'global', check: ownerOnly },
     notifcuaca: { scope: 'global', check: ownerOnly },
     notifsholat: { scope: 'global', check: ownerOnly },
@@ -89,3 +89,4 @@ handler.tags = ['owner', 'group']
 handler.command = /^(true|enable|(turn)?on|false|disable|(turn)?off|0|1)$/i
 
 module.exports = handler
+r
