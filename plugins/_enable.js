@@ -88,5 +88,4 @@ handler.help = ['enable', 'disable'].map(v => v + ' <option>')
 handler.tags = ['owner', 'group']
 handler.command = /^(true|enable|(turn)?on|false|disable|(turn)?off|0|1)$/i
 
-module.exports = handler
-r
+module.exports = handler;
