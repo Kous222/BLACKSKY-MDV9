@@ -2065,20 +2065,22 @@ function formatUptime(seconds) {
 }
 
 global.dfail = (type, m, conn) => {
-    let msg = {
-        rowner: 'Dieser Befehl kann nur vom _*HAUPTBESITZER!1!1!*_ verwendet werden',
-        owner: 'Dieser Befehl kann nur vom _*Bot-Besitzer*_ verwendet werden!',
-        mods: 'Dieser Befehl kann nur von _*Moderatoren*_ verwendet werden!',
-        premium: 'Dieser Befehl ist nur für _*Premium-Mitglieder*_ verfügbar!',
-        rpg: 'Die RPG-Funktion wurde vom Administrator deaktiviert\n\n> Gib *.enable rpg* ein, um auf RPG-Funktionen zuzugreifen',
-        group: 'Dieser Befehl kann nur in Gruppen verwendet werden!',
-        private: 'Dieser Befehl kann nur im privaten Chat verwendet werden!',
-        admin: 'Dieser Befehl ist nur für *Gruppen-Administratoren* verfügbar!',
-        botAdmin: 'Der Bot muss *Administrator* sein, um diesen Befehl zu verwenden!',
-        unreg: 'Bitte registriere dich, um diese Funktion zu nutzen, indem du folgendes eingibst:\n\n*.register Name.Alter*\n\nBeispiel: *#register max.16*',
-        restrict: 'Diese Funktion ist *deaktiviert*!'
-    }[type]
-    if (msg) return m.reply(msg)
+  const messages = {
+    rowner: '⚠️ *Nur für den HAUPTBESITZER!*\nDieser Befehl ist exklusiv für den Hauptbesitzer.',
+    owner: '⚠️ *Nur für den Bot-Besitzer!*\nDu hast keine Berechtigung, diesen Befehl zu nutzen.',
+    mods: '🛡️ *Nur für Moderatoren!*\nDieser Befehl steht nur Moderatoren zur Verfügung.',
+    premium: '💎 *Premium-Mitglieder only!*\nDieser Befehl ist exklusiv für Premium-Nutzer.',
+    rpg: '⚔️ *RPG ist deaktiviert!*\nAdmin hat RPG ausgeschaltet.\nGib *.enable rpg* ein, um RPG zu aktivieren.',
+    group: '👥 *Nur in Gruppen!*\nDieser Befehl funktioniert nur in Gruppenchats.',
+    private: '📩 *Nur privat!*\nDieser Befehl kann nur im privaten Chat genutzt werden.',
+    admin: '🔐 *Nur für Gruppen-Admins!*\nDu musst Admin sein, um diesen Befehl zu verwenden.',
+    botAdmin: '🤖 *Bot braucht Adminrechte!*\nBitte gib dem Bot Adminrechte, um fortzufahren.',
+    unreg: '📝 *Bitte registriere dich!*\nNutze: *.register Name.Alter*\nBeispiel: *.register Max.16*',
+    restrict: '⛔ *Diese Funktion ist deaktiviert!*'
+  }
+
+  let msg = messages[type]
+  if (msg) return m.reply(msg)
 }
 
 let fs = require('fs')
