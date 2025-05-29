@@ -84,7 +84,7 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 };
 
 handler.help = ['slot <betrag>'];
-handler.tags = ['spiel'];
+handler.tags = ['rpg'];
 handler.command = ['slot'];
 handler.group = true;
 handler.rpg = true;

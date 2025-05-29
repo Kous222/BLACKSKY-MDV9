@@ -1,11 +1,13 @@
-const { getDevice } = require('@adiwajshing/baileys')
+const { getDevice } = require('@adiwajshing/baileys');
 
 let handler = async (m) => {
-	m.Antworten(await getDevice(m.quoted ? m.quoted.id : m.key.id))
-}
+  let msg = m.quoted ? m.quoted : m;
+  let device = getDevice(msg.key.id);
+  m.reply(`📱 Nachricht gesendet von einem *${device}* Gerät.`);
+};
 
-handler.help = ['device']
-handler.tags = ['tools']
-handler.command = /^(device)$/i
+handler.help = ['device'];
+handler.tags = ['tools'];
+handler.command = /^(device)$/i;
 
-module.exports = handler
+module.exports = handler;

@@ -1,41 +1,58 @@
-const free = 10000
-const prem = 20000
-const limitfree = 10
-const limitprem = 20
-const Münzenfree = 10000
-const Münzenprem = 20000
+const { getBalance, addBalance, getLastWeekly, setLastWeekly } = require('../lib/bank');
 
-let handler = async (m, { isPrems }) => {
-    let time = global.db.data.users[m.sender].lastweekly + 604800000
-  if (new Date - global.db.data.users[m.sender].lastweekly < 604800000) throw `Sie bereits mengklaim, klaim wöchentlich dies\ntunggu während ${msToTime(time - new Date())} wieder`
-    //    conn.reply(m.chat, `Sie bereits mengklaim und erhalten :`, m)
-        global.db.data.users[m.sender].exp += isPrems ? prem : free
-        global.db.data.users[m.sender].Münzen += isPrems ? Münzenprem : Münzenfree
-        global.db.data.users[m.sender].limit += isPrems ? limitprem : limitfree
-       // global.db.data.users[m.sender].legendary += 3
-        conn.reply(m.chat, `Herzlichen Glückwunsch du erhalten:\n\n+${isPrems ? prem : free} Exp\n+${isPrems ? Münzenprem : Münzenfree} Money\n+${isPrems ? limitprem : limitfree} Limit`, m)
-        global.db.data.users[m.sender].lastweekly= new Date * 1
+const free = 10000;
+const prem = 20000;
+const limitfree = 10;
+const limitprem = 20;
+
+let handler = async (m, { conn, isPrems }) => {
+  try {
+    const id = m.sender.split('@')[0];
+    const now = Date.now();
+    const cooldown = 7 * 24 * 60 * 60 * 1000; // 1 Woche
+
+    const last = await getLastWeekly(id);
+    if (now - last < cooldown) {
+      const remaining = cooldown - (now - last);
+      return m.reply(`⏳ *Wöchentliche Belohnung bereits abgeholt!*\n\nBitte warte noch *${msToTime(remaining)}*, um erneut zu claimen.`);
     }
-    
-handler.help = ['weekly']
-handler.tags = ['rpgabsen']
-handler.command = /^(weekly)$/i
-handler.limit = true
-handler.fail = null
-handler.rpg = true
-module.exports = handler
+
+    const rewardExp = isPrems ? prem : free;
+    const rewardCoins = isPrems ? prem : free;
+    const rewardLimit = isPrems ? limitprem : limitfree;
+
+    global.db.data.users[m.sender].exp += rewardExp;
+    global.db.data.users[m.sender].limit += rewardLimit;
+
+    await addBalance(id, rewardCoins);
+    await setLastWeekly(id, now);
+
+    const format = new Intl.NumberFormat('de-DE');
+
+    await conn.sendMessage(m.chat, {
+      text: `🎉 *Wöchentliche Belohnung!*\n\n✨ Du hast erhalten:\n\n• 🧪 *${format.format(rewardExp)}* XP\n• 💰 *${format.format(rewardCoins)}* Münzen\n• 🎟️ *${rewardLimit}* Limit\n\n📆 Komm nächste Woche wieder für neue Belohnungen!`,
+    }, { quoted: m });
+
+  } catch (e) {
+    console.error('Fehler im Weekly-Plugin:', e);
+    m.reply('⚠️ Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.');
+  }
+};
+
+handler.help = ['weekly'];
+handler.tags = ['rpgabsen'];
+handler.command = /^(weekly)$/i;
+handler.limit = true;
+handler.fail = null;
+handler.rpg = true;
+
+module.exports = handler;
 
 function msToTime(duration) {
-  var milliseconds = parseInt((duration % 1000) / 100),
-    seconds = Math.floor((duration / 1000) % 60),
-    minutes = Math.floor((duration / (1000 * 60)) % 60),
-    hours = Math.floor((duration / (1000 * 60 * 60)) % 24),
-    weeks = Math.floor((duration / (1000 * 60 * 60 * 24)) % 168)
+  let seconds = Math.floor((duration / 1000) % 60),
+      minutes = Math.floor((duration / (1000 * 60)) % 60),
+      hours = Math.floor((duration / (1000 * 60 * 60)) % 24),
+      days = Math.floor(duration / (1000 * 60 * 60 * 24));
 
-  weeks  = (weeks < 10) ? "0" + weeks : weeks
-  hours = (hours < 10) ? "0" + hours : hours
-  minutes = (minutes < 10) ? "0" + minutes : minutes
-  seconds = (seconds < 10) ? "0" + seconds : seconds
-
-  return weeks + " Tag " +  hours + " jam " + minutes + " menit"
+  return `${days} Tag(e), ${hours}h ${minutes}min`;
 }

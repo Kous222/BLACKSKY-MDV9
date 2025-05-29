@@ -28,31 +28,23 @@ let handler = async (m, { conn, text, usedPrefix }) => {
   text = sanitizeNumber(text)
   let number = isNaN(text) ? text.split`@`[1] : text
 
-  if (!text && !m.quoted) {
-    return conn.reply(m.chat, `*❏ PROFILABFRAGE*
-
-• Markiere den Benutzer: *${usedPrefix}profile @Tag*
-• Gib die Nummer ein: *${usedPrefix}profile 491234567890*
-• Dein eigenes Profil: *${usedPrefix}profile* (als Antwort auf deine Nachricht)`, m)
-  }
-
-  if (isNaN(number) || number.length > 15) {
-    return conn.reply(m.chat, `*❏ UNGÜLTIGE NUMMER*
+  let who = m.sender
+  if (text || m.quoted) {
+    if (text && (isNaN(number) || number.length > 15)) {
+      return conn.reply(m.chat, `*❏ UNGÜLTIGE NUMMER*
 
 • Markiere den Benutzer: *${usedPrefix}profile @Tag*
 • Gib die Nummer ein: *${usedPrefix}profile 491234567890*`, m)
+    }
+    who = m.quoted ? m.quoted.sender : number + '@s.whatsapp.net'
   }
 
-  let who = m.quoted ? m.quoted.sender : number + '@s.whatsapp.net'
   let pp = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSXIdvC1Q4WL7_zA6cJm3yileyBT2OsWhBb9Q&usqp=CAU'
-
   try {
     pp = await conn.profilePictureUrl(who, 'image')
   } catch (e) {}
 
-  if (!global.db.data) {
-    throw 'Datenbank nicht initialisiert! Bitte starte den Bot neu.'
-  }
+  if (!global.db.data) throw 'Datenbank nicht initialisiert! Bitte starte den Bot neu.'
 
   if (typeof global.db.data.users[who] === 'undefined') {
     global.db.data.users[who] = {
@@ -111,35 +103,27 @@ let handler = async (m, { conn, text, usedPrefix }) => {
 
   const DAILY_XP_CAP = 3000
 
-  // Always calculate the correct level based on XP
-  // This ensures any discrepancies in stored level values are fixed
   const calculatedLevel = levelling.findLevel(exp, global.multiplier || 1)
   const canLevelUp = calculatedLevel > level
-  
-  // Store old values for display purposes
   const oldLevel = level
-  
-  // Always update level and role if they don't match the calculated values
   let levelUpdated = false
   if (calculatedLevel !== level) {
-    user.level = level = calculatedLevel // Update both local and stored values
+    user.level = level = calculatedLevel
     levelUpdated = true
     console.log(`[PROFILE-SYNC] Updated user level: ${who} from ${oldLevel} to ${calculatedLevel}`)
   }
-  
-  // Update role if needed
+
   const oldRole = role
   const correctRole = getRoleByLevel(calculatedLevel)
   if (correctRole !== role) {
-    user.role = role = correctRole // Update both local and stored values
+    user.role = role = correctRole
     console.log(`[PROFILE-SYNC] Updated user role: ${who} from ${oldRole} to ${correctRole}`)
   }
 
-  // Now that we've ensured the level is correct, get accurate progress data
   const progress = levelling.getProgressData(level, exp, global.multiplier || 1)
   const { progressBar, progressPercent, currentXP, xpRequired, xpLeft } = progress
 
-  let username = conn.getName(who)
+  let username = await conn.getName(who)
   let about = global.db.data.users[who]?.about || (await conn.fetchStatus(who).catch(() => ({}))).status || ''
   let sn = createHash('md5').update(who).digest('hex')
   let relationship = pasangan ? `${pasangan}` : 'Single'
