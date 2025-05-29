@@ -8,6 +8,7 @@ const levelling = require('../lib/levelling')
 const { createHash } = require('crypto')
 const fetch = require('node-fetch')
 const { getRoleBadge, getLevelColor, getRoleByLevel } = require('../lib/role')
+const { initUser } = require('../lib/bank')  // Neu: Bank-System importieren
 
 let handler = async (m, { conn, text, usedPrefix }) => {
   function sanitizeNumber(number) {
@@ -46,6 +47,7 @@ let handler = async (m, { conn, text, usedPrefix }) => {
 
   if (!global.db.data) throw 'Datenbank nicht initialisiert! Bitte starte den Bot neu.'
 
+  // Initialisiere User in globaler DB, falls noch nicht vorhanden
   if (typeof global.db.data.users[who] === 'undefined') {
     global.db.data.users[who] = {
       exp: 0,
@@ -63,31 +65,45 @@ let handler = async (m, { conn, text, usedPrefix }) => {
       autolevelup: true,
       dailyXP: 0,
       lastDailyReset: 0,
-      totalMessages: 0
+      totalMessages: 0,
+      premium: false,
+      premiumTime: 0,
+      pasangan: null,
+      about: '',
+      money: 0,  // placeholder, wird gleich überschrieben
+      bank: 0    // placeholder, wird gleich überschrieben
     }
   }
 
+  // Lade User-Daten aus globaler DB
   let user = global.db.data.users[who]
+
+  // Lade Bank-Daten aus neuem Bank-System
+  let bankUser = await initUser(who)
+  user.money = bankUser.balance || 0   // cash
+  user.bank = bankUser.bank || 0       // bank balance
+
   let now = Date.now()
   let premiumTimeLeft = user.premiumTime > now ? msToDate(user.premiumTime - now) : '*Kein Ablaufdatum für Premium!*'
 
-  let { 
-    name, 
-    pasangan, 
-    limit, 
-    exp = 0, 
-    money = 0, 
-    bank = 0, 
-    age = 0, 
-    level = 0, 
-    role = 'Rekrut ㋡', 
-    registered = false, 
-    regTime = 0, 
-    premium = false, 
-    dailyXP = 0, 
+  let {
+    name,
+    pasangan,
+    limit,
+    exp = 0,
+    money = 0,
+    bank = 0,
+    age = 0,
+    level = 0,
+    role = 'Rekrut ㋡',
+    registered = false,
+    regTime = 0,
+    premium = false,
+    dailyXP = 0,
     lastDailyReset = 0,
     totalMessages = 0,
-    autolevelup = true
+    autolevelup = true,
+    about = ''
   } = user
 
   if (typeof dailyXP === 'undefined') user.dailyXP = dailyXP = 0
@@ -124,18 +140,22 @@ let handler = async (m, { conn, text, usedPrefix }) => {
   const { progressBar, progressPercent, currentXP, xpRequired, xpLeft } = progress
 
   let username = await conn.getName(who)
-  let about = global.db.data.users[who]?.about || (await conn.fetchStatus(who).catch(() => ({}))).status || ''
+  if (!about) {
+    about = (await conn.fetchStatus(who).catch(() => ({}))).status || ''
+  }
   let sn = createHash('md5').update(who).digest('hex')
   let relationship = pasangan ? `${pasangan}` : 'Single'
 
   const badge = getRoleBadge(user.level)
-  const levelColor = getLevelColor(user.level)
+  // levelColor ist nicht verwendet, kannst du weiter nutzen falls gewünscht
+  // const levelColor = getLevelColor(user.level)
 
   const fExp = formatNumber(exp)
   const fCurrentXP = formatNumber(currentXP)
   const fRequired = formatNumber(xpRequired)
   const fLeft = formatNumber(xpLeft)
   const fMoney = formatNumber(money)
+  const fBank = formatNumber(bank)
   const fLimit = formatNumber(limit)
   const fDailyXP = formatNumber(dailyXP)
   const fDailyXPCap = formatNumber(DAILY_XP_CAP)
@@ -173,9 +193,9 @@ let handler = async (m, { conn, text, usedPrefix }) => {
 │ 
 │ 💫 *XP:* ${fCurrentXP} / ${fRequired}
 │ 📚 *Gesamt XP:* ${fExp}
-│ ${xpLeft > 0 ? `🔄 *Benötigt:* ${fLeft} XP bis Level ${user.level+1}` : '🏆 *Level komplett!*'}
+│ ${xpLeft > 0 ? `🔄 *Benötigt:* ${fLeft} XP bis Level ${user.level + 1}` : '🏆 *Level komplett!*'}
 │ 
-│ 📆 *Heute:* ${fDailyXP}/${fDailyXPCap} XP (${DAILY_XP_CAP > 0 ? Math.floor((dailyXP/DAILY_XP_CAP)*100) : 0}% Tagesgrenze)
+│ 📆 *Heute:* ${fDailyXP}/${fDailyXPCap} XP (${DAILY_XP_CAP > 0 ? Math.floor((dailyXP / DAILY_XP_CAP) * 100) : 0}% Tagesgrenze)
 │ ${bonusesText ? `│ ${bonusesText.trim().replace(/\n/g, '\n│ ')}` : ''}
 │ 🤖 *Auto-Level:* ${autolevelup ? 'An ✅' : 'Aus ❌'}
 │ 
@@ -183,7 +203,8 @@ let handler = async (m, { conn, text, usedPrefix }) => {
 
 ┌─⊷ *RESSOURCEN*
 │ 
-│ 💰 *Geld:* ${fMoney}
+│ 💰 *Bargeld:* ${fMoney}
+│ 🏦 *Bank:* ${fBank}
 │ 🔮 *Limit:* ${fLimit}
 │ 
 └───────────
@@ -205,9 +226,7 @@ let handler = async (m, { conn, text, usedPrefix }) => {
 
 handler.help = ['profile [@user]']
 handler.tags = ['info']
-handler.command = /^(profile|profil)$/i
-handler.limit = true
-handler.register = false
-handler.group = false
+handler.command = /^profile$/i
+handler.exp = 0
 
 module.exports = handler
