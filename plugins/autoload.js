@@ -1,6 +1,5 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { fetchPluginPaths } from '../lib/mongo.js';
+const path = require('path');
+const { fetchPluginPaths } = require('../lib/mongo.js');
 
 let handler = async function () {
   const pluginPaths = await fetchPluginPaths();
@@ -8,8 +7,7 @@ let handler = async function () {
   for (const relPath of pluginPaths) {
     try {
       const absPath = path.resolve('./plugins', relPath);
-      const modulePath = `file://${absPath}?cacheBust=${Date.now()}`;
-      const plugin = await import(modulePath);
+      const plugin = require(absPath);
 
       if (plugin?.default || plugin?.run || plugin?.command) {
         global.plugins = global.plugins || [];
@@ -24,10 +22,9 @@ let handler = async function () {
   }
 };
 
-// Optional automatisch beim Start ausführen
-handler.run?.(); // falls es in einem Plugin-System verwendet wird, das run() direkt aufruft
+handler.run?.();
 handler.disabled = false;
-handler.command = []; // keine direkte Benutzerinteraktion
+handler.command = [];
 handler.tags = ['core'];
 
-export default handler;
+module.exports = handler;
