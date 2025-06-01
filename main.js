@@ -1,5 +1,5 @@
 (async () => {
-  require('./config');
+  require('../config');
 
   // Import required modules
   const {
