@@ -986,8 +986,8 @@ module.exports = {
                 isBannedTime: false,
                 mute: false,
                 listStr: {},
-                sWelcome: '*Selamat datang @user!*\n\n     Di group @subject\n\n╭─────「 *intro* 」\n│\n│─⪼ Nama : \n│─⪼ Umur :\n│─⪼ Askot :\n│─⪼ Gender :\n╰─────────────\n\n> semoga betah',
-                sBye: 'Al-fatihah untuk @user',
+                sWelcome: '*Willkommen @user!*\n\n     Die Gruppe @subject\n\n╭─────「 *intro* 」\n│\n│─⪼ Nama : \n│─⪼ Umur :\n│─⪼ Askot :\n│─⪼ Gender :\n╰─────────────\n\n> fühl dich wie zuhause',
+                sBye: 'Auf Wiedersehen @user',
                 sPromote: '',
                 sDemote: '',
                 delete: false, 
@@ -2065,20 +2065,22 @@ function formatUptime(seconds) {
 }
 
 global.dfail = (type, m, conn) => {
+    
     let msg = {
-        rowner: 'Dieser Befehl kann nur vom _*HAUPTBESITZER!1!1!*_ verwendet werden',
-        owner: 'Dieser Befehl kann nur vom _*Bot-Besitzer*_ verwendet werden!',
-        mods: 'Dieser Befehl kann nur von _*Moderatoren*_ verwendet werden!',
-        premium: 'Dieser Befehl ist nur für _*Premium-Mitglieder*_ verfügbar!',
-        rpg: 'Die RPG-Funktion wurde vom Administrator deaktiviert\n\n> Gib *.enable rpg* ein, um auf RPG-Funktionen zuzugreifen',
-        group: 'Dieser Befehl kann nur in Gruppen verwendet werden!',
-        private: 'Dieser Befehl kann nur im privaten Chat verwendet werden!',
-        admin: 'Dieser Befehl ist nur für *Gruppen-Administratoren* verfügbar!',
-        botAdmin: 'Der Bot muss *Administrator* sein, um diesen Befehl zu verwenden!',
-        unreg: 'Bitte registriere dich, um diese Funktion zu nutzen, indem du folgendes eingibst:\n\n*.register Name.Alter*\n\nBeispiel: *#register max.16*',
-        restrict: 'Diese Funktion ist *deaktiviert*!'
-    }[type]
-    if (msg) return m.reply(msg)
+    rowner: '🚫 *Nur der Hauptbesitzer* darf diesen Befehl verwenden!',
+    owner: '🚫 *Nur ein Bot-Besitzer* kann diesen Befehl ausführen!',
+    mods: '🔒 *Nur Moderatoren* dürfen diesen Befehl verwenden.',
+    premium: '⭐ *Nur Premium-Mitglieder* haben Zugriff auf diesen Befehl.',
+    rpg: '🛑 Die RPG-Funktion ist aktuell deaktiviert.\n\n📌 Aktiviere sie mit: *.enable rpg*',
+    group: '👥 Dieser Befehl kann *nur in Gruppen* verwendet werden.',
+    private: '📩 Dieser Befehl ist *nur im privaten Chat* verfügbar.',
+    admin: '🛡️ Dieser Befehl ist nur für *Gruppen-Admins* verfügbar.',
+    botAdmin: '🤖 Ich muss *Adminrechte* haben, um diesen Befehl auszuführen!',
+    unreg: '📛 *Nicht registriert!*\nBitte registriere dich mit:\n\n*.register Name.Alter*\n\nBeispiel: *#register Max.16*',
+    restrict: '⚙️ Diese Funktion wurde vom Besitzer *deaktiviert*!'
+}[type];
+
+if (msg) return m.reply(msg);
 }
 
 let fs = require('fs')
