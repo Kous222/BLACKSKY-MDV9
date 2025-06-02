@@ -27,7 +27,7 @@
   const fetch = require('node-fetch');
   const chalk = require('chalk');
   const crypto = require('crypto');
-  const { makeInMemoryStore } = require('@adiwajshing/baileys');
+  const { makeInMemoryStore } = require('@whiskeysockets/baileys');
 
   let simple = require('./lib/simple');
 
