@@ -50,51 +50,28 @@ const str2Regex = str => {
 // Diese Besitzernummern haben vollen Zugriff auf den Bot
 console.log("Aktuelle(r) Bot-Besitzer:", global.owner)
 
-// Caches regelmäßig bereinigen - Store reference for cleanup
-const cacheCleanupInterval = setInterval(() => {
+// Caches regelmäßig bereinigen
+setInterval(() => {
     const now = Date.now();
     
-    try {
-        // Benutzer-Cache bereinigen
-        for (const [key, { timestamp }] of userDataCache.entries()) {
-            if (now - timestamp > USER_CACHE_TTL) {
-                userDataCache.delete(key);
-            }
+    // Benutzer-Cache bereinigen
+    for (const [key, { timestamp }] of userDataCache.entries()) {
+        if (now - timestamp > USER_CACHE_TTL) {
+            userDataCache.delete(key);
         }
-        
-        // Befehlscache-Größe begrenzen
-        if (commandCache.size > COMMAND_CACHE_MAX) {
-            // Entferne die ältesten 20% der Einträge
-            const keysToRemove = Array.from(commandCache.keys())
-                .slice(0, Math.floor(commandCache.size * 0.2));
-            
-            for (const key of keysToRemove) {
-                commandCache.delete(key);
-            }
-        }
-    } catch (error) {
-        console.error('Cache cleanup error:', error);
     }
-}, 60000); // Reduziert auf alle 60 Sekunden für weniger CPU-Last
-
-// Export cleanup function
-global.cleanupHandlerCaches = () => {
-    clearInterval(cacheCleanupInterval);
-    commandCache.clear();
-    userDataCache.clear();
-    prefixRegexCache.clear();
     
-    // Cleanup plugin intervals
-    if (global.cleanupPluginIntervals) {
-        global.cleanupPluginIntervals.forEach(cleanup => {
-            try {
-                cleanup();
-            } catch (e) {
-                console.error('Error cleaning up plugin interval:', e);
-            }
-        });
+    // Befehlscache-Größe begrenzen
+    if (commandCache.size > COMMAND_CACHE_MAX) {
+        // Entferne die ältesten 20% der Einträge
+        const keysToRemove = Array.from(commandCache.keys())
+            .slice(0, Math.floor(commandCache.size * 0.2));
+        
+        for (const key of keysToRemove) {
+            commandCache.delete(key);
+        }
     }
-};
+}, 30000); // Alle 30 Sekunden ausführen
 
 module.exports = {
     async handler(chatUpdate) {
@@ -530,7 +507,7 @@ module.exports = {
                         
         }
                     if (!isNumber(user.level)) user.level = 0
-                    if (!user.job) user.job = 'Arbeit'
+                    if (!user.job) user.job = 'Pengangguran'
                     if (!isNumber(user.jobexp)) user.jobexp = 0
                     if (!('jail' in user)) user.jail = false
                     if (!('penjara' in user)) user.penjara = false
@@ -952,8 +929,8 @@ module.exports = {
                 if (!('isBannedTime' in chat)) chat.isBannedTime = false
                 if (!('mute' in chat)) chat.mute = false
                 if (!('listStr' in chat)) chat.listStr = {}
-                if (!('sWelcome' in chat)) chat.sWelcome = '*Willkommen @user!*\n\n     Die Gruppe @subject\n\n╭─────「 *intro* 」\n│\n│─⪼ Nama : \n│─⪼ Umur :\n│─⪼ Askot :\n│─⪼ Gender :\n╰─────────────\n\n> semoga betah'
-                if (!('sBye' in chat)) chat.sBye = 'Auf Wiedersehen @user'
+                if (!('sWelcome' in chat)) chat.sWelcome = '*Selamat datang @user!*\n\n     Di group @subject\n\n╭─────「 *intro* 」\n│\n│─⪼ Nama : \n│─⪼ Umur :\n│─⪼ Askot :\n│─⪼ Gender :\n╰─────────────\n\n> semoga betah'
+                if (!('sBye' in chat)) chat.sBye = 'Al-fatihah untuk @user'
                 if (!('sPromote' in chat)) chat.sPromote = ''
                 if (!('sDemote' in chat)) chat.sDemote = ''
                 if (!('delete' in chat)) chat.delete = true
@@ -1009,8 +986,8 @@ module.exports = {
                 isBannedTime: false,
                 mute: false,
                 listStr: {},
-                sWelcome: '*Willkommen @user!*\n\n     Die Gruppe @subject\n\n╭─────「 *intro* 」\n│\n│─⪼ Name : \n│─⪼ Alter :\n│─⪼ Wohnort :\n│─⪼ Gender :\n╰─────────────\n\n> semoga betah',
-                sBye: 'Auf Wiedersehen @user',
+                sWelcome: '*Selamat datang @user!*\n\n     Di group @subject\n\n╭─────「 *intro* 」\n│\n│─⪼ Nama : \n│─⪼ Umur :\n│─⪼ Askot :\n│─⪼ Gender :\n╰─────────────\n\n> semoga betah',
+                sBye: 'Al-fatihah untuk @user',
                 sPromote: '',
                 sDemote: '',
                 delete: false, 
@@ -2088,22 +2065,20 @@ function formatUptime(seconds) {
 }
 
 global.dfail = (type, m, conn) => {
-  const messages = {
-    rowner: '⚠️ *Nur für den HAUPTBESITZER!*\nDieser Befehl ist exklusiv für den Hauptbesitzer.',
-    owner: '⚠️ *Nur für den Bot-Besitzer!*\nDu hast keine Berechtigung, diesen Befehl zu nutzen.',
-    mods: '🛡️ *Nur für Moderatoren!*\nDieser Befehl steht nur Moderatoren zur Verfügung.',
-    premium: '💎 *Premium-Mitglieder only!*\nDieser Befehl ist exklusiv für Premium-Nutzer.',
-    rpg: '⚔️ *RPG ist deaktiviert!*\nAdmin hat RPG ausgeschaltet.\nGib *.enable rpg* ein, um RPG zu aktivieren.',
-    group: '👥 *Nur in Gruppen!*\nDieser Befehl funktioniert nur in Gruppenchats.',
-    private: '📩 *Nur privat!*\nDieser Befehl kann nur im privaten Chat genutzt werden.',
-    admin: '🔐 *Nur für Gruppen-Admins!*\nDu musst Admin sein, um diesen Befehl zu verwenden.',
-    botAdmin: '🤖 *Bot braucht Adminrechte!*\nBitte gib dem Bot Adminrechte, um fortzufahren.',
-    unreg: '📝 *Bitte registriere dich!*\nNutze: *.register Name.Alter*\nBeispiel: *.register Max.16*',
-    restrict: '⛔ *Diese Funktion ist deaktiviert!*'
-  }
-
-  let msg = messages[type]
-  if (msg) return m.reply(msg)
+    let msg = {
+        rowner: 'Dieser Befehl kann nur vom _*HAUPTBESITZER!1!1!*_ verwendet werden',
+        owner: 'Dieser Befehl kann nur vom _*Bot-Besitzer*_ verwendet werden!',
+        mods: 'Dieser Befehl kann nur von _*Moderatoren*_ verwendet werden!',
+        premium: 'Dieser Befehl ist nur für _*Premium-Mitglieder*_ verfügbar!',
+        rpg: 'Die RPG-Funktion wurde vom Administrator deaktiviert\n\n> Gib *.enable rpg* ein, um auf RPG-Funktionen zuzugreifen',
+        group: 'Dieser Befehl kann nur in Gruppen verwendet werden!',
+        private: 'Dieser Befehl kann nur im privaten Chat verwendet werden!',
+        admin: 'Dieser Befehl ist nur für *Gruppen-Administratoren* verfügbar!',
+        botAdmin: 'Der Bot muss *Administrator* sein, um diesen Befehl zu verwenden!',
+        unreg: 'Bitte registriere dich, um diese Funktion zu nutzen, indem du folgendes eingibst:\n\n*.register Name.Alter*\n\nBeispiel: *#register max.16*',
+        restrict: 'Diese Funktion ist *deaktiviert*!'
+    }[type]
+    if (msg) return m.reply(msg)
 }
 
 let fs = require('fs')
