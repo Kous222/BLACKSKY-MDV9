@@ -12,7 +12,7 @@
     jidDecode,
     fetchLatestBaileysVersion,
     proto
-  } = require('@whiskeysockets/baileys');
+  } = require('@adiwajshing/baileys');
 
   const pino = require('pino');
   const WebSocket = require('ws');
@@ -27,7 +27,7 @@
   const fetch = require('node-fetch');
   const chalk = require('chalk');
   const crypto = require('crypto');
-  const { makeInMemoryStore } = require('@whiskeysockets/baileys');
+  const { makeInMemoryStore } = require('@adiwajshing/baileys');
 
   let simple = require('./lib/simple');
 
