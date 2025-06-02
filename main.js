@@ -1,5 +1,6 @@
 (async () => {
   require('./config');
+  require('events').EventEmitter.defaultMaxListeners = 50; // or any safe higher number
 
   const {
     useMultiFileAuthState,
