@@ -6,37 +6,37 @@ const os = require('os');
 const express = require('express');
 const app = express();
 
-// Express.js 
+// Express.js
 const ports = [4000, 3000, 5000, 8000];
 let availablePortIndex = 0;
 
 // Function to send startup message to bot owner
 async function sendStartupMessage(conn, forceMessage = false) {
   if (!conn || !conn.user) return false;
-  
+
   // Initialize the global flag if it doesn't exist
   if (typeof global.startupMessageSent === 'undefined') {
     global.startupMessageSent = false;
   }
-  
+
   // Skip if already sent (unless forced)
   if (global.startupMessageSent && !forceMessage) {
     console.log('\x1b[33m%s\x1b[0m', '⚠️ Startup message already sent, skipping...');
     return false;
   }
-  
+
   try {
     // Set the global flag to prevent duplicate messages
     if (!forceMessage) {
       global.startupMessageSent = true;
     }
-    
+
     // Bot's own JID
     const botNumber = conn.user.jid;
-    
+
     // Current date and time formatted
     const now = new Date().toLocaleString();
-    
+
     // Get system information
     const systemInfo = {
       platform: os.type(),
@@ -46,7 +46,7 @@ async function sendStartupMessage(conn, forceMessage = false) {
       freeRAM: (os.freemem() / (1024 * 1024 * 1024)).toFixed(2) + ' GB',
       uptime: formatUptime(os.uptime())
     };
-    
+
     // Create the startup message
     const startupMessage = `
 ┌─⊷ *BOT STARTUP* ⊶
@@ -64,7 +64,7 @@ async function sendStartupMessage(conn, forceMessage = false) {
 │
 └───────────────────────
 `.trim();
-    
+
     // Send the message to the bot's own number (will appear in saved messages)
     await conn.sendMessage(botNumber, { text: startupMessage });
     console.log('\x1b[32m%s\x1b[0m', '✅ Startup message sent to bot');
@@ -81,7 +81,7 @@ function formatUptime(seconds) {
   const hours = Math.floor((seconds % (3600 * 24)) / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = Math.floor(seconds % 60);
-  
+
   return `${days}d ${hours}h ${minutes}m ${secs}s`;
 }
 
@@ -166,7 +166,7 @@ function start(file) {
 
     fs.watchFile(args[0], () => {
       fs.unwatchFile(args[0]);
-          console.error('\x1b[31m%s\x1b[0m', `File ${args[0]} has been modified. Script will restart...`);
+      console.error('\x1b[31m%s\x1b[0m', `File ${args[0]} has been modified. Script will restart...`);
       start("main.js");
     });
   });
@@ -208,9 +208,9 @@ function start(file) {
 start("main.js");
 
 const tmpDir = './tmp';
-  if (!fs.existsSync(tmpDir)) {
-    fs.mkdirSync(tmpDir);
-    console.log('\x1b[33m%s\x1b[0m', `📁 Created directory ${tmpDir}`);
+if (!fs.existsSync(tmpDir)) {
+  fs.mkdirSync(tmpDir);
+  console.log('\x1b[33m%s\x1b[0m', `📁 Created directory ${tmpDir}`);
 }
 
 process.on('unhandledRejection', (reason) => {

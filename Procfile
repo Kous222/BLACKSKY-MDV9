@@ -1,1 +1,2 @@
-worker: node . --autocleartmp
+web: node server.js
+worker: node worker.js
