@@ -183,18 +183,54 @@
 
   global.conn = simple.makeWASocket(connectionOptions);
 
+  // Store interval references for cleanup
+  const intervals = [];
+  
   if (!opts.test) {
     if (global.db) {
-      setInterval(async () => {
-        if (global.db.data) await global.db.write();
+      const dbWriteInterval = setInterval(async () => {
+        try {
+          if (global.db.data) await global.db.write();
 
-        if (!opts.tmp && (global.support || {}).find) {
-          const tmp = [os.tmpdir(), 'tmp'];
-          tmp.forEach(dir => cp.spawn('find', [dir, '-amin', '3', '-type', 'f', '-delete']));
+          if (!opts.tmp && (global.support || {}).find) {
+            const tmp = [os.tmpdir(), 'tmp'];
+            tmp.forEach(dir => {
+              try {
+                cp.spawn('find', [dir, '-amin', '3', '-type', 'f', '-delete']);
+              } catch (e) {
+                // Ignore cleanup errors
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Database write error:', error);
         }
       }, 30 * 1000);
+      
+      intervals.push(dbWriteInterval);
     }
   }
+  
+  // Cleanup function for intervals
+  global.cleanupIntervals = () => {
+    intervals.forEach(interval => clearInterval(interval));
+    intervals.length = 0;
+  };
+
+  // Add graceful shutdown handling
+  process.on('SIGTERM', () => {
+    console.log('Received SIGTERM, shutting down gracefully...');
+    global.cleanupIntervals();
+    if (global.cleanupHandlerCaches) global.cleanupHandlerCaches();
+    process.exit(0);
+  });
+
+  process.on('SIGINT', () => {
+    console.log('Received SIGINT, shutting down gracefully...');
+    global.cleanupIntervals();
+    if (global.cleanupHandlerCaches) global.cleanupHandlerCaches();
+    process.exit(0);
+  });
 
   async function connectionUpdate(update) {
     const { connection, lastDisconnect } = update;
@@ -273,20 +309,34 @@
 
     if (reloadConn) {
       try {
-        global.conn.ws.close();
-      } catch { }
+        // Cleanup intervals before reconnecting
+        if (global.cleanupIntervals) global.cleanupIntervals();
+        
+        // Close websocket properly
+        if (global.conn && global.conn.ws) {
+          global.conn.ws.close();
+        }
+      } catch (e) {
+        console.error('Error during cleanup:', e);
+      }
+      
       global.conn = {
         ...global.conn,
         ...simple.makeWASocket(connectionOptions)
       };
     }
 
-    if (!isFirstInit) {
-      conn.ev.removeAllListeners('messages.upsert');
-      conn.ev.removeAllListeners('group-participants.update');
-      conn.ev.removeAllListeners('message.delete');
-      conn.ev.removeAllListeners('connection.update');
-      conn.ev.removeAllListeners('creds.update');
+    if (!isFirstInit && conn && conn.ev) {
+      // Remove all listeners to prevent memory leaks
+      try {
+        conn.ev.removeAllListeners('messages.upsert');
+        conn.ev.removeAllListeners('group-participants.update');
+        conn.ev.removeAllListeners('message.delete');
+        conn.ev.removeAllListeners('connection.update');
+        conn.ev.removeAllListeners('creds.update');
+      } catch (e) {
+        console.error('Error removing listeners:', e);
+      }
     }
 
     conn.welcome = 'Selamat datang @user di group @subject utamakan baca desk ya \n@desc';

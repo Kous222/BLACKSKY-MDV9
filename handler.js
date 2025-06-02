@@ -50,28 +50,51 @@ const str2Regex = str => {
 // Diese Besitzernummern haben vollen Zugriff auf den Bot
 console.log("Aktuelle(r) Bot-Besitzer:", global.owner)
 
-// Caches regelmäßig bereinigen
-setInterval(() => {
+// Caches regelmäßig bereinigen - Store reference for cleanup
+const cacheCleanupInterval = setInterval(() => {
     const now = Date.now();
     
-    // Benutzer-Cache bereinigen
-    for (const [key, { timestamp }] of userDataCache.entries()) {
-        if (now - timestamp > USER_CACHE_TTL) {
-            userDataCache.delete(key);
+    try {
+        // Benutzer-Cache bereinigen
+        for (const [key, { timestamp }] of userDataCache.entries()) {
+            if (now - timestamp > USER_CACHE_TTL) {
+                userDataCache.delete(key);
+            }
         }
-    }
-    
-    // Befehlscache-Größe begrenzen
-    if (commandCache.size > COMMAND_CACHE_MAX) {
-        // Entferne die ältesten 20% der Einträge
-        const keysToRemove = Array.from(commandCache.keys())
-            .slice(0, Math.floor(commandCache.size * 0.2));
         
-        for (const key of keysToRemove) {
-            commandCache.delete(key);
+        // Befehlscache-Größe begrenzen
+        if (commandCache.size > COMMAND_CACHE_MAX) {
+            // Entferne die ältesten 20% der Einträge
+            const keysToRemove = Array.from(commandCache.keys())
+                .slice(0, Math.floor(commandCache.size * 0.2));
+            
+            for (const key of keysToRemove) {
+                commandCache.delete(key);
+            }
         }
+    } catch (error) {
+        console.error('Cache cleanup error:', error);
     }
-}, 30000); // Alle 30 Sekunden ausführen
+}, 60000); // Reduziert auf alle 60 Sekunden für weniger CPU-Last
+
+// Export cleanup function
+global.cleanupHandlerCaches = () => {
+    clearInterval(cacheCleanupInterval);
+    commandCache.clear();
+    userDataCache.clear();
+    prefixRegexCache.clear();
+    
+    // Cleanup plugin intervals
+    if (global.cleanupPluginIntervals) {
+        global.cleanupPluginIntervals.forEach(cleanup => {
+            try {
+                cleanup();
+            } catch (e) {
+                console.error('Error cleaning up plugin interval:', e);
+            }
+        });
+    }
+};
 
 module.exports = {
     async handler(chatUpdate) {

@@ -160,14 +160,24 @@ function start(file) {
   p.on("exit", (code) => {
     isRunning = false;
     console.error('\x1b[31m%s\x1b[0m', `Exited with code: ${code}`);
-    start('main.js');
+    
+    // Only restart if code is not 0 and not already restarting
+    if (code !== 0 && !isRunning) {
+      setTimeout(() => {
+        if (!isRunning) {
+          start('main.js');
+        }
+      }, 2000); // Add delay to prevent rapid restarts
+    }
 
     if (code === 0) return;
 
     fs.watchFile(args[0], () => {
       fs.unwatchFile(args[0]);
       console.error('\x1b[31m%s\x1b[0m', `File ${args[0]} has been modified. Script will restart...`);
-      start("main.js");
+      if (!isRunning) {
+        start("main.js");
+      }
     });
   });
 
@@ -202,7 +212,7 @@ function start(file) {
   console.log(`💽 \x1b[33mFree RAM: ${freeRamInGB.toFixed(2)} GB\x1b[0m`);
   console.log('\x1b[33m%s\x1b[0m', `📃 Script by BLACKSKY-MD`);
 
-  setInterval(() => {}, 1000);
+  // Removed empty interval that was causing memory leak
 }
 
 start("main.js");
@@ -215,12 +225,7 @@ if (!fs.existsSync(tmpDir)) {
 
 process.on('unhandledRejection', (reason) => {
   console.error('\x1b[31m%s\x1b[0m', `Unhandled promise rejection: ${reason}`);
-  console.error('\x1b[31m%s\x1b[0m', 'Unhandled promise rejection. Script will restart...');
-  start('main.js');
+  // Log but don't auto-restart to prevent infinite loops
 });
 
-process.on('exit', (code) => {
-  console.error(`Exited with code: ${code}`);
-  console.error('Script will restart...');
-  start('main.js');
-});
+// Remove auto-restart on exit to prevent infinite restart cycles
